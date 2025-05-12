@@ -1,16 +1,57 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText } from 'lucide-react';
+import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText, Info } from 'lucide-react';
 import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
+
+// Example config content for placeholders
+const placeholderProjectConfig = `
+import type { ProjectConfig } from '@/types';
+
+export const projectConfig: ProjectConfig = {
+  appName: 'Genesis Template',
+  availableAccentColors: [
+    { name: 'Teal', hslValue: '180 100% 25%', hexValue: '#008080' },
+    // ... more colors
+  ],
+  defaultAccentColorName: 'Teal',
+  // ... more config
+};
+`.trim();
+
+const placeholderSidebarConfig = `
+import type { SidebarConfig } from '@/types';
+import { LayoutDashboard, Users } from 'lucide-react';
+
+export const sidebarConfig: SidebarConfig = {
+  items: [
+    { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'user'] },
+    // ... more items
+  ],
+};
+`.trim();
+
+const placeholderRolesConfig = `
+import type { RolesConfig } from '@/types';
+
+export const rolesConfig: RolesConfig = {
+  roles: ['admin', 'user', 'guest'],
+  routePermissions: {
+    '/dashboard': ['admin', 'user'],
+    // ... more permissions
+  },
+  defaultRole: 'user',
+};
+`.trim();
+
 
 export default function ConfigAdvisorPage() {
   const { user, loading: authLoading } = useAuth();
@@ -20,11 +61,63 @@ export default function ConfigAdvisorPage() {
   const [suggestions, setSuggestions] = useState<AnalyzeConfigOutput['suggestions'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPlaceholders, setShowPlaceholders] = useState(true);
+
+  useEffect(() => {
+    // Check if user has previously entered any data to decide on showing placeholders
+    if (localStorage.getItem('configAdvisorInputs')) {
+        const storedInputs = JSON.parse(localStorage.getItem('configAdvisorInputs')!);
+        setProjectConfigContent(storedInputs.projectConfigContent || '');
+        setSidebarConfigContent(storedInputs.sidebarConfigContent || '');
+        setRolesConfigContent(storedInputs.rolesConfigContent || '');
+        setShowPlaceholders(!storedInputs.projectConfigContent && !storedInputs.sidebarConfigContent && !storedInputs.rolesConfigContent);
+    } else {
+      // If no stored inputs, set placeholders if user hasn't typed anything
+      if (!projectConfigContent && !sidebarConfigContent && !rolesConfigContent) {
+        setProjectConfigContent(placeholderProjectConfig);
+        setSidebarConfigContent(placeholderSidebarConfig);
+        setRolesConfigContent(placeholderRolesConfig);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
+
+
+  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
+    setter(value);
+    setShowPlaceholders(false); // Hide placeholders once user starts typing
+    // Persist current inputs
+    localStorage.setItem('configAdvisorInputs', JSON.stringify({
+        projectConfigContent: projectConfigContent, // these will be stale by one char
+        sidebarConfigContent: sidebarConfigContent,
+        rolesConfigContent: rolesConfigContent,
+        [setter.name.replace('set', '').toLowerCase()]: value // update current field
+    }));
+  };
+  
+  const loadExampleConfigs = () => {
+    setProjectConfigContent(placeholderProjectConfig);
+    setSidebarConfigContent(placeholderSidebarConfig);
+    setRolesConfigContent(placeholderRolesConfig);
+    setShowPlaceholders(false); // User explicitly loaded examples
+    localStorage.setItem('configAdvisorInputs', JSON.stringify({
+        projectConfigContent: placeholderProjectConfig,
+        sidebarConfigContent: placeholderSidebarConfig,
+        rolesConfigContent: placeholderRolesConfig
+    }));
+  };
+
 
   const handleSubmit = async () => {
     setIsLoading(true);
     setError(null);
     setSuggestions(null);
+
+    if (!projectConfigContent.trim() && !sidebarConfigContent.trim() && !rolesConfigContent.trim()) {
+        setError("Please provide content for at least one configuration file to analyze.");
+        setIsLoading(false);
+        return;
+    }
 
     const input: AnalyzeConfigInput = {
       projectConfig: projectConfigContent,
@@ -37,7 +130,7 @@ export default function ConfigAdvisorPage() {
       setSuggestions(result.suggestions);
     } catch (err: any) {
       console.error('Error analyzing config:', err);
-      setError(err.message || 'Failed to get suggestions from AI.');
+      setError(err.message || 'Failed to get suggestions from AI. Please ensure Genkit services are running if in local development (npm run genkit:dev).');
     } finally {
       setIsLoading(false);
     }
@@ -64,24 +157,29 @@ export default function ConfigAdvisorPage() {
 
 
   return (
-    <div className="flex-1 space-y-4 md:space-y-6">
+    <div className="flex-1 space-y-4 md:space-y-6 p-1 sm:p-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
-        <Button onClick={handleSubmit} disabled={isLoading} size="sm">
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Lightbulb className="mr-2 h-4 w-4" />
-          )}
-          Analyze Configurations
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={loadExampleConfigs} disabled={isLoading} variant="outline" size="sm">
+            <Info className="mr-2 h-4 w-4" /> Load Examples
+          </Button>
+          <Button onClick={handleSubmit} disabled={isLoading} size="sm">
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Lightbulb className="mr-2 h-4 w-4" />
+            )}
+            Analyze Configurations
+          </Button>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-xl md:text-2xl">Input Configuration Files</CardTitle>
-          <CardDescription>
-            Paste the content of your configuration files below. The AI will analyze them for potential improvements in performance and security.
+          <CardDescription className="text-xs sm:text-sm">
+            Paste the content of your configuration files below. The AI will analyze them for potential improvements. You can also load example configurations to see how it works.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -91,11 +189,11 @@ export default function ConfigAdvisorPage() {
             </label>
             <Textarea
               id="projectConfig"
-              placeholder="Paste content of project.config.ts here..."
+              placeholder={showPlaceholders ? "Example project.config.ts content..." : "Paste content of project.config.ts here..."}
               value={projectConfigContent}
-              onChange={(e) => setProjectConfigContent(e.target.value)}
-              rows={6}
-              className="font-mono text-xs"
+              onChange={(e) => handleInputChange(setProjectConfigContent, e.target.value)}
+              rows={8}
+              className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
               disabled={isLoading}
             />
           </div>
@@ -105,11 +203,11 @@ export default function ConfigAdvisorPage() {
             </label>
             <Textarea
               id="sidebarConfig"
-              placeholder="Paste content of sidebar.config.ts here..."
+              placeholder={showPlaceholders ? "Example sidebar.config.ts content..." : "Paste content of sidebar.config.ts here..."}
               value={sidebarConfigContent}
-              onChange={(e) => setSidebarConfigContent(e.target.value)}
-              rows={6}
-              className="font-mono text-xs"
+              onChange={(e) => handleInputChange(setSidebarConfigContent, e.target.value)}
+              rows={8}
+              className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
               disabled={isLoading}
             />
           </div>
@@ -119,15 +217,20 @@ export default function ConfigAdvisorPage() {
             </label>
             <Textarea
               id="rolesConfig"
-              placeholder="Paste content of roles.config.ts here..."
+              placeholder={showPlaceholders ? "Example roles.config.ts content..." : "Paste content of roles.config.ts here..."}
               value={rolesConfigContent}
-              onChange={(e) => setRolesConfigContent(e.target.value)}
-              rows={6}
-              className="font-mono text-xs"
+              onChange={(e) => handleInputChange(setRolesConfigContent, e.target.value)}
+              rows={8}
+              className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
               disabled={isLoading}
             />
           </div>
         </CardContent>
+         <CardFooter>
+          <p className="text-xs text-muted-foreground">
+            Note: The AI analysis is based on general best practices and the provided content. Always review suggestions carefully before implementing.
+          </p>
+        </CardFooter>
       </Card>
 
       {error && (
@@ -141,7 +244,7 @@ export default function ConfigAdvisorPage() {
       {isLoading && (
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-sm">Analyzing configurations, please wait...</p>
+          <p className="ml-2 text-sm text-muted-foreground">Analyzing configurations, please wait...</p>
         </div>
       )}
 
@@ -149,7 +252,7 @@ export default function ConfigAdvisorPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-xl md:text-2xl">AI Suggestions</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               Here are the AI-powered suggestions to improve your configurations:
             </CardDescription>
           </CardHeader>
@@ -157,14 +260,14 @@ export default function ConfigAdvisorPage() {
             <Accordion type="single" collapsible className="w-full">
               {suggestions.map((suggestion, index) => (
                 <AccordionItem value={`item-${index}`} key={index}>
-                  <AccordionTrigger className="text-sm">
-                    <div className="flex items-center gap-2 text-left">
+                  <AccordionTrigger className="text-sm hover:no-underline">
+                    <div className="flex items-center gap-2 text-left w-full">
                         <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="font-semibold">{suggestion.file}:</span>
-                        <span className="truncate flex-1">{suggestion.suggestion}</span>
+                        <span className="font-semibold min-w-[130px] sm:min-w-[150px]">{suggestion.file}:</span>
+                        <span className="truncate flex-1 ">{suggestion.suggestion}</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert px-2">
+                  <AccordionContent className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert px-2 leading-relaxed">
                     <p><strong>Suggestion:</strong> {suggestion.suggestion}</p>
                     <p><strong>Reason:</strong> {suggestion.reason}</p>
                   </AccordionContent>
@@ -185,3 +288,4 @@ export default function ConfigAdvisorPage() {
     </div>
   );
 }
+
