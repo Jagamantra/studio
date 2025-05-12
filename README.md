@@ -23,8 +23,8 @@ To get started with the Genesis Template:
         cp .env .env.local
         ```
     *   Open your `.env.local` file.
-    *   The primary variable to configure is `NEXT_PUBLIC_API_BASE_URL`.
-        *   Initially, this can be a placeholder or point to a local mock server if you set one up separately. The application uses an internal mock API service by default (see "Mock API and Data" section below).
+    *   The primary variable to configure if you decide to connect to a real backend is `NEXT_PUBLIC_API_BASE_URL`.
+        *   Initially, this can be left blank or as a placeholder, as the application uses an internal mock API service by default (see "Mock API and Data" section below).
         *   When you're ready to connect to your actual backend, update this URL to point to your API's base endpoint.
         Example:
         ```env
@@ -47,11 +47,11 @@ To get started with the Genesis Template:
     The application should now be running, typically on `http://localhost:9002`.
 
 5.  **Explore the App**:
-    *   Navigate to `src/app/page.tsx` to see the entry point.
+    *   Navigate to `src/app/page.tsx` which redirects to `/auth/login`.
     *   The application uses a dummy authentication system. Default credentials are:
         *   Admin: `admin@dummy.com` / `password123`
         *   User: `user@dummy.com` / `password123`
-    *   You can register new dummy users, and their data will be stored in your browser's local storage for the session.
+    *   You can register new dummy users. Their data and session state are managed using browser Local Storage.
     *   Check out core features like Theme Switcher, Profile Editor, Role-Based Access Control (mocked), Dynamic Sidebar, and the AI Config Advisor.
 
 ## Core Features
@@ -60,7 +60,7 @@ To get started with the Genesis Template:
 -   **Profile Editor**: User profile management (personal details, password change) using mock services.
 -   **Access Control**: Role-based access control for routes (mocked), configured in `src/config/roles.config.ts`.
 -   **Sidebar Manager**: Dynamic sidebar navigation, configured in `src/config/sidebar.config.ts`, with a minimize option.
--   **Config Advisor**: AI-powered tool to analyze configuration files (`project.config.ts`, `sidebar.config.ts`, `roles.config.ts`) for improvements. Accessible to (mock) admins. This feature can be enabled or disabled (see "Toggling Config Advisor" section below).
+-   **Config Advisor**: AI-powered tool to analyze configuration files (`project.config.ts`, `sidebar.config.ts`, `roles.config.ts`) for improvements. Accessible to (mock) admins. This feature can be enabled or disabled (see "Application Configuration" section below).
 
 ## Genkit for AI Features
 
@@ -73,19 +73,95 @@ This application uses Genkit for AI-related functionalities like the Config Advi
     npm run genkit:watch
     ```
 
-## Mock API and Data
+## Mock API and Data Persistence
 
-The application currently uses a mock API service layer located in `src/services/api.ts`. This layer simulates backend interactions and uses dummy data primarily from `src/data/dummy-data.ts`. This allows for full frontend development and testing without a live backend. User authentication is also handled by a dummy system, with user data persisted in local storage.
+The application currently uses a mock API service layer located in `src/services/api.ts`. This layer simulates backend interactions and uses dummy data primarily from `src/data/dummy-data.ts`. This allows for full frontend development and testing without a live backend. User authentication is also handled by a dummy system.
 
-### Data Persistence (Mock Setup)
-
-In the current mock setup, data is persisted in the browser's Local Storage:
--   **User Session**: `AuthProvider` stores the current logged-in (dummy) user in `localStorage` (key: `genesis_current_dummy_user`). MFA verification status is also stored (key: `genesis_mfa_verified`).
--   **Dummy User Database**: A list of all registered dummy users is stored in `localStorage` (key: `genesis_dummy_users`). This is managed by `src/services/api.ts` and used by the User Management features.
--   **Theme Settings**: `ThemeProvider` stores theme preferences (mode, accent color, border radius, app version, app name) in `localStorage` (key prefix: `genesis-theme-`).
--   **Config Advisor Inputs**: The `ConfigAdvisorPage` stores user inputs for the AI configuration analysis in `localStorage` (key: `configAdvisorInputs`).
+Data is persisted in the browser's **Local Storage**:
+-   **User Session & Details**:
+    *   `genesis_current_dummy_user`: Stores the profile of the currently logged-in (dummy) user. Managed by `src/contexts/auth-provider.tsx`.
+    *   `genesis_mfa_verified`: Stores a boolean flag indicating if the current user has completed the mock MFA step. Managed by `src/contexts/auth-provider.tsx`.
+-   **Dummy User Database**:
+    *   `genesis_dummy_users`: Stores an array of all registered dummy users. This is used by the User Management features and the mock API service in `src/services/api.ts`.
+-   **Theme Settings (`src/contexts/theme-provider.tsx`)**:
+    *   `genesis-theme-mode`: Stores the selected theme (light, dark, system).
+    *   `genesis-theme-accent`: Stores the selected accent color (HSL or HEX string).
+    *   `genesis-theme-radius`: Stores the selected border radius value (e.g., "0.5rem").
+    *   `genesis-theme-version`: Stores the selected application version ID.
+    *   `genesis-theme-app-name`: Stores the application name.
+    *   `genesis-theme-app-icon-paths`: Stores the SVG path data for the dynamic app icon.
+-   **Config Advisor Inputs (`src/app/(app)/config-advisor/page.tsx`)**:
+    *   `configAdvisorInputs`: Stores the user's input for the project, sidebar, and roles configuration content for analysis.
 
 **Note**: This Local Storage persistence is for the mock/dummy setup. When you integrate a real backend API, this data would typically be stored in your backend database, and Local Storage would primarily be used for session tokens or minimal client-side preferences.
+
+## Application Configuration
+
+Most application-level configurations are centralized in the `src/config/` directory.
+
+### 1. Project-Wide Settings (`src/config/project.config.ts`)
+
+This file (`projectConfig`) controls fundamental aspects of the application:
+
+-   **`appName: string`**:
+    *   Sets the application's name, displayed in the header, browser title, and other UI elements.
+    *   Dynamically updated via the ThemeProvider and `ThemeSwitcher` component if changed at runtime (e.g., through Config Advisor page).
+-   **`appIconPaths: string[]`**:
+    *   An array of SVG path `d` attributes that define the application's main icon. This icon is rendered dynamically in the header and auth layout.
+    *   Can be updated via `ThemeProvider` if needed.
+-   **`availableAccentColors: AccentColor[]`** and **`defaultAccentColorName: string`**:
+    *   `AccentColor = { name: string; hslValue: string; hexValue: string; }`
+    *   Defines the list of predefined accent colors available in the `ThemeSwitcher`.
+    *   `defaultAccentColorName` specifies which of these colors is the default.
+    *   The `ThemeSwitcher` also allows users to pick a custom HEX color.
+-   **`availableBorderRadii: BorderRadiusOption[]`** and **`defaultBorderRadiusName: string`**:
+    *   `BorderRadiusOption = { name: string; value: string; }` (e.g., `{ name: 'Medium', value: '0.5rem' }`)
+    *   Defines the border radius options available in the `ThemeSwitcher`.
+    *   `defaultBorderRadiusName` sets the default.
+-   **`availableAppVersions: AppVersion[]`** and **`defaultAppVersionId: string`**:
+    *   `AppVersion = { name: string; id: string; }`
+    *   Allows defining different "versions" or modes of the application (e.g., 'v1.0.0', 'beta', 'dev').
+    *   The selected version can alter UI components or features, as seen in the Dashboard page.
+    *   Users can switch versions via the dropdown in the `AppSidebar` or `ThemeSwitcher`.
+-   **`enableConfigAdvisor: boolean`**:
+    *   Controls the visibility and accessibility of the AI Config Advisor feature.
+    *   If `false`:
+        *   "Config Advisor" link is removed from the sidebar.
+        *   "Config Advisor" card is hidden from the admin dashboard.
+        *   Direct navigation to `/config-advisor` shows a "Feature Disabled" message.
+    *   If `true` (default): The feature is available to admin users.
+
+### 2. Theme Customization (Runtime)
+
+Users can customize the theme at runtime using the **Theme Switcher** (palette icon in the header):
+-   **Mode**: Light, Dark, or System preference.
+-   **Accent Color**: Choose from predefined colors (from `project.config.ts`) or pick a custom HEX color. The application uses HSL CSS variables (`--accent-h`, `--accent-s`, `--accent-l`) in `src/app/globals.css` for dynamic theming.
+-   **Border Radius**: Select from predefined border radius options (from `project.config.ts`). This updates the `--radius` CSS variable.
+
+These settings are managed by `src/contexts/theme-provider.tsx` and persisted in Local Storage.
+
+### 3. Sidebar Navigation (`src/config/sidebar.config.ts`)
+
+This file defines the navigation items displayed in the application sidebar:
+-   Each `SidebarNavItem` object includes:
+    *   `id`: A unique identifier.
+    *   `label`: The text displayed for the item.
+    *   `href`: The path the item links to.
+    *   `icon`: A Lucide icon component.
+    *   `roles?`: An optional array of `Role` (e.g., `['admin', 'user']`) that determines who can see the item. If omitted, it's visible to all authenticated users who meet other criteria.
+    *   `subItems?`: An optional array of `SidebarNavItem` for creating nested menus.
+    *   `disabled?`: A boolean to disable the item.
+-   The sidebar dynamically renders items based on this configuration and the current user's role.
+-   The Config Advisor link is conditionally added based on `projectConfig.enableConfigAdvisor`.
+
+### 4. Role-Based Access Control (RBAC) (`src/config/roles.config.ts`)
+
+This file configures user roles and their permissions:
+-   **`roles: Role[]`**: Defines all available roles in the system (e.g., `['admin', 'user', 'guest']`).
+-   **`routePermissions: Record<string, Role[]>`**: Maps base route paths to an array of roles allowed to access them.
+    *   Example: `'/users': ['admin']` means only users with the 'admin' role can access `/users` and its sub-routes.
+    *   The `AuthProvider` and page-level checks use this for route protection.
+-   **`defaultRole: Role`**: Specifies the role assigned to newly registered (dummy) users.
 
 ## Connecting to Your Backend API
 
@@ -100,7 +176,7 @@ To connect the Genesis Template to your actual backend API, follow these steps:
 
 2.  **Update API Service Functions**:
     *   Open `src/services/api.ts`. This file contains functions like `fetchUsers`, `addUser`, `updateUserProfile`, etc. Currently, these functions return mock data or simulate API calls.
-    *   Modify these functions to make actual HTTP requests to your backend endpoints using an HTTP client like `axios` (which is already set up in `apiClient` within this file) or `fetch`.
+    *   Modify these functions to make actual HTTP requests to your backend endpoints using an HTTP client like `axios` (which is already set up as `apiClient` within this file) or the native `fetch` API.
     *   **Example - Modifying `fetchUsers`**:
         ```typescript
         // Before (Mock Implementation) in src/services/api.ts
@@ -124,50 +200,18 @@ To connect the Genesis Template to your actual backend API, follow these steps:
           }
         };
         ```
-    *   Update all relevant functions in `src/services/api.ts` (`addUser`, `updateUser`, `deleteUser`, `loginUser`, `registerUser`, `updateUserProfile`, `changeUserPassword`, etc.) to interact with your backend endpoints. Ensure the request payloads and response data structures match your API's specifications.
+    *   Update all relevant functions in `src/services/api.ts` (`addUser`, `updateUser`, `deleteUser`, `loginUser`, `registerUser`, `updateUserProfile`, `changeUserPassword`, `forgotPassword`, etc.) to interact with your backend endpoints. Ensure the request payloads and response data structures match your API's specifications.
 
 3.  **Authentication**:
     *   The current application uses a dummy authentication system managed by `src/contexts/auth-provider.tsx` and `src/services/api.ts` (mock `loginUser`, `registerUser`).
     *   You will need to replace this with your backend's authentication mechanism.
     *   Modify `loginUser` and `registerUser` in `src/services/api.ts` to call your backend's auth endpoints.
-    *   Adjust `src/contexts/auth-provider.tsx` to handle tokens (e.g., JWTs) received from your backend, store them securely (e.g., HttpOnly cookies managed by the backend, or localStorage for client-side tokens), and include them in `apiClient` requests (e.g., via Authorization headers).
+    *   Adjust `src/contexts/auth-provider.tsx` to handle tokens (e.g., JWTs) received from your backend, store them securely (e.g., HttpOnly cookies managed by the backend, or localStorage for client-side tokens if appropriate for your security model), and include them in `apiClient` requests (e.g., via Authorization headers).
     *   The `apiClient` in `src/services/api.ts` can be configured with interceptors to automatically add auth tokens to requests.
 
 4.  **Data Types**:
     *   Ensure the TypeScript types defined in `src/types/index.ts` (e.g., `UserProfile`) match the data structures your backend API expects and returns. Update these types as necessary.
 
 By following these steps, you can transition the Genesis Template from using its mock API to interacting with your live backend services.
-
-## Toggling Config Advisor Feature
-
-The AI-powered Config Advisor feature can be enabled or disabled globally via a configuration setting.
-
--   **Location**: `src/config/project.config.ts`
--   **Property**: `enableConfigAdvisor` (boolean)
-
-To **disable** the Config Advisor:
-1.  Open `src/config/project.config.ts`.
-2.  Find the `enableConfigAdvisor` property within the `projectConfig` object.
-3.  Set its value to `false`:
-    ```typescript
-    export const projectConfig: ProjectConfig = {
-      // ... other properties
-      enableConfigAdvisor: false, // Set to false to disable
-    };
-    ```
-
-To **enable** the Config Advisor:
-1.  Open `src/config/project.config.ts`.
-2.  Set `enableConfigAdvisor` to `true`:
-    ```typescript
-    export const projectConfig: ProjectConfig = {
-      // ... other properties
-      enableConfigAdvisor: true, // Set to true to enable
-    };
-    ```
-When disabled:
--   The "Config Advisor" link will be removed from the sidebar.
--   The "Config Advisor" card will be hidden from the admin dashboard.
--   Direct navigation to the `/config-advisor` page will show a "Feature Disabled" message.
-
-Restart your development server if it was running for the changes in `project.config.ts` to be fully reflected, especially for server-side logic or build-time configurations (though in this case, it's primarily client-side rendering that will be affected).
+The folder structure utilizes Next.js App Router conventions, including route groups like `(app)` and `(auth)` to apply specific layouts to different sections of the application without affecting the URL paths. This is a standard and recommended practice. Components are primarily sourced from Shadcn UI, ensuring a consistent and modern look and feel.
+```
