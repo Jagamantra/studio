@@ -19,6 +19,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { projectConfig } from '@/config/project.config';
 import type { AccentColor, BorderRadiusOption } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -27,7 +29,7 @@ export function ThemeSwitcher() {
   const {
     theme,
     setTheme,
-    accentColor,
+    accentColor, // This can be HSL string (e.g., "180 100% 25%") or HEX string (e.g., "#008080")
     setAccentColor,
     borderRadius,
     setBorderRadius,
@@ -37,9 +39,19 @@ export function ThemeSwitcher() {
     availableBorderRadii,
   } = useTheme();
 
-  const currentAccent = availableAccentColors.find(ac => ac.hslValue === accentColor);
   const currentRadius = availableBorderRadii.find(br => br.value === borderRadius);
   const currentVersion = projectConfig.availableAppVersions.find(v => v.id === appVersion);
+
+  // Determine current accent for display and color input value
+  const currentPredefinedAccent = availableAccentColors.find(ac => ac.hslValue === accentColor);
+  
+  const colorInputValue = currentPredefinedAccent 
+    ? currentPredefinedAccent.hexValue 
+    : (accentColor.startsWith('#') ? accentColor : projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hexValue || '#000000');
+
+  const accentDisplayName = currentPredefinedAccent ? currentPredefinedAccent.name : 'Custom';
+  const accentDisplayColorValue = currentPredefinedAccent ? `hsl(${currentPredefinedAccent.hslValue})` : accentColor;
+
 
   return (
     <DropdownMenu>
@@ -76,28 +88,43 @@ export function ThemeSwitcher() {
             </DropdownMenuSubContent>
           </DropdownMenuPortal>
         </DropdownMenuSub>
+        
+        <DropdownMenuSeparator />
 
-        {/* Accent Color */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <div className="mr-2 h-4 w-4 rounded-full" style={{ backgroundColor: `hsl(${currentAccent?.hslValue})` }} />
-            <span>Accent: {currentAccent?.name || 'Default'}</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuSubContent>
-              <ScrollArea className="h-48">
-                <DropdownMenuRadioGroup value={accentColor} onValueChange={setAccentColor}>
-                  {availableAccentColors.map((color: AccentColor) => (
-                    <DropdownMenuRadioItem key={color.name} value={color.hslValue}>
-                      <div className="mr-2 h-4 w-4 rounded-full" style={{ backgroundColor: `hsl(${color.hslValue})` }} />
-                      {color.name}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </ScrollArea>
-            </DropdownMenuSubContent>
-          </DropdownMenuPortal>
-        </DropdownMenuSub>
+        {/* Accent Color Section */}
+        <DropdownMenuLabel className="flex items-center">
+          <div className="mr-2 h-4 w-4 rounded-full border" style={{ backgroundColor: accentDisplayColorValue }} />
+          Accent: {accentDisplayName}
+        </DropdownMenuLabel>
+        <div className="px-1">
+          <ScrollArea className="h-auto max-h-40"> {/* Allow scroll if many predefined colors */}
+            <DropdownMenuRadioGroup
+              value={currentPredefinedAccent ? accentColor : ""} // `accentColor` from useTheme is HSL string if predefined
+              onValueChange={(newHslValue) => { // newHslValue is an HSL string from a predefined color
+                setAccentColor(newHslValue);
+              }}
+            >
+              {availableAccentColors.map((colorOption: AccentColor) => (
+                <DropdownMenuRadioItem key={colorOption.name} value={colorOption.hslValue}>
+                  <div className="mr-2 h-4 w-4 rounded-full border" style={{ backgroundColor: `hsl(${colorOption.hslValue})` }} />
+                  {colorOption.name}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </ScrollArea>
+          <div className="mt-2 p-1">
+            <Label htmlFor="custom-color-picker" className="text-xs font-medium text-muted-foreground">
+              Custom Color
+            </Label>
+            <Input
+              id="custom-color-picker"
+              type="color"
+              className="mt-1 h-8 w-full p-0.5 border rounded-md cursor-pointer focus-visible:ring-1 focus-visible:ring-ring"
+              value={colorInputValue} // Must be a hex string
+              onChange={(e) => setAccentColor(e.target.value)} // e.target.value is always hex
+            />
+          </div>
+        </div>
 
         {/* Border Radius */}
         <DropdownMenuSub>

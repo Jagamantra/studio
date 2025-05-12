@@ -9,7 +9,7 @@ import type { ThemeSettings, AccentColor, BorderRadiusOption } from '@/types';
 
 interface ThemeProviderState extends ThemeSettings {
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
-  setAccentColor: (accentHslValue: string) => void;
+  setAccentColor: (accentValue: string) => void; // Can be HSL string or HEX string
   setBorderRadius: (radiusValue: string) => void;
   setAppVersion: (versionId: string) => void;
   availableAccentColors: AccentColor[];
@@ -46,7 +46,7 @@ export function ThemeProvider({
   );
   const [accentColor, setAccentColorState] = useLocalStorage<string>(
     `${storageKey}-accent`,
-    initialState.accentColor
+    initialState.accentColor 
   );
   const [borderRadius, setBorderRadiusState] = useLocalStorage<string>(
     `${storageKey}-radius`,
@@ -75,13 +75,31 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
     if (accentColor) {
-      root.style.setProperty('--accent', accentColor);
-      // Assuming accent-foreground is derived or fixed for simplicity, or you can add logic to calculate it
-      // For teal (180 100% 25%), a light foreground like 0 0% 98% works.
-      // For a more dynamic approach, this might need a mapping or calculation.
-      // For now, we use the pre-defined one in globals.css. The primary accent variable is --accent.
-      // If the accent color makes the default ring color unsuitable, update --ring as well
-      // Example: root.style.setProperty('--ring', accentColor); // or a lighter/darker shade
+      // If accentColor is an HSL string like "180 100% 25%" (without 'hsl()' wrapper), wrap it.
+      // If it's a HEX string like "#RRGGBB" or already `hsl(...)`, use as is.
+      if (accentColor.includes(' ') && !accentColor.startsWith('hsl(') && !accentColor.startsWith('#')) {
+        root.style.setProperty('--accent', `hsl(${accentColor})`);
+        // Also update --ring to match the primary part of HSL or a related color
+        const primaryHue = accentColor.split(' ')[0];
+        root.style.setProperty('--ring', `hsl(${primaryHue} 100% 35%)`); // Example: Keep saturation & lightness for ring related to hue
+      } else {
+        root.style.setProperty('--accent', accentColor);
+        // If HEX, derive a ring color or use a fixed offset.
+        // For simplicity, if it's hex, the ring might take this directly or be a theme default.
+        // Here, we'll make --ring also follow --accent directly if it's a direct value like HEX
+        // Consider a more sophisticated mapping for --ring if specific shades are needed per accent.
+         if (accentColor.startsWith('#')) {
+           root.style.setProperty('--ring', accentColor); // For HEX, ring might directly use it or a derived value
+         } else if (accentColor.startsWith('hsl(')) {
+            // If accentColor is already like 'hsl(180 100% 25%)', parse and adjust for ring
+            const matches = accentColor.match(/hsl\(\s*(\d+)\s*,\s*(\d+%)\s*,\s*(\d+%)\s*\)/);
+            if (matches) {
+                root.style.setProperty('--ring', `hsl(${matches[1]}, 100%, 35%)`);
+            } else {
+                 root.style.setProperty('--ring', projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0].hslValue);
+            }
+         }
+      }
     }
   }, [accentColor]);
 

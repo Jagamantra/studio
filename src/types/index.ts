@@ -2,7 +2,8 @@ import type { LucideIcon } from 'lucide-react';
 
 export type AccentColor = {
   name: string;
-  hslValue: string; // e.g., "180 100% 25%" (without hsl() wrapper)
+  hslValue: string; // e.g., "180 100% 25%" (without hsl() wrapper) for CSS
+  hexValue: string; // e.g., "#008080" for color input
 };
 
 export type BorderRadiusOption = {
@@ -64,7 +65,7 @@ export type UserProfile = {
 // For theme context
 export type ThemeSettings = {
   theme: 'light' | 'dark' | 'system';
-  accentColor: string; // HSL value string
+  accentColor: string; // HSL value string (e.g., "180 100% 25%") or HEX string (e.g., "#008080")
   borderRadius: string; // CSS rem/px value
   appVersion: string; // ID of the app version
 };
