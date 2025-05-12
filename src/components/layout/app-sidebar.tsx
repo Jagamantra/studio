@@ -2,14 +2,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-// Link import removed as it's no longer used for app name/icon
-// import Link from 'next/link';
 import {
   Sidebar,
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  // SidebarTrigger, // This is a general trigger, specific toggle is used below
   useSidebar,
 } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/layout/main-nav';
@@ -21,7 +18,6 @@ import { PanelLeftOpen, PanelLeftClose, GitBranch } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  // DropdownMenuItem, // Not used directly here
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -37,8 +33,6 @@ export function AppSidebar() {
 
   useEffect(() => {
     setIsClient(true);
-    // Sync with theme provider's version once on client
-    // This might cause intended hydration difference for appVersion controlled elements.
     setAppVersion(themeAppVersion); 
   }, [themeAppVersion]);
 
@@ -47,11 +41,9 @@ export function AppSidebar() {
     setThemeAppVersion(newVersion); 
   };
   
-  // Safely determine version name for SSR and client
   const resolvedAppVersionForDisplay = isClient ? appVersion : projectConfig.defaultAppVersionId;
-  const currentVersionName = 
-    projectConfig.availableAppVersions.find(v => v.id === resolvedAppVersionForDisplay)?.name || 
-    (isClient ? 'Select Version' : projectConfig.availableAppVersions.find(v=>v.id === projectConfig.defaultAppVersionId)?.name || 'Loading...');
+  const currentVersionDetails = projectConfig.availableAppVersions.find(v => v.id === resolvedAppVersionForDisplay);
+  const currentVersionName = currentVersionDetails?.name || (isClient ? 'Select Version' : projectConfig.availableAppVersions.find(v=>v.id === projectConfig.defaultAppVersionId)?.name || 'Loading...');
 
 
   return (
@@ -63,14 +55,14 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                    <Button 
                       variant="outline" 
-                      className="justify-start group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
-                      disabled={!isClient} // Disable if not client-side ready
+                      className="w-40 justify-start group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
+                      disabled={!isClient}
                     >
                       <GitBranch className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
                       <span className="truncate group-data-[collapsible=icon]:hidden">{currentVersionName}</span>
                   </Button>
               </DropdownMenuTrigger>
-              {isClient && ( // Render content only on client to avoid hydration issues with DropdownMenuRadioGroup's value
+              {isClient && (
                 <DropdownMenuContent className="w-[var(--sidebar-width)] group-data-[collapsible=icon]:w-auto" side="bottom" align="start">
                      <DropdownMenuRadioGroup value={appVersion} onValueChange={handleAppVersionChange}>
                         {projectConfig.availableAppVersions.map(version => (
