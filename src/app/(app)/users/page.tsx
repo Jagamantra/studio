@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -29,7 +30,6 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
-// import { Label } from '@/components/ui/label'; // Not directly used, FormLabel is used
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -38,29 +38,23 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { rolesConfig } from '@/config/roles.config';
+import { initialMockUsersData } from '@/data/dummy-data';
 
-
-// Mock data for users - in a real app, this would come from Firebase/Firestore
-const initialMockUsers: UserProfile[] = [
-  { uid: '1', email: 'admin@example.com', displayName: 'Admin User', photoURL: 'https://picsum.photos/seed/user1/40/40', phoneNumber: '123-456-7890', role: 'admin' },
-  { uid: '2', email: 'user1@example.com', displayName: 'Regular User One', photoURL: 'https://picsum.photos/seed/user2/40/40', phoneNumber: '987-654-3210', role: 'user' },
-  { uid: '3', email: 'user2@example.com', displayName: 'Another User', photoURL: null, phoneNumber: null, role: 'user' },
-];
 
 const userFormSchema = z.object({
   displayName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   role: z.enum(rolesConfig.roles as [Role, ...Role[]], { message: "Invalid role." }),
   phoneNumber: z.string().optional().nullable(),
-  password: z.string().optional(), // Make password optional for edit, required for add
+  password: z.string().optional(), 
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
 export default function UsersPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isConfigured } = useAuth();
   const { toast } = useToast();
-  const [users, setUsers] = React.useState<UserProfile[]>(initialMockUsers);
+  const [users, setUsers] = React.useState<UserProfile[]>([]);
   const [tableLoading, setTableLoading] = React.useState(false); 
 
   const [isUserModalOpen, setIsUserModalOpen] = React.useState(false);
@@ -68,6 +62,21 @@ export default function UsersPage() {
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingUser, setDeletingUser] = React.useState<UserProfile | null>(null);
+
+  React.useEffect(() => {
+    // Initialize users from dummy data or could be from a fetch if API existed
+    setTableLoading(true);
+    // Simulate fetching users
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && !isConfigured) {
+        const storedUsers = localStorage.getItem('genesis_dummy_users');
+        setUsers(storedUsers ? JSON.parse(storedUsers) : initialMockUsersData);
+      } else {
+         setUsers(initialMockUsersData); // Fallback or for configured state if needed
+      }
+      setTableLoading(false);
+    }, 300);
+  }, [isConfigured]);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema.refine(data => editingUser || data.password, {
@@ -90,7 +99,7 @@ export default function UsersPage() {
         email: editingUser.email || '',
         role: editingUser.role,
         phoneNumber: editingUser.phoneNumber || '',
-        password: '', // Password not pre-filled for editing
+        password: '', 
       });
     } else {
       form.reset({
@@ -122,9 +131,14 @@ export default function UsersPage() {
   const confirmDeleteUser = async () => {
     if (!deletingUser) return;
     setTableLoading(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
-    setUsers(prev => prev.filter(u => u.uid !== deletingUser.uid));
+    
+    const updatedUsers = users.filter(u => u.uid !== deletingUser.uid);
+    setUsers(updatedUsers);
+    if (typeof window !== 'undefined' && !isConfigured) {
+      localStorage.setItem('genesis_dummy_users', JSON.stringify(updatedUsers));
+    }
+
     toast({ title: "User Deleted", description: `${deletingUser.displayName} has been removed.` });
     setTableLoading(false);
     setIsDeleteDialogOpen(false);
@@ -133,22 +147,27 @@ export default function UsersPage() {
 
   const handleUserFormSubmit = async (values: UserFormValues) => {
     setTableLoading(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    if (editingUser) { // Editing existing user
-      setUsers(prevUsers => prevUsers.map(u => 
-        u.uid === editingUser.uid ? { ...editingUser, ...values, password: u.password } : u // Keep original password if not changed
-      ));
+    let updatedUsersList: UserProfile[];
+
+    if (editingUser) { 
+      updatedUsersList = users.map(u => 
+        u.uid === editingUser.uid ? { ...editingUser, ...values, password: u.password } : u 
+      );
       toast({ title: "User Updated", description: `${values.displayName} has been updated.` });
-    } else { // Adding new user
+    } else { 
       const newUser: UserProfile = {
         uid: `mock-${Date.now()}`, 
         ...values,
         photoURL: null, 
       };
-      setUsers(prevUsers => [newUser, ...prevUsers]);
+      updatedUsersList = [newUser, ...users];
       toast({ title: "User Added", description: `${values.displayName} has been created.` });
+    }
+    setUsers(updatedUsersList);
+    if (typeof window !== 'undefined' && !isConfigured) {
+      localStorage.setItem('genesis_dummy_users', JSON.stringify(updatedUsersList));
     }
     setTableLoading(false);
     setIsUserModalOpen(false);
@@ -198,7 +217,7 @@ export default function UsersPage() {
                 <Edit className="mr-2 h-4 w-4" /> Edit User
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => openDeleteDialog(row.original)} className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={tableLoading}>
+              <DropdownMenuItem onClick={() => openDeleteDialog(row.original)} className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={tableLoading || (user?.uid === row.original.uid && !isConfigured)}>
                 <Trash2 className="mr-2 h-4 w-4" /> Delete User
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -211,8 +230,12 @@ export default function UsersPage() {
   if (authLoading) {
      return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
+  
+  // The user object from useAuth might have its role overridden to 'admin' if not configured.
+  // Use this `effectiveUserRole` for access control checks.
+  const effectiveUserRole = user?.role;
 
-  if (user?.role !== 'admin') {
+  if (effectiveUserRole !== 'admin') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 text-center">
         <ShieldAlert className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
@@ -229,7 +252,7 @@ export default function UsersPage() {
 
 
   return (
-    <div className="flex-1 space-y-4 md:space-y-6">
+    <div className="flex-1 space-y-4 md:space-y-6 p-1 sm:p-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
         <Button onClick={openAddUserModal} disabled={tableLoading} size="sm">
@@ -355,4 +378,3 @@ export default function UsersPage() {
     </div>
   );
 }
-

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -19,31 +20,7 @@ import Link from 'next/link';
 import { projectConfig as appProjectConfig } from '@/config/project.config'; 
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/contexts/theme-provider';
-
-const placeholderSidebarConfig = `
-// sidebar.config.ts
-// Example: import { Home, Settings } from 'lucide-react';
-export const sidebarConfig = {
-  items: [
-    { id: 'dashboard', label: 'Home', href: '/dashboard', /*icon: Home,*/ roles: ['admin', 'user'] },
-    // Example: Add a new item for admins
-    // { id: 'admin-tools', label: 'Admin Tools', href: '/admin/tools', /*icon: Settings,*/ roles: ['admin'] },
-  ],
-};
-`.trim();
-
-const placeholderRolesConfig = `
-// roles.config.ts
-export const rolesConfig = {
-  roles: ['admin', 'user', 'editor', 'guest'], // Example: Added 'editor'
-  routePermissions: {
-    '/dashboard': ['admin', 'user', 'editor'],
-    '/admin': ['admin'], // Example: New rule for an /admin section
-    // '/posts/edit': ['admin', 'editor'], // Example for content editing
-  },
-  defaultRole: 'user',
-};
-`.trim();
+import { placeholderSidebarConfigData, placeholderRolesConfigData } from '@/data/dummy-data';
 
 const projectConfigFormSchema = z.object({
   appName: z.string().min(1, 'App name is required.').max(100, 'App name cannot exceed 100 characters.'),
@@ -176,7 +153,6 @@ export default function ConfigAdvisorPage() {
   
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
-    // Simulate async operation
     await new Promise(resolve => setTimeout(resolve, 300));
     projectConfigForm.reset({
       appName: "Example App", 
@@ -184,8 +160,8 @@ export default function ConfigAdvisorPage() {
       defaultBorderRadiusName: appProjectConfig.availableBorderRadii[1]?.name || appProjectConfig.defaultBorderRadiusName, 
       defaultAppVersionId: appProjectConfig.availableAppVersions[1]?.id || appProjectConfig.defaultAppVersionId, 
     });
-    setSidebarConfigContent(placeholderSidebarConfig);
-    setRolesConfigContent(placeholderRolesConfig);
+    setSidebarConfigContent(placeholderSidebarConfigData);
+    setRolesConfigContent(placeholderRolesConfigData);
     setShowPlaceholders(false); 
     setIsLoadingExamples(false);
     toast({
@@ -199,7 +175,6 @@ export default function ConfigAdvisorPage() {
     const isValid = await projectConfigForm.trigger();
     if (isValid) {
       const projectConfigValues = projectConfigForm.getValues();
-      // Simulate async operation
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setAppName(projectConfigValues.appName);
@@ -219,7 +194,7 @@ export default function ConfigAdvisorPage() {
       }
       
       setAppVersion(projectConfigValues.defaultAppVersionId);
-      projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false }); // Reset dirty state after save
+      projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false }); 
 
       toast({
         title: 'Project Configuration Applied',
@@ -237,7 +212,6 @@ export default function ConfigAdvisorPage() {
 
   const handleResetProjectConfig = async () => {
     setIsResettingProjectConfig(true);
-    // Simulate async operation
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const originalAppName = appProjectConfig.appName;
@@ -319,7 +293,7 @@ export const projectConfig = {
   if (authLoading) {
     return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
-
+  
   const effectiveUserRole = user?.role;
   if (effectiveUserRole !== 'admin') {
     return (
@@ -471,7 +445,7 @@ export const projectConfig = {
             </label>
             <Textarea
               id="sidebarConfig"
-              placeholder={showPlaceholders && !sidebarConfigContent ? placeholderSidebarConfig : "Paste content of sidebar.config.ts here..."}
+              placeholder={showPlaceholders && !sidebarConfigContent ? placeholderSidebarConfigData : "Paste content of sidebar.config.ts here..."}
               value={sidebarConfigContent}
               onChange={(e) => handleTextareaChange(setSidebarConfigContent, e.target.value)}
               rows={8}
@@ -485,7 +459,7 @@ export const projectConfig = {
             </label>
             <Textarea
               id="rolesConfig"
-              placeholder={showPlaceholders && !rolesConfigContent ? placeholderRolesConfig : "Paste content of roles.config.ts here..."}
+              placeholder={showPlaceholders && !rolesConfigContent ? placeholderRolesConfigData : "Paste content of roles.config.ts here..."}
               value={rolesConfigContent}
               onChange={(e) => handleTextareaChange(setRolesConfigContent, e.target.value)}
               rows={8}
@@ -556,4 +530,3 @@ export const projectConfig = {
     </div>
   );
 }
-
