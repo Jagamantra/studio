@@ -47,6 +47,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const configured = false; 
 
+  const getDummyUsersFromStorage = useCallback((): UserProfile[] => {
+    if (typeof window === 'undefined') return [];
+    const usersJson = localStorage.getItem(DUMMY_USERS_STORAGE_KEY);
+    return usersJson ? JSON.parse(usersJson) : [];
+  }, []);
+
+  const saveDummyUsersToStorage = useCallback((users: UserProfile[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(users));
+      api.resetMockUsers(); 
+      api.loadMockUsersFromStorage(DUMMY_USERS_STORAGE_KEY);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (!localStorage.getItem(DUMMY_USERS_STORAGE_KEY)) {
@@ -91,43 +105,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [userProfile, configured]);
 
   useEffect(() => {
-    if (!loading) {
-      const isAuthPage = pathname.startsWith('/auth/');
-      const isPublicRoot = pathname === '/';
+    if (loading) return; // Don't do anything if still loading initial auth state
 
-      if (contextDisplayUser && contextDisplayUser.uid !== previewAdminUserProfile.uid) {
-        // A "real" user is logged in (e.g., session restored or post-MFA)
-        if (pathname === '/auth/login' || pathname === '/auth/register') {
-          router.replace('/dashboard');
-        }
-        // If on /auth/mfa, this effect should not redirect them away.
-        // Other /auth/* pages could be redirected to dashboard if user is fully authenticated.
-      } else {
-        // No "real" user is logged in (current user is previewAdmin or null before previewAdmin is set)
-        if (!isAuthPage && !isPublicRoot) {
-          // If not on an auth page and not on the root page (which handles its own redirect),
-          // redirect to login.
-          router.replace('/auth/login');
-        }
+    const isAuthPage = pathname.startsWith('/auth/');
+    // const isMfaPage = pathname === '/auth/mfa'; // Not strictly needed for this revised logic
+    // const isLoginPage = pathname === '/auth/login'; // Not strictly needed for this revised logic
+    // const isRegisterPage = pathname === '/auth/register'; // Not strictly needed for this revised logic
+    const isPublicRoot = pathname === '/';
+
+    // If a real user is logged in (not the previewAdmin)
+    if (contextDisplayUser && contextDisplayUser.uid !== previewAdminUserProfile.uid) {
+      // User is logged in.
+      // The login/register functions will push to /auth/mfa.
+      // The MFA page will push to /dashboard upon success.
+      // If a logged-in user (post-MFA) tries to access /auth/login or /auth/register again,
+      // they will currently stay there. This is a simplification to fix the MFA flow.
+      // A more robust solution would involve an `mfaCompleted` state to redirect them to /dashboard.
+      // For now, we prioritize fixing the MFA flow.
+    } else {
+      // No "real" user is logged in (current user is previewAdmin or null before previewAdmin is set)
+      // If not on an auth page and not on the root page (which handles its own redirect),
+      // redirect to login.
+      if (!isAuthPage && !isPublicRoot) {
+        router.replace('/auth/login');
       }
     }
   }, [contextDisplayUser, loading, pathname, router]);
 
 
-  const getDummyUsersFromStorage = (): UserProfile[] => {
-    if (typeof window === 'undefined') return [];
-    const usersJson = localStorage.getItem(DUMMY_USERS_STORAGE_KEY);
-    return usersJson ? JSON.parse(usersJson) : [];
-  };
-
-  const saveDummyUsersToStorage = (users: UserProfile[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(users));
-      api.resetMockUsers(); 
-      api.loadMockUsersFromStorage(DUMMY_USERS_STORAGE_KEY);
-    }
-  };
-  
   const loginWithDummyCredentials = useCallback(async (email: string, password?: string): Promise<UserProfile | null> => {
     setLoading(true);
     setError(null);
@@ -138,13 +143,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(user));
       }
-      router.push('/auth/mfa'); // Redirect to MFA page
+      router.push('/auth/mfa'); 
       return user;
     } catch (err: any) {
       setError(err);
       return null;
     } finally {
-      setLoading(false);
+      setLoading(false); 
     }
   }, [router]);
 
@@ -163,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUsers.push(newUser);
       saveDummyUsersToStorage(currentUsers);
 
-      router.push('/auth/mfa'); // Redirect to MFA page
+      router.push('/auth/mfa'); 
       return newUser;
     } catch (err: any) {
       setError(err);
@@ -171,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, getDummyUsersFromStorage, saveDummyUsersToStorage]);
 
   const logout = useCallback(async () => {
     setLoading(true);
@@ -201,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return newProfile;
     });
      setMockFirebaseUser(prev => prev ? { ...prev, ...updatedProfileData } : null);
-  }, []);
+  }, [getDummyUsersFromStorage, saveDummyUsersToStorage]);
 
 
   const contextValue = useMemo(() => ({
@@ -215,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loginWithDummyCredentials,
     registerDummyUser,
     updateCurrentLocalUser,
-  }), [contextDisplayUser, mockFirebaseUser, loading, error, configured, logout, setUserProfile, loginWithDummyCredentials, registerDummyUser, updateCurrentLocalUser]);
+  }), [contextDisplayUser, mockFirebaseUser, loading, error, configured, logout, loginWithDummyCredentials, registerDummyUser, updateCurrentLocalUser]);
 
   return (
     <AuthContext.Provider value={contextValue}>
@@ -231,4 +236,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
