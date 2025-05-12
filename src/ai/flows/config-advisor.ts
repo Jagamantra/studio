@@ -40,19 +40,19 @@ const prompt = ai.definePrompt({
   prompt: `You are an AI-powered configuration analyzer. You will receive the content of three configuration files:
 
 project.config.ts:
-```
-{{{projectConfig}}}
-```
+\`\`\`
+{{ { projectConfig } }}
+\`\`\`
 
 sidebar.config.ts:
-```
-{{{sidebarConfig}}}
-```
+\`\`\`
+{{ { sidebarConfig } }}
+\`\`\`
 
 roles.config.ts:
-```
-{{{rolesConfig}}}
-```
+\`\`\`
+{{ { rolesConfig } }}
+\`\`\`
 
 Analyze these files and provide suggestions for improvements related to app performance and security. Focus on identifying potential issues, inefficiencies, or vulnerabilities in the configurations.  Return an array of suggestions, each including the file name, the suggestion itself, and the reason for the suggestion.  The output should be formatted as a JSON object matching the AnalyzeConfigOutputSchema.
 `,
@@ -69,3 +69,4 @@ const analyzeConfigFlow = ai.defineFlow(
     return output!;
   }
 );
+
