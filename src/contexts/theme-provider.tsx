@@ -9,16 +9,18 @@ import type { ThemeSettings, AccentColor, BorderRadiusOption } from '@/types';
 
 interface ThemeProviderState extends ThemeSettings {
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
-  setAccentColor: (accentValue: string) => void; // Can be HSL string or HEX string
+  setAccentColor: (accentValue: string) => void; // Can be HSL component string "H S% L%" or HEX string
   setBorderRadius: (radiusValue: string) => void;
   setAppVersion: (versionId: string) => void;
   availableAccentColors: AccentColor[];
   availableBorderRadii: BorderRadiusOption[];
 }
 
+const defaultAccentHslValue = projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0].hslValue;
+
 const initialState: ThemeProviderState = {
   theme: 'system',
-  accentColor: projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0].hslValue,
+  accentColor: defaultAccentHslValue,
   borderRadius: projectConfig.availableBorderRadii.find(r => r.name === projectConfig.defaultBorderRadiusName)?.value || projectConfig.availableBorderRadii[0].value,
   appVersion: projectConfig.defaultAppVersionId,
   setTheme: () => null,
@@ -74,34 +76,62 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement;
-    if (accentColor) {
-      // If accentColor is an HSL string like "180 100% 25%" (without 'hsl()' wrapper), wrap it.
-      // If it's a HEX string like "#RRGGBB" or already `hsl(...)`, use as is.
-      if (accentColor.includes(' ') && !accentColor.startsWith('hsl(') && !accentColor.startsWith('#')) {
-        root.style.setProperty('--accent', `hsl(${accentColor})`);
-        // Also update --ring to match the primary part of HSL or a related color
-        const primaryHue = accentColor.split(' ')[0];
-        root.style.setProperty('--ring', `hsl(${primaryHue} 100% 35%)`); // Example: Keep saturation & lightness for ring related to hue
-      } else {
-        root.style.setProperty('--accent', accentColor);
-        // If HEX, derive a ring color or use a fixed offset.
-        // For simplicity, if it's hex, the ring might take this directly or be a theme default.
-        // Here, we'll make --ring also follow --accent directly if it's a direct value like HEX
-        // Consider a more sophisticated mapping for --ring if specific shades are needed per accent.
-         if (accentColor.startsWith('#')) {
-           root.style.setProperty('--ring', accentColor); // For HEX, ring might directly use it or a derived value
-         } else if (accentColor.startsWith('hsl(')) {
-            // If accentColor is already like 'hsl(180 100% 25%)', parse and adjust for ring
-            const matches = accentColor.match(/hsl\(\s*(\d+)\s*,\s*(\d+%)\s*,\s*(\d+%)\s*\)/);
-            if (matches) {
-                root.style.setProperty('--ring', `hsl(${matches[1]}, 100%, 35%)`);
-            } else {
-                 root.style.setProperty('--ring', projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0].hslValue);
-            }
-         }
+    if (!accentColor) return;
+
+    if (accentColor.startsWith('#')) {
+      // Handle HEX input from custom color picker
+      // This directly sets --accent and --primary, bypassing the HSL component system for this custom color.
+      root.style.setProperty('--accent', accentColor);
+      root.style.setProperty('--primary', accentColor); // Make primary follow accent directly with HEX
+      // Foreground and ring for HEX would need more advanced logic (e.g., contrast check, color manipulation)
+      // For simplicity, they might fall back to globals.css defaults or previously set HSL-derived values if not explicitly set here.
+      // To ensure ring also changes, we could try to parse HEX to HSL for hue, or set a generic ring.
+      // This is a simplified fallback for custom HEX.
+      const isDark = root.classList.contains('dark');
+      root.style.setProperty('--accent-foreground', isDark ? 'hsl(0 0% 95%)' : 'hsl(0 0% 10%)');
+      root.style.setProperty('--primary-foreground', isDark ? 'hsl(0 0% 95%)' : 'hsl(0 0% 10%)');
+      root.style.setProperty('--ring', accentColor); // Ring can be the same as accent for HEX
+
+    } else {
+      // Handle HSL component string "H S% L%"
+      const parts = accentColor.match(/(\d+)\s*(\d+%)\s*(\d+%)/);
+      if (parts && parts.length === 4) {
+        const h = parts[1];
+        const s = parts[2];
+        const l = parts[3];
+        root.style.setProperty('--accent-h', h);
+        root.style.setProperty('--accent-s', s);
+        root.style.setProperty('--accent-l', l);
+
+        // primary follows accent by using the same HSL components
+        root.style.setProperty('--primary-h', h);
+        root.style.setProperty('--primary-s', s);
+        root.style.setProperty('--primary-l', l);
+        
+        // Update full CSS properties that use these components
+        root.style.setProperty('--accent', `hsl(${h}, ${s}, ${l})`);
+        root.style.setProperty('--primary', `hsl(${h}, ${s}, ${l})`);
+
+        // Dynamic foreground determination
+        const lightnessValue = parseFloat(l);
+        const isDarkTheme = root.classList.contains('dark');
+        
+        let fgLightnessVar = isDarkTheme
+          ? (lightnessValue > 55 ? '--accent-foreground-l-dark-theme' : '--accent-foreground-l-light-theme')
+          : (lightnessValue < 50 ? '--accent-foreground-l-light-theme' : '--accent-foreground-l-dark-theme');
+        
+        const finalFg = `hsl(0, 0%, var(${fgLightnessVar}))`;
+        root.style.setProperty('--accent-foreground', finalFg);
+        root.style.setProperty('--primary-foreground', finalFg);
+
+        // Ring color (using accent's hue, with modified S/L from globals.css via --ring-s, --ring-l)
+        root.style.setProperty('--ring-h', h); // Update --ring-h to follow accent's hue
+        // --ring-s and --ring-l are defined in globals.css and combine with --ring-h
+        // No need to set --ring directly here if it's derived from --ring-h/s/l in globals.css
       }
     }
-  }, [accentColor]);
+  }, [accentColor, theme]);
+
 
   useEffect(() => {
     const root = window.document.documentElement;

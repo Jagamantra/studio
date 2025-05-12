@@ -79,15 +79,15 @@ export default function DashboardPage() {
       </div>
       
       {!isConfigured && (
-         <Card className="mb-6 border-blue-500 bg-blue-50 dark:bg-blue-900/30">
+         <Card className="mb-6 border-accent bg-accent/10 dark:bg-accent/20">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              <CardTitle className="text-blue-700 dark:text-blue-300">Demo Mode</CardTitle>
+              <AlertTriangle className="h-6 w-6 text-accent" />
+              <CardTitle className="text-accent">Demo Mode</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-blue-600 dark:text-blue-400">
+            <p className="text-sm text-accent/90 dark:text-accent/80">
               Firebase is not configured. You are viewing the dashboard with sample data. Some interactive features might be limited.
             </p>
           </CardContent>
@@ -183,6 +183,7 @@ export default function DashboardPage() {
                  <Image src="https://picsum.photos/seed/dashboard2/400/200" alt="Feature placeholder 2" width={400} height={200} className="rounded-md mb-4" data-ai-hint="modern workspace" />
                 <h3 className="text-lg font-semibold mb-1">Explore Theme Options</h3>
                 <p className="text-sm text-muted-foreground mb-3">Adjust themes, colors, and more via the palette icon in the header.</p>
+                {/* Button removed as theme switcher is in header */}
             </div>
         </CardContent>
       </Card>
@@ -190,4 +191,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
