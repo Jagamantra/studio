@@ -3,15 +3,15 @@
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import { isFirebaseConfigured } from '@/lib/firebase'; // Will always be false now
+// import { isFirebaseConfigured } from '@/lib/firebase'; // Firebase is removed
 import type { UserProfile, Role } from '@/types';
 import { rolesConfig } from '@/config/roles.config';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
-  DUMMY_USERS_STORAGE_KEY, 
-  CURRENT_DUMMY_USER_STORAGE_KEY, 
-  initialDummyUsersForAuth, // Initial set of users if local storage is empty
-  previewAdminUserProfile, // Default user when not "logged in" in dummy mode
+    DUMMY_USERS_STORAGE_KEY, 
+    CURRENT_DUMMY_USER_STORAGE_KEY, 
+    initialDummyUsersForAuth, // Initial set of users if local storage is empty
+    previewAdminUserProfile, // Default user when not "logged in" in dummy mode
 } from '@/data/dummy-data';
 import * as api from '@/services/api'; // Import mock API service
 
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const configured = isFirebaseConfigured(); // This will be false
+  const configured = false; // Firebase is removed, so it's never configured.
 
   // Initialize dummy users in localStorage if not present
   useEffect(() => {

@@ -17,17 +17,22 @@ To get started with the Genesis Template:
     pnpm install
     ```
 3.  **Set up Environment Variables**:
-    *   A file named `.env` has been provided in the root of your project with placeholder values.
-    *   You should copy this file to `.env.local`. `.env.local` is ignored by Git.
+    *   A file named `.env` has been provided in the root of your project.
+    *   You should copy this file to `.env.local`. `.env.local` is ignored by Git and is where your local environment-specific variables should go.
         ```bash
         cp .env .env.local
         ```
     *   Open your `.env.local` file.
-    *   You should populate `NEXT_PUBLIC_API_BASE_URL` if you intend to connect to a real backend later. For now, it can point to a mock server or be a placeholder. Example:
+    *   The primary variable to configure is `NEXT_PUBLIC_API_BASE_URL`.
+        *   Initially, this can be a placeholder or point to a local mock server if you set one up separately. The application uses an internal mock API service by default (see "Mock API and Data" section below).
+        *   When you're ready to connect to your actual backend, update this URL to point to your API's base endpoint.
+        Example:
         ```env
         NEXT_PUBLIC_API_BASE_URL="http://localhost:3001/api"
+        # Or for a production API:
+        # NEXT_PUBLIC_API_BASE_URL="https://api.yourdomain.com"
         ```
-    *   Firebase configuration variables are no longer required as Firebase has been removed. The application uses a dummy authentication system and mock API services.
+    *   No Firebase configuration is required as Firebase has been removed.
 
 4.  **Restart your development server**:
     If your Next.js development server was already running, you **must restart it** for any new environment variables in `.env.local` to be loaded.
@@ -72,4 +77,53 @@ This application uses Genkit for AI-related functionalities like the Config Advi
 
 The application currently uses a mock API service layer located in `src/services/api.ts`. This layer simulates backend interactions and uses dummy data primarily from `src/data/dummy-data.ts`. This allows for full frontend development and testing without a live backend. User authentication is also handled by a dummy system, with user data persisted in local storage.
 
-For future development, the functions in `src/services/api.ts` can be updated to make real HTTP requests to your backend using the `NEXT_PUBLIC_API_BASE_URL` environment variable.
+**Connecting to Your Backend API:**
+
+To connect the Genesis Template to your actual backend API, follow these steps:
+
+1.  **Set `NEXT_PUBLIC_API_BASE_URL`**:
+    *   In your `.env.local` file, update `NEXT_PUBLIC_API_BASE_URL` to point to your backend's base URL. For example:
+        ```env
+        NEXT_PUBLIC_API_BASE_URL="https://your-api.example.com/v1"
+        ```
+    *   Restart your Next.js development server for this change to take effect.
+
+2.  **Update API Service Functions**:
+    *   Open `src/services/api.ts`. This file contains functions like `fetchUsers`, `addUser`, `updateUserProfile`, etc. Currently, these functions return mock data or simulate API calls.
+    *   Modify these functions to make actual HTTP requests to your backend endpoints using an HTTP client like `axios` (which is already set up in `apiClient` within this file) or `fetch`.
+    *   **Example - Modifying `fetchUsers`**:
+        ```typescript
+        // Before (Mock Implementation) in src/services/api.ts
+        // export const fetchUsers = async (): Promise<UserProfile[]> => {
+        //   console.log('API Service: Mock fetchUsers called');
+        //   return Promise.resolve([...currentMockUsers]);
+        // };
+
+        // After (Real API Call) in src/services/api.ts
+        import type { UserProfile } from '@/types'; // Ensure UserProfile type matches your API response
+        // ... (apiClient setup remains the same)
+
+        export const fetchUsers = async (): Promise<UserProfile[]> => {
+          try {
+            const response = await apiClient.get('/users'); // Replace '/users' with your actual endpoint
+            return response.data; // Assuming your API returns user data in response.data
+          } catch (error) {
+            console.error('Error fetching users:', error);
+            // Handle errors appropriately, e.g., throw error or return empty array
+            throw error;
+          }
+        };
+        ```
+    *   Update all relevant functions in `src/services/api.ts` (`addUser`, `updateUser`, `deleteUser`, `loginUser`, `registerUser`, `updateUserProfile`, `changeUserPassword`, etc.) to interact with your backend endpoints. Ensure the request payloads and response data structures match your API's specifications.
+
+3.  **Authentication**:
+    *   The current application uses a dummy authentication system managed by `src/contexts/auth-provider.tsx` and `src/services/api.ts` (mock `loginUser`, `registerUser`).
+    *   You will need to replace this with your backend's authentication mechanism.
+    *   Modify `loginUser` and `registerUser` in `src/services/api.ts` to call your backend's auth endpoints.
+    *   Adjust `src/contexts/auth-provider.tsx` to handle tokens (e.g., JWTs) received from your backend, store them securely (e.g., HttpOnly cookies managed by the backend, or localStorage for client-side tokens), and include them in `apiClient` requests (e.g., via Authorization headers).
+    *   The `apiClient` in `src/services/api.ts` can be configured with interceptors to automatically add auth tokens to requests.
+
+4.  **Data Types**:
+    *   Ensure the TypeScript types defined in `src/types/index.ts` (e.g., `UserProfile`) match the data structures your backend API expects and returns. Update these types as necessary.
+
+By following these steps, you can transition the Genesis Template from using its mock API to interacting with your live backend services.
