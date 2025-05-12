@@ -12,41 +12,37 @@ import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
 
-// Example config content for placeholders
+// Updated example config content for placeholders
 const placeholderProjectConfig = `
-import type { ProjectConfig } from '@/types';
-
-export const projectConfig: ProjectConfig = {
-  appName: 'Genesis Template',
-  availableAccentColors: [
-    { name: 'Teal', hslValue: '180 100% 25%', hexValue: '#008080' },
-    // ... more colors
-  ],
-  defaultAccentColorName: 'Teal',
-  // ... more config
+// project.config.ts
+export const projectConfig = {
+  appName: 'My Awesome App',
+  defaultAccentColorName: 'Blue', // Try 'Rose' or 'Green'
+  defaultBorderRadiusName: 'Medium', // Options: 'Small', 'Large'
+  defaultAppVersionId: 'v1.0.0', // Also 'v0.9.0-beta', 'dev'
 };
 `.trim();
 
 const placeholderSidebarConfig = `
-import type { SidebarConfig } from '@/types';
-import { LayoutDashboard, Users } from 'lucide-react';
-
-export const sidebarConfig: SidebarConfig = {
+// sidebar.config.ts
+// import { User, Settings } from 'lucide-react';
+export const sidebarConfig = {
   items: [
-    { id: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'user'] },
-    // ... more items
+    { id: 'dashboard', label: 'Home', href: '/dashboard', /*icon: Home,*/ roles: ['admin', 'user'] },
+    // Example: Add a new item for admins
+    // { id: 'admin-tools', label: 'Admin Tools', href: '/admin/tools', icon: Settings, roles: ['admin'] },
   ],
 };
 `.trim();
 
 const placeholderRolesConfig = `
-import type { RolesConfig } from '@/types';
-
-export const rolesConfig: RolesConfig = {
-  roles: ['admin', 'user', 'guest'],
+// roles.config.ts
+export const rolesConfig = {
+  roles: ['admin', 'user', 'editor', 'guest'], // Added 'editor'
   routePermissions: {
-    '/dashboard': ['admin', 'user'],
-    // ... more permissions
+    '/dashboard': ['admin', 'user', 'editor'],
+    '/admin': ['admin'], // New rule for an /admin section
+    // '/posts/edit': ['admin', 'editor'], // Example for content editing
   },
   defaultRole: 'user',
 };
@@ -83,15 +79,14 @@ export default function ConfigAdvisorPage() {
   }, []); // Run once on mount
 
 
-  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
+  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string, fieldName: string) => {
     setter(value);
     setShowPlaceholders(false); // Hide placeholders once user starts typing
     // Persist current inputs
     localStorage.setItem('configAdvisorInputs', JSON.stringify({
-        projectConfigContent: projectConfigContent, // these will be stale by one char
-        sidebarConfigContent: sidebarConfigContent,
-        rolesConfigContent: rolesConfigContent,
-        [setter.name.replace('set', '').toLowerCase()]: value // update current field
+        projectConfigContent: fieldName === 'projectConfigContent' ? value : projectConfigContent,
+        sidebarConfigContent: fieldName === 'sidebarConfigContent' ? value : sidebarConfigContent,
+        rolesConfigContent: fieldName === 'rolesConfigContent' ? value : rolesConfigContent,
     }));
   };
   
@@ -191,7 +186,7 @@ export default function ConfigAdvisorPage() {
               id="projectConfig"
               placeholder={showPlaceholders ? "Example project.config.ts content..." : "Paste content of project.config.ts here..."}
               value={projectConfigContent}
-              onChange={(e) => handleInputChange(setProjectConfigContent, e.target.value)}
+              onChange={(e) => handleInputChange(setProjectConfigContent, e.target.value, 'projectConfigContent')}
               rows={8}
               className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
               disabled={isLoading}
@@ -205,7 +200,7 @@ export default function ConfigAdvisorPage() {
               id="sidebarConfig"
               placeholder={showPlaceholders ? "Example sidebar.config.ts content..." : "Paste content of sidebar.config.ts here..."}
               value={sidebarConfigContent}
-              onChange={(e) => handleInputChange(setSidebarConfigContent, e.target.value)}
+              onChange={(e) => handleInputChange(setSidebarConfigContent, e.target.value, 'sidebarConfigContent')}
               rows={8}
               className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
               disabled={isLoading}
@@ -219,7 +214,7 @@ export default function ConfigAdvisorPage() {
               id="rolesConfig"
               placeholder={showPlaceholders ? "Example roles.config.ts content..." : "Paste content of roles.config.ts here..."}
               value={rolesConfigContent}
-              onChange={(e) => handleInputChange(setRolesConfigContent, e.target.value)}
+              onChange={(e) => handleInputChange(setRolesConfigContent, e.target.value, 'rolesConfigContent')}
               rows={8}
               className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
               disabled={isLoading}
