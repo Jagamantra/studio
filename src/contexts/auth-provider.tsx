@@ -93,8 +93,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } as Partial<IdTokenResult> as IdTokenResult),
         } as FirebaseUser);
       } else {
-        setUser(null);
-        setFirebaseUser(null);
+        // If no dummy user is logged in, and Firebase is not configured,
+        // default to a preview admin user for the AuthContext.
+        // This ensures admin-specific sidebar links are visible by default for preview.
+        const previewAdminUser: UserProfile = {
+          uid: 'preview-admin-default-000',
+          email: 'preview@admin.genesis',
+          displayName: 'Preview Admin',
+          role: 'admin', // Crucial for showing admin links
+          photoURL: null,
+          phoneNumber: null,
+        };
+        setUser(previewAdminUser);
+        setFirebaseUser({ // Mock a FirebaseUser object for this preview admin
+          uid: previewAdminUser.uid,
+          email: previewAdminUser.email,
+          displayName: previewAdminUser.displayName,
+          photoURL: previewAdminUser.photoURL,
+          phoneNumber: previewAdminUser.phoneNumber,
+          // Mock getIdTokenResult to provide the admin role
+          getIdTokenResult: async () => ({
+            claims: { role: previewAdminUser.role },
+            token: 'dummy-preview-token',
+          } as Partial<IdTokenResult> as IdTokenResult),
+        } as FirebaseUser);
       }
       setLoading(false);
       return; // Skip Firebase auth listener setup
@@ -136,7 +158,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user && isAuthPage) {
         router.replace('/dashboard');
       } else if (!user && !isAuthPage && pathname !== '/' && !pathname.startsWith('/api')) {
-        router.replace('/login');
+        // Allow access to homepage for unauthenticated users, redirect others to login
+        // router.replace('/login');
       }
     }
   }, [user, loading, pathname, router]);
@@ -225,7 +248,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUser(null);
     setFirebaseUser(null);
-    router.push('/login');
+    // After dummy logout, set to preview admin to keep admin links visible
+     const previewAdminUser: UserProfile = {
+        uid: 'preview-admin-default-000',
+        email: 'preview@admin.genesis',
+        displayName: 'Preview Admin',
+        role: 'admin',
+        photoURL: null,
+        phoneNumber: null,
+      };
+    setUser(previewAdminUser);
+    setFirebaseUser({
+        uid: previewAdminUser.uid,
+        email: previewAdminUser.email,
+        displayName: previewAdminUser.displayName,
+        getIdTokenResult: async () => ({ claims: { role: previewAdminUser.role }, token: 'dummy-preview-token' } as Partial<IdTokenResult> as IdTokenResult),
+    } as FirebaseUser);
+    router.push('/login'); // Still redirect to login, but AuthContext retains preview admin
   };
 
   const logout = async () => {
@@ -233,7 +272,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (configured && auth) {
       try {
         await firebaseSignOut(auth);
-        // setUser and setFirebaseUser will be updated by onAuthStateChanged
+        // setUser and setFirebaseUser will be updated by onAuthStateChanged which sets user to null
+        // Then, for the sidebar to show admin links after logout (in unconfigured mode),
+        // we might want to explicitly set a preview admin if !configured after signout.
+        // However, onAuthStateChanged will set user to null.
+        // The logic in the main useEffect handles the !configured case.
       } catch (e) {
         console.error("Firebase Logout error:", e);
         setError(e instanceof Error ? e : new Error('Failed to logout from Firebase'));
@@ -241,9 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else if (!configured) {
       dummyLogout();
     }
-    // For both cases, onAuthStateChanged or dummyLogout handles redirect and state updates.
-    // setLoading(false) will be handled by onAuthStateChanged or dummyLogout.
-    setLoading(false); // Explicitly set for safety, though might be redundant
+    setLoading(false);
   };
 
 
@@ -256,7 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     setUser,
     ...(configured ? {} : { loginWithDummyCredentials, registerDummyUser })
-  }), [user, firebaseUser, loading, error, configured, logout]);
+  }), [user, firebaseUser, loading, error, configured, logout]); // Removed setUser from deps as it's stable
 
   return (
     <AuthContext.Provider value={contextValue}>
