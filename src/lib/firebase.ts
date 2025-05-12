@@ -5,7 +5,7 @@ import { getAuth, type Auth } from 'firebase/auth';
 // import { getFirestore, type Firestore } from 'firebase/firestore';
 // import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
-const firebaseConfig = {
+const firebaseEnvConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -20,15 +20,32 @@ let authServiceInstance: Auth | undefined = undefined; // Renamed to avoid confu
 // let dbInstance: Firestore | undefined = undefined;
 // let storageInstance: FirebaseStorage | undefined = undefined;
 
-// Helper function to check if essential Firebase config values are present
+// Helper function to check if essential Firebase config values are present and not placeholders
 export const isFirebaseConfigured = (): boolean => {
-  return !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
+  const apiKey = firebaseEnvConfig.apiKey;
+  const projectId = firebaseEnvConfig.projectId;
+
+  if (!apiKey || !projectId) {
+    return false;
+  }
+
+  // Check for common placeholder patterns
+  const placeholderPatterns = ["REPLACE_WITH_YOUR", "YOUR_FIREBASE_API_KEY", "YOUR_FIREBASE_PROJECT_ID"];
+  
+  const isApiKeyPlaceholder = placeholderPatterns.some(pattern => apiKey.includes(pattern));
+  const isProjectIdPlaceholder = placeholderPatterns.some(pattern => projectId.includes(pattern));
+
+  if (isApiKeyPlaceholder || isProjectIdPlaceholder) {
+    return false;
+  }
+
+  return true;
 };
 
 if (isFirebaseConfigured()) {
   if (!getApps().length) {
     try {
-      appInstance = initializeApp(firebaseConfig);
+      appInstance = initializeApp(firebaseEnvConfig);
     } catch (e) {
       console.error("Firebase: Failed to initialize app. Check your Firebase config.", e);
       // appInstance will remain undefined, subsequent service initializations will be skipped.
@@ -57,8 +74,9 @@ if (isFirebaseConfigured()) {
     // }
   }
 } else {
+  // This message will now correctly appear if actual keys are missing OR if placeholders are used.
   console.warn(
-    "Firebase configuration is missing or incomplete (e.g., NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set in .env). Firebase services will not be initialized."
+    "Firebase configuration is missing, incomplete, or uses placeholder values. Firebase services will not be initialized, and dummy authentication will be used if available."
   );
 }
 
