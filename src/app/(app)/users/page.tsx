@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -9,7 +8,7 @@ import type { UserProfile, Role } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, UserPlus, ShieldAlert, Loader2, AlertTriangle, UserCog } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, UserPlus, ShieldAlert, Loader2, UserCog } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,14 +29,14 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+// import { Label } from '@/components/ui/label'; // Not directly used, FormLabel is used
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { rolesConfig } from '@/config/roles.config';
 
 
@@ -53,7 +52,7 @@ const userFormSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   role: z.enum(rolesConfig.roles as [Role, ...Role[]], { message: "Invalid role." }),
   phoneNumber: z.string().optional().nullable(),
-  // password field might be needed for 'add user' if not using Firebase Auth to create users
+  password: z.string().optional(), // Make password optional for edit, required for add
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -62,7 +61,7 @@ export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = React.useState<UserProfile[]>(initialMockUsers);
-  const [tableLoading, setTableLoading] = React.useState(false); // For data table operations like delete
+  const [tableLoading, setTableLoading] = React.useState(false); 
 
   const [isUserModalOpen, setIsUserModalOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<UserProfile | null>(null);
@@ -71,12 +70,16 @@ export default function UsersPage() {
   const [deletingUser, setDeletingUser] = React.useState<UserProfile | null>(null);
 
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(userFormSchema.refine(data => editingUser || data.password, {
+      message: "Password is required for new users.",
+      path: ["password"],
+    })),
     defaultValues: {
       displayName: '',
       email: '',
       role: 'user',
       phoneNumber: '',
+      password: '',
     },
   });
 
@@ -87,6 +90,7 @@ export default function UsersPage() {
         email: editingUser.email || '',
         role: editingUser.role,
         phoneNumber: editingUser.phoneNumber || '',
+        password: '', // Password not pre-filled for editing
       });
     } else {
       form.reset({
@@ -94,6 +98,7 @@ export default function UsersPage() {
         email: '',
         role: 'user',
         phoneNumber: '',
+        password: '',
       });
     }
   }, [editingUser, form, isUserModalOpen]);
@@ -133,14 +138,14 @@ export default function UsersPage() {
 
     if (editingUser) { // Editing existing user
       setUsers(prevUsers => prevUsers.map(u => 
-        u.uid === editingUser.uid ? { ...editingUser, ...values } : u
+        u.uid === editingUser.uid ? { ...editingUser, ...values, password: u.password } : u // Keep original password if not changed
       ));
       toast({ title: "User Updated", description: `${values.displayName} has been updated.` });
     } else { // Adding new user
       const newUser: UserProfile = {
-        uid: `mock-${Date.now()}`, // Simple unique ID for mock
+        uid: `mock-${Date.now()}`, 
         ...values,
-        photoURL: null, // New users won't have a photoURL by default
+        photoURL: null, 
       };
       setUsers(prevUsers => [newUser, ...prevUsers]);
       toast({ title: "User Added", description: `${values.displayName} has been created.` });
@@ -182,18 +187,18 @@ export default function UsersPage() {
         <div className="text-right">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="h-8 w-8 p-0" disabled={tableLoading}>
                 <span className="sr-only">Open menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => openEditUserModal(row.original)}>
+              <DropdownMenuItem onClick={() => openEditUserModal(row.original)} disabled={tableLoading}>
                 <Edit className="mr-2 h-4 w-4" /> Edit User
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => openDeleteDialog(row.original)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+              <DropdownMenuItem onClick={() => openDeleteDialog(row.original)} className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={tableLoading}>
                 <Trash2 className="mr-2 h-4 w-4" /> Delete User
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -228,12 +233,11 @@ export default function UsersPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
         <Button onClick={openAddUserModal} disabled={tableLoading} size="sm">
-          <UserPlus className="mr-2 h-4 w-4" /> Add User
+          {tableLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />} Add User
         </Button>
       </div>
       <DataTable columns={columns} data={users} searchColumnId="email" onAdd={openAddUserModal} isLoading={tableLoading}/>
 
-      {/* Add/Edit User Dialog */}
       <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -250,7 +254,7 @@ export default function UsersPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
-                    <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                    <FormControl><Input placeholder="John Doe" {...field} disabled={tableLoading} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -261,7 +265,7 @@ export default function UsersPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" placeholder="name@example.com" {...field} disabled={!!editingUser} /></FormControl>
+                    <FormControl><Input type="email" placeholder="name@example.com" {...field} disabled={!!editingUser || tableLoading} /></FormControl>
                     {editingUser && <FormDescription className="text-xs">Email cannot be changed for existing users (mock limitation).</FormDescription>}
                     <FormMessage />
                   </FormItem>
@@ -273,14 +277,14 @@ export default function UsersPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={tableLoading}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {rolesConfig.roles.filter(role => role !== 'guest').map(role => ( // Exclude guest for user assignment
+                        {rolesConfig.roles.filter(role => role !== 'guest').map(role => ( 
                           <SelectItem key={role} value={role} className="capitalize">
                             {role}
                           </SelectItem>
@@ -297,20 +301,19 @@ export default function UsersPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone Number (Optional)</FormLabel>
-                    <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} /></FormControl>
+                    <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} disabled={tableLoading} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              {/* Add password field for new users if needed, e.g., if not using Firebase Auth creation directly */}
               {!editingUser && (
                 <FormField
                   control={form.control}
-                  name="password" // Assuming you add 'password' to UserFormValues and schema for new users
+                  name="password" 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Password</FormLabel>
-                      <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                      <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={tableLoading} /></FormControl>
                       <FormDescription className="text-xs">Required for new users. Min 8 characters (mock limitation).</FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -331,7 +334,6 @@ export default function UsersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

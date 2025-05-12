@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -91,7 +90,10 @@ export default function ConfigAdvisorPage() {
   const [rolesConfigContent, setRolesConfigContent] = useState('');
   
   const [suggestions, setSuggestions] = useState<AnalyzeConfigOutput['suggestions'] | null>(null);
-  const [isLoading, setIsLoading] = useState(false); 
+  const [isLoadingAi, setIsLoadingAi] = useState(false); 
+  const [isSavingProjectConfig, setIsSavingProjectConfig] = useState(false);
+  const [isResettingProjectConfig, setIsResettingProjectConfig] = useState(false);
+  const [isLoadingExamples, setIsLoadingExamples] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPlaceholders, setShowPlaceholders] = useState(true); 
 
@@ -172,7 +174,10 @@ export default function ConfigAdvisorPage() {
     }
   };
   
-  const loadExampleConfigs = () => {
+  const loadExampleConfigs = async () => {
+    setIsLoadingExamples(true);
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 300));
     projectConfigForm.reset({
       appName: "Example App", 
       defaultAccentColorName: appProjectConfig.availableAccentColors[1]?.name || appProjectConfig.defaultAccentColorName, 
@@ -182,6 +187,7 @@ export default function ConfigAdvisorPage() {
     setSidebarConfigContent(placeholderSidebarConfig);
     setRolesConfigContent(placeholderRolesConfig);
     setShowPlaceholders(false); 
+    setIsLoadingExamples(false);
     toast({
       title: 'Example Configurations Loaded',
       description: 'You can now analyze these example settings.',
@@ -189,9 +195,12 @@ export default function ConfigAdvisorPage() {
   };
 
   const handleSaveProjectConfig = async () => {
+    setIsSavingProjectConfig(true);
     const isValid = await projectConfigForm.trigger();
     if (isValid) {
       const projectConfigValues = projectConfigForm.getValues();
+      // Simulate async operation
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       setAppName(projectConfigValues.appName);
 
@@ -210,6 +219,7 @@ export default function ConfigAdvisorPage() {
       }
       
       setAppVersion(projectConfigValues.defaultAppVersionId);
+      projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false }); // Reset dirty state after save
 
       toast({
         title: 'Project Configuration Applied',
@@ -222,10 +232,14 @@ export default function ConfigAdvisorPage() {
         variant: 'destructive',
       });
     }
+    setIsSavingProjectConfig(false);
   };
 
-  const handleResetProjectConfig = () => {
-    // Get original defaults from appProjectConfig
+  const handleResetProjectConfig = async () => {
+    setIsResettingProjectConfig(true);
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     const originalAppName = appProjectConfig.appName;
     const originalAccentColorName = appProjectConfig.defaultAccentColorName;
     const originalAccentColorData = appProjectConfig.availableAccentColors.find(c => c.name === originalAccentColorName);
@@ -237,7 +251,6 @@ export default function ConfigAdvisorPage() {
     
     const originalAppVersionId = appProjectConfig.defaultAppVersionId;
 
-    // Apply these original defaults to the theme context (application-wide)
     setAppName(originalAppName);
     if (originalAccentColorHsl) {
       setAccentColor(originalAccentColorHsl);
@@ -247,15 +260,13 @@ export default function ConfigAdvisorPage() {
     }
     setAppVersion(originalAppVersionId);
 
-    // Explicitly reset form fields to ensure immediate visual update to original defaults.
-    // The useEffect that watches theme context changes will also run and reinforce this.
     projectConfigForm.reset({
       appName: originalAppName,
       defaultAccentColorName: originalAccentColorName,
       defaultBorderRadiusName: originalBorderRadiusName,
       defaultAppVersionId: originalAppVersionId,
     });
-
+    setIsResettingProjectConfig(false);
     toast({
       title: 'Project Configuration Reset',
       description: 'Project settings have been reset to their original defaults and applied application-wide.',
@@ -263,7 +274,7 @@ export default function ConfigAdvisorPage() {
   };
 
   const handleAnalyzeSubmit = async () => {
-    setIsLoading(true);
+    setIsLoadingAi(true);
     setError(null);
     setSuggestions(null);
 
@@ -284,7 +295,7 @@ export const projectConfig = {
 
     if (!generatedProjectConfigContent.trim() && !sidebarConfigContent.trim() && !rolesConfigContent.trim()) {
         setError("Please provide content or configuration for at least one file to analyze.");
-        setIsLoading(false);
+        setIsLoadingAi(false);
         return;
     }
 
@@ -301,7 +312,7 @@ export const projectConfig = {
       console.error('Error analyzing config:', err);
       setError(err.message || 'Failed to get suggestions from AI. Please ensure Genkit services are running if in local development (npm run genkit:dev).');
     } finally {
-      setIsLoading(false);
+      setIsLoadingAi(false);
     }
   };
   
@@ -325,17 +336,19 @@ export const projectConfig = {
     );
   }
 
+  const anyLoading = isLoadingAi || isSavingProjectConfig || isResettingProjectConfig || isLoadingExamples;
 
   return (
     <div className="flex-1 space-y-4 md:space-y-6 p-1 sm:p-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
         <div className="flex gap-2">
-          <Button onClick={loadExampleConfigs} disabled={isLoading} variant="outline" size="sm">
-            <Info className="mr-2 h-4 w-4" /> Load Examples
+          <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
+            {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />} 
+            Load Examples
           </Button>
-          <Button onClick={handleAnalyzeSubmit} disabled={isLoading} size="sm">
-            {isLoading ? (
+          <Button onClick={handleAnalyzeSubmit} disabled={anyLoading} size="sm">
+            {isLoadingAi ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Lightbulb className="mr-2 h-4 w-4" />
@@ -361,7 +374,7 @@ export const projectConfig = {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>App Name</FormLabel>
-                    <FormControl><Input {...field} disabled={isLoading} /></FormControl>
+                    <FormControl><Input {...field} disabled={anyLoading} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -372,7 +385,7 @@ export const projectConfig = {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Default Accent Color</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select accent color" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {availableAccentColors.map(color => (
@@ -390,7 +403,7 @@ export const projectConfig = {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Default Border Radius</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select border radius" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {availableBorderRadii.map(radius => (
@@ -408,7 +421,7 @@ export const projectConfig = {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Default App Version</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select app version" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {appProjectConfig.availableAppVersions.map(version => (
@@ -426,19 +439,19 @@ export const projectConfig = {
         <CardFooter className="border-t px-6 py-4 flex justify-end space-x-2">
             <Button 
                 onClick={handleResetProjectConfig} 
-                disabled={isLoading}
+                disabled={anyLoading}
                 variant="outline"
                 size="sm"
             >
-                <RotateCcw className="mr-2 h-4 w-4" />
+                {isResettingProjectConfig ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
                 Reset Changes
             </Button>
             <Button 
                 onClick={handleSaveProjectConfig} 
-                disabled={!projectConfigForm.formState.isDirty || isLoading}
+                disabled={!projectConfigForm.formState.isDirty || anyLoading}
                 size="sm"
             >
-                <Save className="mr-2 h-4 w-4" />
+                {isSavingProjectConfig ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save & Apply Project Settings
             </Button>
         </CardFooter>
@@ -463,7 +476,7 @@ export const projectConfig = {
               onChange={(e) => handleTextareaChange(setSidebarConfigContent, e.target.value)}
               rows={8}
               className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
-              disabled={isLoading}
+              disabled={anyLoading}
             />
           </div>
           <div>
@@ -477,7 +490,7 @@ export const projectConfig = {
               onChange={(e) => handleTextareaChange(setRolesConfigContent, e.target.value)}
               rows={8}
               className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
-              disabled={isLoading}
+              disabled={anyLoading}
             />
           </div>
         </CardContent>
@@ -496,7 +509,7 @@ export const projectConfig = {
         </Alert>
       )}
 
-      {isLoading && !suggestions && ( 
+      {isLoadingAi && !suggestions && ( 
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="ml-2 text-sm text-muted-foreground">Analyzing configurations, please wait...</p>
@@ -533,7 +546,7 @@ export const projectConfig = {
         </Card>
       )}
 
-      {suggestions && suggestions.length === 0 && !isLoading && (
+      {suggestions && suggestions.length === 0 && !isLoadingAi && (
          <Alert>
             <Lightbulb className="h-4 w-4" />
             <AlertTitle>No Specific Suggestions</AlertTitle>

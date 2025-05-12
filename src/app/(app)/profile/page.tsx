@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -19,18 +18,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud, ShieldCheck, Settings2, UserCircle, Edit2 } from 'lucide-react';
+import { Loader2, Edit2, ShieldCheck, Settings2, UserCircle } from 'lucide-react';
 import { updateProfile as firebaseUpdateProfile, updatePassword as firebaseUpdatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters.').max(50, 'Name cannot exceed 50 characters.').optional(),
-  email: z.string().email('Invalid email address.').optional(), // Email change requires verification, more complex
-  phoneNumber: z.string().optional(), // Add validation if needed e.g. .regex(/^\+[1-9]\d{1,14}$/, 'Invalid phone number')
-  photoURL: z.string().url('Invalid URL for photo.').optional().nullable(), // For simplicity, direct URL. Real app: upload.
+  email: z.string().email('Invalid email address.').optional(), 
+  phoneNumber: z.string().optional(), 
+  photoURL: z.string().url('Invalid URL for photo.').optional().nullable(), 
 });
 
 const passwordFormSchema = z.object({
@@ -53,7 +51,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 type AdvancedSettingsFormValues = z.infer<typeof advancedSettingsSchema>;
 
 export default function ProfilePage() {
-  const { user, firebaseUser, setUser, logout, loading: authLoading } = useAuth();
+  const { user, firebaseUser, setUser, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState({ profile: false, password: false, advanced: false });
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -92,7 +90,7 @@ export default function ProfilePage() {
         phoneNumber: user.phoneNumber || '',
         photoURL: user.photoURL || '',
       });
-      setPreviewUrl(user.photoURL); // Initialize preview with current photoURL
+      setPreviewUrl(user.photoURL); 
       advancedSettingsForm.reset({
         receiveNotifications: user.receiveNotifications ?? true,
         interfaceDensity: user.interfaceDensity ?? 'comfortable',
@@ -107,12 +105,12 @@ export default function ProfilePage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
-        profileForm.setValue('photoURL', reader.result as string); // Update form value for submission
+        profileForm.setValue('photoURL', reader.result as string); 
       };
       reader.readAsDataURL(file);
     } else {
       setSelectedFile(null);
-      setPreviewUrl(user?.photoURL || null); // Revert to original if file deselected
+      setPreviewUrl(user?.photoURL || null); 
       profileForm.setValue('photoURL', user?.photoURL || null);
     }
   };
@@ -121,9 +119,6 @@ export default function ProfilePage() {
     if (!firebaseUser) return;
     setIsLoading(prev => ({ ...prev, profile: true }));
     try {
-      // In a real app, `selectedFile` would be uploaded to Firebase Storage,
-      // and `data.photoURL` would be set to the storage URL.
-      // For this demo, we are using the data URI from `previewUrl` if a new file was selected.
       const photoURLToUpdate = selectedFile ? previewUrl : data.photoURL;
 
       await firebaseUpdateProfile(firebaseUser, {
@@ -166,6 +161,8 @@ export default function ProfilePage() {
   async function onAdvancedSubmit(data: AdvancedSettingsFormValues) {
      setIsLoading(prev => ({ ...prev, advanced: true }));
     try {
+      // Simulate async operation
+      await new Promise(resolve => setTimeout(resolve, 500));
       console.log("Advanced settings saved:", data);
       setUser(prevUser => prevUser ? { ...prevUser, ...data } : null);
       toast({ title: 'Settings Saved', description: 'Your advanced settings have been updated.' });
@@ -183,8 +180,10 @@ export default function ProfilePage() {
     return names[0][0].toUpperCase() + names[names.length - 1][0].toUpperCase();
   };
 
-  if (authLoading) return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  if (authLoading) return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user) return <div className="flex flex-1 items-center justify-center p-4"><p>Please log in to view your profile.</p></div>;
+
+  const anyLoading = isLoading.profile || isLoading.password || isLoading.advanced;
 
   return (
     <div className="flex-1 space-y-6 md:space-y-8">
@@ -192,7 +191,6 @@ export default function ProfilePage() {
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Profile</h1>
       </div>
 
-      {/* Personal Information */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -218,7 +216,7 @@ export default function ProfilePage() {
                     size="icon" 
                     className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background shadow-md"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading.profile}
+                    disabled={isLoading.profile || anyLoading}
                     aria-label="Change profile picture"
                   >
                     <Edit2 className="h-4 w-4"/>
@@ -230,7 +228,7 @@ export default function ProfilePage() {
                       className="hidden" 
                       onChange={handleFileChange}
                       accept="image/png, image/jpeg, image/gif" 
-                      disabled={isLoading.profile}
+                      disabled={isLoading.profile || anyLoading}
                     /> 
                 </div>
                 <div className="flex-grow space-y-1 w-full sm:w-auto text-center sm:text-left">
@@ -247,7 +245,7 @@ export default function ProfilePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
-                    <FormControl><Input placeholder="Your full name" {...field} disabled={isLoading.profile} /></FormControl>
+                    <FormControl><Input placeholder="Your full name" {...field} disabled={isLoading.profile || anyLoading} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -270,14 +268,14 @@ export default function ProfilePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone Number (Optional)</FormLabel>
-                    <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} disabled={isLoading.profile} /></FormControl>
+                    <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} disabled={isLoading.profile || anyLoading} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button type="submit" disabled={isLoading.profile}>
+              <Button type="submit" disabled={isLoading.profile || anyLoading}>
                 {isLoading.profile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Changes
               </Button>
             </CardFooter>
@@ -285,7 +283,6 @@ export default function ProfilePage() {
         </Form>
       </Card>
 
-      {/* Change Password */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -305,7 +302,7 @@ export default function ProfilePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Current Password</FormLabel>
-                    <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading.password} /></FormControl>
+                    <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading.password || anyLoading} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -316,7 +313,7 @@ export default function ProfilePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
-                    <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading.password} /></FormControl>
+                    <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading.password || anyLoading} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -327,14 +324,14 @@ export default function ProfilePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Confirm New Password</FormLabel>
-                    <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading.password} /></FormControl>
+                    <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading.password || anyLoading} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button type="submit" disabled={isLoading.password}>
+              <Button type="submit" disabled={isLoading.password || anyLoading}>
                 {isLoading.password && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Update Password
               </Button>
             </CardFooter>
@@ -342,7 +339,6 @@ export default function ProfilePage() {
         </Form>
       </Card>
 
-      {/* Advanced Settings */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -371,7 +367,7 @@ export default function ProfilePage() {
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={isLoading.advanced}
+                        disabled={isLoading.advanced || anyLoading}
                       />
                     </FormControl>
                   </FormItem>
@@ -383,7 +379,7 @@ export default function ProfilePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Interface Density</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.advanced}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.advanced || anyLoading}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select interface density" />
@@ -404,7 +400,7 @@ export default function ProfilePage() {
               />
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button type="submit" disabled={isLoading.advanced}>
+              <Button type="submit" disabled={isLoading.advanced || anyLoading}>
                 {isLoading.advanced && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Preferences
               </Button>
             </CardFooter>
