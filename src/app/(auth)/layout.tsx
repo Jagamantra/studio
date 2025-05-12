@@ -1,10 +1,13 @@
 
+'use client'; 
+
 import type { ReactNode } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { projectConfig } from '@/config/project.config';
+import { useTheme } from '@/contexts/theme-provider'; 
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
+  const { appName } = useTheme(); 
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4 sm:p-6 md:p-8">
       <div className="w-full max-w-md">
@@ -15,7 +18,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             </svg>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {projectConfig.appName}
+            {appName}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Welcome! Please sign in or create an account.

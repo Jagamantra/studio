@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
+// import { GeistMono } from 'geist/font/mono'; // Removed as per previous fix for module not found
 import './globals.css';
 import { ThemeProvider } from '@/contexts/theme-provider';
 import { AuthProvider } from '@/contexts/auth-provider';
@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased flex flex-col min-h-screen`}>
+      <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}> {/* Removed GeistMono variable */}
         <ThemeProvider
           storageKey="genesis-theme"
           defaultTheme="system"

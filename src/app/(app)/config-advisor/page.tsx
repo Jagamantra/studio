@@ -17,10 +17,10 @@ import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText, Info, Save
 import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
-import { projectConfig as appProjectConfig } from '@/config/project.config'; // Import actual config for defaults and options
+import { projectConfig as appProjectConfig } from '@/config/project.config'; 
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/contexts/theme-provider';
 
-// Placeholder content for textareas
 const placeholderSidebarConfig = `
 // sidebar.config.ts
 // import { User, Settings } from 'lucide-react';
@@ -64,14 +64,24 @@ interface StoredConfigAdvisorInputs {
 export default function ConfigAdvisorPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const { 
+    appName: currentAppName,
+    accentColor: currentAccentColor,
+    borderRadius: currentBorderRadius,
+    appVersion: currentAppVersion,
+    setAppName, 
+    setAccentColor, 
+    setBorderRadius, 
+    setAppVersion 
+  } = useTheme();
   
   const projectConfigForm = useForm<ProjectConfigFormValues>({
     resolver: zodResolver(projectConfigFormSchema),
     defaultValues: {
-      appName: appProjectConfig.appName,
-      defaultAccentColorName: appProjectConfig.defaultAccentColorName,
-      defaultBorderRadiusName: appProjectConfig.defaultBorderRadiusName,
-      defaultAppVersionId: appProjectConfig.defaultAppVersionId,
+      appName: currentAppName,
+      defaultAccentColorName: appProjectConfig.availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
+      defaultBorderRadiusName: appProjectConfig.availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+      defaultAppVersionId: currentAppVersion,
     },
   });
 
@@ -79,7 +89,7 @@ export default function ConfigAdvisorPage() {
   const [rolesConfigContent, setRolesConfigContent] = useState('');
   
   const [suggestions, setSuggestions] = useState<AnalyzeConfigOutput['suggestions'] | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // For AI analysis loading
+  const [isLoading, setIsLoading] = useState(false); 
   const [error, setError] = useState<string | null>(null);
   const [showPlaceholders, setShowPlaceholders] = useState(true); 
 
@@ -103,10 +113,10 @@ export default function ConfigAdvisorPage() {
         } else {
             setShowPlaceholders(true);
             projectConfigForm.reset({
-              appName: appProjectConfig.appName,
-              defaultAccentColorName: appProjectConfig.defaultAccentColorName,
-              defaultBorderRadiusName: appProjectConfig.defaultBorderRadiusName,
-              defaultAppVersionId: appProjectConfig.defaultAppVersionId,
+              appName: currentAppName,
+              defaultAccentColorName: appProjectConfig.availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
+              defaultBorderRadiusName: appProjectConfig.availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+              defaultAppVersionId: currentAppVersion,
             });
         }
     }
@@ -124,17 +134,17 @@ export default function ConfigAdvisorPage() {
         localStorage.setItem('configAdvisorInputs', JSON.stringify(currentInputs));
         
         const projectFormIsDefaultOrEmpty = !watchedProjectConfig.appName || 
-            (watchedProjectConfig.appName === appProjectConfig.appName &&
-             watchedProjectConfig.defaultAccentColorName === appProjectConfig.defaultAccentColorName &&
-             watchedProjectConfig.defaultBorderRadiusName === appProjectConfig.defaultBorderRadiusName &&
-             watchedProjectConfig.defaultAppVersionId === appProjectConfig.defaultAppVersionId
+            (watchedProjectConfig.appName === currentAppName &&
+             watchedProjectConfig.defaultAccentColorName === (appProjectConfig.availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName) &&
+             watchedProjectConfig.defaultBorderRadiusName === (appProjectConfig.availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName) &&
+             watchedProjectConfig.defaultAppVersionId === currentAppVersion
             );
 
         if (!projectFormIsDefaultOrEmpty || sidebarConfigContent || rolesConfigContent) {
             setShowPlaceholders(false);
         }
     }
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, appProjectConfig]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
 
 
   const handleTextareaChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
@@ -159,12 +169,31 @@ export default function ConfigAdvisorPage() {
   const handleSaveProjectConfig = async () => {
     const isValid = await projectConfigForm.trigger();
     if (isValid) {
-      // Data is already saved to localStorage by the useEffect watching `watchedProjectConfig`.
+      const projectConfigValues = projectConfigForm.getValues();
+
+      setAppName(projectConfigValues.appName);
+
+      const selectedAccent = appProjectConfig.availableAccentColors.find(
+        (color) => color.name === projectConfigValues.defaultAccentColorName
+      );
+      if (selectedAccent) {
+        setAccentColor(selectedAccent.hslValue);
+      }
+
+      const selectedRadius = appProjectConfig.availableBorderRadii.find(
+        (radius) => radius.name === projectConfigValues.defaultBorderRadiusName
+      );
+      if (selectedRadius) {
+        setBorderRadius(selectedRadius.value);
+      }
+      
+      setAppVersion(projectConfigValues.defaultAppVersionId);
+
       toast({
-        title: 'Project Configuration Saved',
-        description: 'Your project settings draft has been saved locally.',
+        title: 'Project Configuration Applied',
+        description: 'Your project settings have been applied and saved locally.',
       });
-      projectConfigForm.reset(projectConfigForm.getValues()); // Resets dirty state
+      projectConfigForm.reset(projectConfigValues); 
     } else {
       toast({
         title: 'Validation Error',
@@ -221,7 +250,6 @@ export const projectConfig = {
     return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  // Ensure user is admin, otherwise show access denied. This is important as dummy user might be admin.
   const effectiveUserRole = user?.role;
   if (effectiveUserRole !== 'admin') {
     return (
@@ -262,12 +290,11 @@ export const projectConfig = {
         <CardHeader>
           <CardTitle className="text-xl md:text-2xl">Project Configuration (project.config.ts)</CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            Modify your project settings. The AI will analyze the generated file content.
+            Modify your project settings. Changes saved here will apply globally. The AI will analyze the generated file content.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...projectConfigForm}>
-            {/* Removed top-level form onSubmit as save button is separate */}
             <div className="space-y-4">
               <FormField
                 control={projectConfigForm.control}
@@ -344,7 +371,7 @@ export const projectConfig = {
                 size="sm"
             >
                 <Save className="mr-2 h-4 w-4" />
-                Save Project Draft
+                Save & Apply Project Settings
             </Button>
         </CardFooter>
       </Card>
@@ -401,7 +428,7 @@ export const projectConfig = {
         </Alert>
       )}
 
-      {isLoading && !suggestions && ( // Show loading indicator only when actively fetching new suggestions
+      {isLoading && !suggestions && ( 
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="ml-2 text-sm text-muted-foreground">Analyzing configurations, please wait...</p>

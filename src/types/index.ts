@@ -68,5 +68,7 @@ export type ThemeSettings = {
   accentColor: string; // HSL value string (e.g., "180 100% 25%") or HEX string (e.g., "#008080")
   borderRadius: string; // CSS rem/px value
   appVersion: string; // ID of the app version
+  appName: string; 
 };
+
 
