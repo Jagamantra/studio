@@ -19,6 +19,7 @@ export type AppVersion = {
 
 export type ProjectConfig = {
   appName: string;
+  appIconPaths?: string[]; // SVG path data for the application icon
   availableAccentColors: AccentColor[];
   defaultAccentColorName: string;
   availableBorderRadii: BorderRadiusOption[];
@@ -70,11 +71,13 @@ export type ThemeSettings = {
   borderRadius: string; // CSS rem/px value
   appVersion: string; // ID of the app version
   appName: string; 
+  appIconPaths?: string[]; // SVG path data for dynamic icon
 };
 
 // This type is defined in config-advisor/page.tsx but used in its child components.
 // If it were to be used more broadly, it could stay here.
 // For now, child components import it from the page.
 // export type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;
+
 
 

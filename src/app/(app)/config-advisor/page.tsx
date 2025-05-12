@@ -172,6 +172,8 @@ export default function ConfigAdvisorPage() {
       const selectedRadius = availableBorderRadii.find(r => r.name === projectConfigValues.defaultBorderRadiusName);
       if (selectedRadius) setBorderRadius(selectedRadius.value);
       setAppVersion(projectConfigValues.defaultAppVersionId);
+      // Note: appIconPaths are not editable in this form yet.
+      // If they were, we'd call setAppIconPaths here.
       
       projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false }); 
 
@@ -201,11 +203,13 @@ export default function ConfigAdvisorPage() {
     const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value || 
                                       (appProjectConfig.availableBorderRadii.find(br => br.name === appProjectConfig.defaultBorderRadiusName)?.value || appProjectConfig.availableBorderRadii[0]?.value);
     const originalAppVersionId = appProjectConfig.defaultAppVersionId;
+    // const originalAppIconPaths = appProjectConfig.appIconPaths; // Reset icon paths if they become editable
 
     setAppName(originalAppName);
     if(originalAccentHsl) setAccentColor(originalAccentHsl);
     if(originalBorderRadiusValue) setBorderRadius(originalBorderRadiusValue);
     setAppVersion(originalAppVersionId);
+    // if(originalAppIconPaths) setAppIconPaths(originalAppIconPaths); // If icon paths were editable
 
     projectConfigForm.reset({
       appName: originalAppName,
@@ -226,6 +230,7 @@ export default function ConfigAdvisorPage() {
 // project.config.ts
 export const projectConfig = {
   appName: '${projectConfigData.appName}',
+  appIconPaths: ${JSON.stringify(appProjectConfig.appIconPaths, null, 2)},
   availableAccentColors: ${JSON.stringify(appProjectConfig.availableAccentColors, null, 2)},
   defaultAccentColorName: '${projectConfigData.defaultAccentColorName}',
   availableBorderRadii: ${JSON.stringify(appProjectConfig.availableBorderRadii, null, 2)},

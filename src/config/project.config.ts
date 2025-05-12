@@ -1,7 +1,13 @@
+
 import type { ProjectConfig } from '@/types';
 
 export const projectConfig: ProjectConfig = {
   appName: 'Genesis Template',
+  appIconPaths: [ // Default SVG paths for the application icon
+    "M12 2L2 7l10 5 10-5-10-5z",
+    "M2 17l10 5 10-5",
+    "M2 12l10 5 10-5"
+  ],
   availableAccentColors: [
     { name: 'Teal', hslValue: '180 100% 25%', hexValue: '#008080' },
     { name: 'Blue', hslValue: '221.2 83.2% 53.3%', hexValue: '#2563EB' },
@@ -24,4 +30,5 @@ export const projectConfig: ProjectConfig = {
   ],
   defaultAppVersionId: 'v1.0.0',
 };
+
 

@@ -14,6 +14,7 @@ interface ThemeProviderState extends ThemeSettings {
   setBorderRadius: (radiusValue: string) => void;
   setAppVersion: (versionId: string) => void;
   setAppName: (appName: string) => void; 
+  setAppIconPaths: (paths: string[]) => void; // Setter for icon paths
   availableAccentColors: AccentColor[];
   availableBorderRadii: BorderRadiusOption[];
 }
@@ -26,6 +27,9 @@ const getInitialBorderRadius = () => {
   return projectConfig.availableBorderRadii.find(r => r.name === projectConfig.defaultBorderRadiusName)?.value || projectConfig.availableBorderRadii[0]?.value || '0.5rem';
 };
 
+const getInitialAppIconPaths = () => {
+  return projectConfig.appIconPaths || [];
+}
 
 const initialState: ThemeProviderState = {
   theme: 'system',
@@ -33,11 +37,13 @@ const initialState: ThemeProviderState = {
   borderRadius: getInitialBorderRadius(),
   appVersion: projectConfig.defaultAppVersionId,
   appName: projectConfig.appName, 
+  appIconPaths: getInitialAppIconPaths(), // Initialize icon paths
   setTheme: () => null,
   setAccentColor: () => null,
   setBorderRadius: () => null,
   setAppVersion: () => null,
   setAppName: () => null, 
+  setAppIconPaths: () => null, // Placeholder setter
   availableAccentColors: projectConfig.availableAccentColors,
   availableBorderRadii: projectConfig.availableBorderRadii,
 };
@@ -73,6 +79,11 @@ export function ThemeProvider({
     `${storageKey}-app-name`,
     initialState.appName
   );
+  const [appIconPaths, setAppIconPathsInternal] = useLocalStorage<string[]>(
+    `${storageKey}-app-icon-paths`,
+    initialState.appIconPaths || []
+  );
+
 
   // Create stable setters
   const setTheme = useCallback((newTheme: 'light' | 'dark' | 'system') => setThemeState(newTheme), [setThemeState]);
@@ -80,6 +91,7 @@ export function ThemeProvider({
   const setBorderRadius = useCallback((newBorderRadius: string) => setBorderRadiusInternal(newBorderRadius), [setBorderRadiusInternal]);
   const setAppVersion = useCallback((newAppVersion: string) => setAppVersionInternal(newAppVersion), [setAppVersionInternal]);
   const setAppName = useCallback((newAppName: string) => setAppNameInternal(newAppName), [setAppNameInternal]);
+  const setAppIconPaths = useCallback((newPaths: string[]) => setAppIconPathsInternal(newPaths), [setAppIconPathsInternal]);
 
 
   useEffect(() => {
@@ -145,7 +157,6 @@ export function ThemeProvider({
     root.style.setProperty('--accent-s', s);
     root.style.setProperty('--accent-l', l);
     
-    // This ensures primary also updates if accent changes
     root.style.setProperty('--primary-h', h);
     root.style.setProperty('--primary-s', s);
     root.style.setProperty('--primary-l', l);
@@ -164,7 +175,7 @@ export function ThemeProvider({
     root.style.setProperty('--accent-foreground', finalFgHslString);
     root.style.setProperty('--primary-foreground', finalFgHslString);
 
-    root.style.setProperty('--ring-h', h); // Keep ring hue consistent with accent
+    root.style.setProperty('--ring-h', h); 
 
   }, [accentColor, theme]);
 
@@ -176,21 +187,30 @@ export function ThemeProvider({
     }
   }, [borderRadius]);
 
+  // Update document title dynamically
+  useEffect(() => {
+    if (appName) {
+      document.title = appName;
+    }
+  }, [appName]);
+
   const value = useMemo(() => ({
     theme,
     accentColor,
     borderRadius,
     appVersion,
     appName, 
+    appIconPaths, // Provide icon paths
     setTheme,
     setAccentColor,
     setBorderRadius,
     setAppVersion,
     setAppName, 
+    setAppIconPaths, // Provide setter
     availableAccentColors: projectConfig.availableAccentColors,
     availableBorderRadii: projectConfig.availableBorderRadii,
-  }), [theme, accentColor, borderRadius, appVersion, appName, 
-      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName]);
+  }), [theme, accentColor, borderRadius, appVersion, appName, appIconPaths, 
+      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths]);
 
   return (
     <ThemeProviderContext.Provider value={value}>

@@ -7,7 +7,7 @@ import { useTheme } from '@/contexts/theme-provider';
 import { ThemeSwitcher } from '@/components/layout/theme-switcher';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
-  const { appName } = useTheme();
+  const { appName, appIconPaths } = useTheme();
 
   return (
     // Outermost div for full-screen background
@@ -22,9 +22,22 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="w-full max-w-md flex flex-col items-center">
           <div className="mb-4 sm:mb-6 flex flex-col items-center text-center">
             <Link href="/" className="mb-2 sm:mb-3 inline-block">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 sm:h-8 sm:w-8 text-primary">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-              </svg>
+              {appIconPaths && appIconPaths.length > 0 && (
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  className="h-6 w-6 sm:h-8 sm:w-8 text-primary"
+                >
+                  {appIconPaths.map((d, index) => (
+                    <path key={index} d={d}></path>
+                  ))}
+                </svg>
+              )}
             </Link>
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
               {appName}
