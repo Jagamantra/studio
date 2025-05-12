@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { UseFormReturn } from 'react-hook-form';
@@ -113,12 +112,13 @@ export function ProjectConfigFormCard({
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="border-t px-6 py-4 flex justify-end space-x-2">
+      <CardFooter className="border-t px-6 py-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2 sm:gap-0">
           <Button 
               onClick={handleResetProjectConfig} 
               disabled={anyLoading}
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
           >
               {isResettingProjectConfig ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
               Reset Changes
@@ -127,6 +127,7 @@ export function ProjectConfigFormCard({
               onClick={handleSaveProjectConfig} 
               disabled={!projectConfigForm.formState.isDirty || anyLoading || isSavingProjectConfig}
               size="sm"
+              className="w-full sm:w-auto"
           >
               {isSavingProjectConfig ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save & Apply Project Settings

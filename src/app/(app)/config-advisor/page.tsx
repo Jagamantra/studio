@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -190,13 +189,15 @@ export default function ConfigAdvisorPage() {
 
   const handleResetProjectConfig = async () => {
     setIsResettingProjectConfig(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 500)); 
     
     const originalAppName = appProjectConfig.appName;
     const originalAccentColorName = appProjectConfig.defaultAccentColorName;
-    const originalAccentHsl = availableAccentColors.find(c => c.name === originalAccentColorName)?.hslValue || defaultAccentHslValue;
+    const originalAccentHsl = availableAccentColors.find(c => c.name === originalAccentColorName)?.hslValue || 
+                              (projectConfig.availableAccentColors.find(ac => ac.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0]?.hslValue);
     const originalBorderRadiusName = appProjectConfig.defaultBorderRadiusName;
-    const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value || initialState.borderRadius;
+    const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value || 
+                                      (projectConfig.availableBorderRadii.find(br => br.name === projectConfig.defaultBorderRadiusName)?.value || projectConfig.availableBorderRadii[0]?.value);
     const originalAppVersionId = appProjectConfig.defaultAppVersionId;
 
     setAppName(originalAppName);
@@ -281,17 +282,19 @@ export const projectConfig = {
   const anyLoading = isLoadingAi || isSavingProjectConfig || isResettingProjectConfig || isLoadingExamples;
 
   return (
-    <div className="flex-1 space-y-4 md:space-y-6 p-1 sm:p-0">
+    <div className="flex-1 space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
         <div className="flex gap-2">
           <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
             {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />} 
-            Load Examples
+            <span className="hidden sm:inline">Load Examples</span>
+            <span className="sm:hidden">Examples</span>
           </Button>
           <Button onClick={handleAnalyzeSubmit} disabled={anyLoading} size="sm">
             {isLoadingAi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
-            Analyze Configurations
+            <span className="hidden sm:inline">Analyze Configurations</span>
+            <span className="sm:hidden">Analyze</span>
           </Button>
         </div>
       </div>

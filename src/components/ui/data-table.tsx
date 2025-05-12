@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -36,10 +35,10 @@ import { ChevronDown, PlusCircle } from "lucide-react"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  searchColumnId?: string // ID of the column to use for global search
-  onAdd?: () => void // Callback for add button
-  onEdit?: (rowData: TData) => void // Callback for edit action
-  onDelete?: (rowData: TData) => void // Callback for delete action
+  searchColumnId?: string 
+  onAdd?: () => void 
+  onEdit?: (rowData: TData) => void 
+  onDelete?: (rowData: TData) => void 
   isLoading?: boolean
 }
 
@@ -76,7 +75,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-2">
         {searchColumnId && (
           <Input
             placeholder={`Filter by ${searchColumnId}...`}
@@ -84,19 +83,21 @@ export function DataTable<TData, TValue>({
             onChange={(event) =>
               table.getColumn(searchColumnId)?.setFilterValue(event.target.value)
             }
-            className="max-w-sm"
+            className="w-full sm:max-w-sm h-9" // Ensure consistent height with buttons
             disabled={isLoading}
           />
         )}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center justify-start sm:justify-end gap-2">
           {onAdd && (
-            <Button onClick={onAdd} size="sm" disabled={isLoading}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add New
+            <Button onClick={onAdd} size="sm" disabled={isLoading} className="w-full sm:w-auto">
+              <PlusCircle className="mr-2 h-4 w-4" /> 
+              <span className="hidden sm:inline">Add New</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-auto" disabled={isLoading}>
+              <Button variant="outline" size="sm" disabled={isLoading} className="w-full sm:w-auto">
                 Columns <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -178,12 +179,12 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-4">
+        <div className="text-xs sm:text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-        <div className="space-x-2">
+        <div className="flex space-x-2">
           <Button
             variant="outline"
             size="sm"

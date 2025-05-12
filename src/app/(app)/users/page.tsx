@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -129,11 +128,13 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 md:space-y-6 p-1 sm:p-0">
+    <div className="flex-1 space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
         <Button onClick={openAddUserModal} disabled={anyLoading} size="sm">
-          {anyLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />} Add User
+          {anyLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />} 
+          <span className="hidden sm:inline">Add User</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
       <DataTable columns={columns} data={users} searchColumnId="email" onAdd={openAddUserModal} isLoading={anyLoading}/>
