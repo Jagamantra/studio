@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 // Import other Firebase services as needed:
@@ -14,24 +15,52 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID, // Optional
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-// let db: Firestore;
-// let storage: FirebaseStorage;
+let appInstance: FirebaseApp | undefined = undefined;
+let authServiceInstance: Auth | undefined = undefined; // Renamed to avoid confusion with export name
+// let dbInstance: Firestore | undefined = undefined;
+// let storageInstance: FirebaseStorage | undefined = undefined;
 
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
-
-auth = getAuth(app);
-// db = getFirestore(app); // Initialize Firestore if used
-// storage = getStorage(app); // Initialize Storage if used
-
-export { app, auth /*, db, storage */ };
-
-// Helper function to check if Firebase is configured
-export const isFirebaseConfigured = () => {
+// Helper function to check if essential Firebase config values are present
+export const isFirebaseConfigured = (): boolean => {
   return !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
 };
+
+if (isFirebaseConfigured()) {
+  if (!getApps().length) {
+    try {
+      appInstance = initializeApp(firebaseConfig);
+    } catch (e) {
+      console.error("Firebase: Failed to initialize app. Check your Firebase config.", e);
+      // appInstance will remain undefined, subsequent service initializations will be skipped.
+    }
+  } else {
+    appInstance = getApp();
+  }
+
+  if (appInstance) {
+    try {
+      authServiceInstance = getAuth(appInstance);
+    } catch (e) {
+      console.error("Firebase: Failed to get Auth instance. Ensure app was initialized correctly.", e);
+      // authServiceInstance will remain undefined.
+    }
+    // Example for other services:
+    // try {
+    //   dbInstance = getFirestore(appInstance);
+    // } catch (e) {
+    //   console.error("Firebase: Failed to get Firestore instance:", e);
+    // }
+    // try {
+    //   storageInstance = getStorage(appInstance);
+    // } catch (e) {
+    //   console.error("Firebase: Failed to get Storage instance:", e);
+    // }
+  }
+} else {
+  console.warn(
+    "Firebase configuration is missing or incomplete (e.g., NEXT_PUBLIC_FIREBASE_API_KEY or NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set in .env). Firebase services will not be initialized."
+  );
+}
+
+// Export potentially undefined services using their intended export names
+export { appInstance as app, authServiceInstance as auth /*, dbInstance as db, storageInstance as storage */ };
