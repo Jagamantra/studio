@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText, Info } from 'lucide-react';
+import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText, Info, Save } from 'lucide-react';
 import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
 import { projectConfig as appProjectConfig } from '@/config/project.config'; // Import actual config for defaults and options
+import { useToast } from '@/hooks/use-toast';
 
 // Placeholder content for textareas
 const placeholderSidebarConfig = `
@@ -62,6 +63,7 @@ interface StoredConfigAdvisorInputs {
 
 export default function ConfigAdvisorPage() {
   const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   
   const projectConfigForm = useForm<ProjectConfigFormValues>({
     resolver: zodResolver(projectConfigFormSchema),
@@ -77,11 +79,10 @@ export default function ConfigAdvisorPage() {
   const [rolesConfigContent, setRolesConfigContent] = useState('');
   
   const [suggestions, setSuggestions] = useState<AnalyzeConfigOutput['suggestions'] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // For AI analysis loading
   const [error, setError] = useState<string | null>(null);
-  const [showPlaceholders, setShowPlaceholders] = useState(true); // Placeholder state for textareas
+  const [showPlaceholders, setShowPlaceholders] = useState(true); 
 
-  // Load initial data from localStorage or set defaults
   useEffect(() => {
     if (typeof window !== 'undefined') {
         const storedInputsJSON = localStorage.getItem('configAdvisorInputs');
@@ -93,7 +94,6 @@ export default function ConfigAdvisorPage() {
             setSidebarConfigContent(storedInputs.sidebarConfigContent || '');
             setRolesConfigContent(storedInputs.rolesConfigContent || '');
             
-            // Determine if placeholders should be shown
             const projectFormIsDefault = JSON.stringify(projectConfigForm.getValues()) === JSON.stringify(projectConfigForm.formState.defaultValues);
             setShowPlaceholders(
               projectFormIsDefault &&
@@ -101,9 +101,7 @@ export default function ConfigAdvisorPage() {
               !storedInputs.rolesConfigContent
             );
         } else {
-            // If no stored inputs, set placeholders true initially
             setShowPlaceholders(true);
-            // And load defaults into form
             projectConfigForm.reset({
               appName: appProjectConfig.appName,
               defaultAccentColorName: appProjectConfig.defaultAccentColorName,
@@ -113,9 +111,8 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
+  }, []); 
 
-  // Persist changes to localStorage
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -126,7 +123,6 @@ export default function ConfigAdvisorPage() {
         };
         localStorage.setItem('configAdvisorInputs', JSON.stringify(currentInputs));
         
-        // Hide placeholders if any form has changed from default or textareas have content
         const projectFormIsDefaultOrEmpty = !watchedProjectConfig.appName || 
             (watchedProjectConfig.appName === appProjectConfig.appName &&
              watchedProjectConfig.defaultAccentColorName === appProjectConfig.defaultAccentColorName &&
@@ -160,7 +156,25 @@ export default function ConfigAdvisorPage() {
     setShowPlaceholders(false); 
   };
 
-  const handleSubmit = async () => {
+  const handleSaveProjectConfig = async () => {
+    const isValid = await projectConfigForm.trigger();
+    if (isValid) {
+      // Data is already saved to localStorage by the useEffect watching `watchedProjectConfig`.
+      toast({
+        title: 'Project Configuration Saved',
+        description: 'Your project settings draft has been saved locally.',
+      });
+      projectConfigForm.reset(projectConfigForm.getValues()); // Resets dirty state
+    } else {
+      toast({
+        title: 'Validation Error',
+        description: 'Please correct the errors in the project configuration form.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleAnalyzeSubmit = async () => {
     setIsLoading(true);
     setError(null);
     setSuggestions(null);
@@ -207,7 +221,9 @@ export const projectConfig = {
     return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  if (user?.role !== 'admin') {
+  // Ensure user is admin, otherwise show access denied. This is important as dummy user might be admin.
+  const effectiveUserRole = user?.role;
+  if (effectiveUserRole !== 'admin') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 text-center">
         <ShieldQuestion className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
@@ -222,6 +238,7 @@ export const projectConfig = {
     );
   }
 
+
   return (
     <div className="flex-1 space-y-4 md:space-y-6 p-1 sm:p-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -230,7 +247,7 @@ export const projectConfig = {
           <Button onClick={loadExampleConfigs} disabled={isLoading} variant="outline" size="sm">
             <Info className="mr-2 h-4 w-4" /> Load Examples
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading} size="sm">
+          <Button onClick={handleAnalyzeSubmit} disabled={isLoading} size="sm">
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -250,7 +267,8 @@ export const projectConfig = {
         </CardHeader>
         <CardContent>
           <Form {...projectConfigForm}>
-            <form className="space-y-4">
+            {/* Removed top-level form onSubmit as save button is separate */}
+            <div className="space-y-4">
               <FormField
                 control={projectConfigForm.control}
                 name="appName"
@@ -268,7 +286,7 @@ export const projectConfig = {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Default Accent Color</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select accent color" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {appProjectConfig.availableAccentColors.map(color => (
@@ -286,7 +304,7 @@ export const projectConfig = {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Default Border Radius</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select border radius" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {appProjectConfig.availableBorderRadii.map(radius => (
@@ -304,7 +322,7 @@ export const projectConfig = {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Default App Version</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select app version" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {appProjectConfig.availableAppVersions.map(version => (
@@ -316,9 +334,19 @@ export const projectConfig = {
                   </FormItem>
                 )}
               />
-            </form>
+            </div>
           </Form>
         </CardContent>
+        <CardFooter className="border-t px-6 py-4">
+            <Button 
+                onClick={handleSaveProjectConfig} 
+                disabled={!projectConfigForm.formState.isDirty || isLoading}
+                size="sm"
+            >
+                <Save className="mr-2 h-4 w-4" />
+                Save Project Draft
+            </Button>
+        </CardFooter>
       </Card>
 
       <Card>
@@ -335,7 +363,7 @@ export const projectConfig = {
             </label>
             <Textarea
               id="sidebarConfig"
-              placeholder={showPlaceholders && !sidebarConfigContent ? "Example sidebar.config.ts content..." : "Paste content of sidebar.config.ts here..."}
+              placeholder={showPlaceholders && !sidebarConfigContent ? placeholderSidebarConfig : "Paste content of sidebar.config.ts here..."}
               value={sidebarConfigContent}
               onChange={(e) => handleTextareaChange(setSidebarConfigContent, e.target.value)}
               rows={8}
@@ -349,7 +377,7 @@ export const projectConfig = {
             </label>
             <Textarea
               id="rolesConfig"
-              placeholder={showPlaceholders && !rolesConfigContent ? "Example roles.config.ts content..." : "Paste content of roles.config.ts here..."}
+              placeholder={showPlaceholders && !rolesConfigContent ? placeholderRolesConfig : "Paste content of roles.config.ts here..."}
               value={rolesConfigContent}
               onChange={(e) => handleTextareaChange(setRolesConfigContent, e.target.value)}
               rows={8}
@@ -373,7 +401,7 @@ export const projectConfig = {
         </Alert>
       )}
 
-      {isLoading && (
+      {isLoading && !suggestions && ( // Show loading indicator only when actively fetching new suggestions
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="ml-2 text-sm text-muted-foreground">Analyzing configurations, please wait...</p>
