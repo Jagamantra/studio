@@ -13,7 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText, Info, Save } from 'lucide-react';
+import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText, Info, Save, RotateCcw } from 'lucide-react';
 import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
@@ -23,12 +23,12 @@ import { useTheme } from '@/contexts/theme-provider';
 
 const placeholderSidebarConfig = `
 // sidebar.config.ts
-// import { User, Settings } from 'lucide-react';
+// Example: import { Home, Settings } from 'lucide-react';
 export const sidebarConfig = {
   items: [
     { id: 'dashboard', label: 'Home', href: '/dashboard', /*icon: Home,*/ roles: ['admin', 'user'] },
     // Example: Add a new item for admins
-    // { id: 'admin-tools', label: 'Admin Tools', href: '/admin/tools', icon: Settings, roles: ['admin'] },
+    // { id: 'admin-tools', label: 'Admin Tools', href: '/admin/tools', /*icon: Settings,*/ roles: ['admin'] },
   ],
 };
 `.trim();
@@ -36,10 +36,10 @@ export const sidebarConfig = {
 const placeholderRolesConfig = `
 // roles.config.ts
 export const rolesConfig = {
-  roles: ['admin', 'user', 'editor', 'guest'], // Added 'editor'
+  roles: ['admin', 'user', 'editor', 'guest'], // Example: Added 'editor'
   routePermissions: {
     '/dashboard': ['admin', 'user', 'editor'],
-    '/admin': ['admin'], // New rule for an /admin section
+    '/admin': ['admin'], // Example: New rule for an /admin section
     // '/posts/edit': ['admin', 'editor'], // Example for content editing
   },
   defaultRole: 'user',
@@ -47,10 +47,10 @@ export const rolesConfig = {
 `.trim();
 
 const projectConfigFormSchema = z.object({
-  appName: z.string().min(1, 'App name is required.'),
-  defaultAccentColorName: z.string(),
-  defaultBorderRadiusName: z.string(),
-  defaultAppVersionId: z.string(),
+  appName: z.string().min(1, 'App name is required.').max(100, 'App name cannot exceed 100 characters.'),
+  defaultAccentColorName: z.string({required_error: "Accent color is required."}),
+  defaultBorderRadiusName: z.string({required_error: "Border radius is required."}),
+  defaultAppVersionId: z.string({required_error: "App version is required."}),
 });
 
 type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;
@@ -66,21 +66,23 @@ export default function ConfigAdvisorPage() {
   const { toast } = useToast();
   const { 
     appName: currentAppName,
-    accentColor: currentAccentColor,
+    accentColor: currentAccentColor, // This is HSL or HEX string
     borderRadius: currentBorderRadius,
     appVersion: currentAppVersion,
     setAppName, 
     setAccentColor, 
     setBorderRadius, 
-    setAppVersion 
+    setAppVersion,
+    availableAccentColors, // from useTheme now
+    availableBorderRadii // from useTheme now
   } = useTheme();
   
   const projectConfigForm = useForm<ProjectConfigFormValues>({
     resolver: zodResolver(projectConfigFormSchema),
     defaultValues: {
       appName: currentAppName,
-      defaultAccentColorName: appProjectConfig.availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
-      defaultBorderRadiusName: appProjectConfig.availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+      defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
+      defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
       defaultAppVersionId: currentAppVersion,
     },
   });
@@ -111,17 +113,32 @@ export default function ConfigAdvisorPage() {
               !storedInputs.rolesConfigContent
             );
         } else {
-            setShowPlaceholders(true);
-            projectConfigForm.reset({
-              appName: currentAppName,
-              defaultAccentColorName: appProjectConfig.availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
-              defaultBorderRadiusName: appProjectConfig.availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
-              defaultAppVersionId: currentAppVersion,
-            });
+          // This else block is key for initializing form on first load or if no localStorage.
+          // It ensures the form uses the current theme settings as its defaults.
+          projectConfigForm.reset({
+            appName: currentAppName,
+            defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
+            defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+            defaultAppVersionId: currentAppVersion,
+          });
+          setShowPlaceholders(true);
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []); // Runs on mount and when initial values from theme might change (though currentTheme values are stable per session unless ThemeSwitcher changes them)
+
+  // Update form if theme context values change (e.g., user uses ThemeSwitcher in header)
+  // This ensures form defaults reflect the "live" theme settings.
+  useEffect(() => {
+    projectConfigForm.reset({
+      appName: currentAppName,
+      defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
+      defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+      defaultAppVersionId: currentAppVersion,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
+
 
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
@@ -135,8 +152,8 @@ export default function ConfigAdvisorPage() {
         
         const projectFormIsDefaultOrEmpty = !watchedProjectConfig.appName || 
             (watchedProjectConfig.appName === currentAppName &&
-             watchedProjectConfig.defaultAccentColorName === (appProjectConfig.availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName) &&
-             watchedProjectConfig.defaultBorderRadiusName === (appProjectConfig.availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName) &&
+             watchedProjectConfig.defaultAccentColorName === (availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName) &&
+             watchedProjectConfig.defaultBorderRadiusName === (availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName) &&
              watchedProjectConfig.defaultAppVersionId === currentAppVersion
             );
 
@@ -144,7 +161,7 @@ export default function ConfigAdvisorPage() {
             setShowPlaceholders(false);
         }
     }
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, availableAccentColors, availableBorderRadii]);
 
 
   const handleTextareaChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
@@ -156,14 +173,18 @@ export default function ConfigAdvisorPage() {
   
   const loadExampleConfigs = () => {
     projectConfigForm.reset({
-      appName: appProjectConfig.appName,
-      defaultAccentColorName: appProjectConfig.defaultAccentColorName,
-      defaultBorderRadiusName: appProjectConfig.defaultBorderRadiusName,
-      defaultAppVersionId: appProjectConfig.defaultAppVersionId,
+      appName: "Example App", // Example values
+      defaultAccentColorName: appProjectConfig.availableAccentColors[1]?.name || appProjectConfig.defaultAccentColorName, // Pick a different example color
+      defaultBorderRadiusName: appProjectConfig.availableBorderRadii[1]?.name || appProjectConfig.defaultBorderRadiusName, // Pick different example radius
+      defaultAppVersionId: appProjectConfig.availableAppVersions[1]?.id || appProjectConfig.defaultAppVersionId, // Pick different example version
     });
     setSidebarConfigContent(placeholderSidebarConfig);
     setRolesConfigContent(placeholderRolesConfig);
     setShowPlaceholders(false); 
+    toast({
+      title: 'Example Configurations Loaded',
+      description: 'You can now analyze these example settings.',
+    });
   };
 
   const handleSaveProjectConfig = async () => {
@@ -173,14 +194,14 @@ export default function ConfigAdvisorPage() {
 
       setAppName(projectConfigValues.appName);
 
-      const selectedAccent = appProjectConfig.availableAccentColors.find(
+      const selectedAccent = availableAccentColors.find(
         (color) => color.name === projectConfigValues.defaultAccentColorName
       );
       if (selectedAccent) {
-        setAccentColor(selectedAccent.hslValue);
+        setAccentColor(selectedAccent.hslValue); // setAccentColor in useTheme expects HSL or HEX
       }
 
-      const selectedRadius = appProjectConfig.availableBorderRadii.find(
+      const selectedRadius = availableBorderRadii.find(
         (radius) => radius.name === projectConfigValues.defaultBorderRadiusName
       );
       if (selectedRadius) {
@@ -193,6 +214,7 @@ export default function ConfigAdvisorPage() {
         title: 'Project Configuration Applied',
         description: 'Your project settings have been applied and saved locally.',
       });
+      // After saving, reset the form with the new values to make it "clean"
       projectConfigForm.reset(projectConfigValues); 
     } else {
       toast({
@@ -203,6 +225,19 @@ export default function ConfigAdvisorPage() {
     }
   };
 
+  const handleResetProjectConfig = () => {
+    projectConfigForm.reset({
+      appName: currentAppName,
+      defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
+      defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+      defaultAppVersionId: currentAppVersion,
+    });
+    toast({
+      title: 'Project Configuration Reset',
+      description: 'Form fields have been reset to the current theme settings.',
+    });
+  };
+
   const handleAnalyzeSubmit = async () => {
     setIsLoading(true);
     setError(null);
@@ -210,6 +245,8 @@ export default function ConfigAdvisorPage() {
 
     const projectConfigData = projectConfigForm.getValues();
     
+    // Ensure we use the defined available colors and radii from the project config for generation
+    // as the theme provider might have its own list that could differ conceptually for this analysis
     const generatedProjectConfigContent = `
 // project.config.ts
 export const projectConfig = {
@@ -295,7 +332,7 @@ export const projectConfig = {
         </CardHeader>
         <CardContent>
           <Form {...projectConfigForm}>
-            <div className="space-y-4">
+            <form className="space-y-4"> {/* Removed onSubmit from form tag, handled by button */}
               <FormField
                 control={projectConfigForm.control}
                 name="appName"
@@ -316,7 +353,7 @@ export const projectConfig = {
                     <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select accent color" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        {appProjectConfig.availableAccentColors.map(color => (
+                        {availableAccentColors.map(color => (
                           <SelectItem key={color.name} value={color.name}>{color.name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -334,7 +371,7 @@ export const projectConfig = {
                     <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select border radius" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        {appProjectConfig.availableBorderRadii.map(radius => (
+                        {availableBorderRadii.map(radius => (
                           <SelectItem key={radius.name} value={radius.name}>{radius.name} ({radius.value})</SelectItem>
                         ))}
                       </SelectContent>
@@ -361,10 +398,19 @@ export const projectConfig = {
                   </FormItem>
                 )}
               />
-            </div>
+            </form>
           </Form>
         </CardContent>
-        <CardFooter className="border-t px-6 py-4">
+        <CardFooter className="border-t px-6 py-4 flex justify-end space-x-2">
+            <Button 
+                onClick={handleResetProjectConfig} 
+                disabled={!projectConfigForm.formState.isDirty || isLoading}
+                variant="outline"
+                size="sm"
+            >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Reset Changes
+            </Button>
             <Button 
                 onClick={handleSaveProjectConfig} 
                 disabled={!projectConfigForm.formState.isDirty || isLoading}
