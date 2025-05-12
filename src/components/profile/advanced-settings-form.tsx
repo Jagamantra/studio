@@ -90,7 +90,7 @@ export function AdvancedSettingsForm({ user, setUser, anyLoading, setAnyLoading 
                       Receive updates and important announcements via email.
                     </FormDescription>
                   </div>
-                  <FormControl asChild>
+                  <FormControl>
                     <Switch
                       checked={field.value}
                       onCheckedChange={field.onChange}
@@ -107,7 +107,7 @@ export function AdvancedSettingsForm({ user, setUser, anyLoading, setAnyLoading 
                 <FormItem>
                   <FormLabel>Interface Density</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || anyLoading}>
-                    <FormControl asChild>
+                    <FormControl> {/* Removed asChild prop */}
                       <SelectTrigger>
                         <SelectValue placeholder="Select interface density" />
                       </SelectTrigger>
