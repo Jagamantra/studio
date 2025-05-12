@@ -12,7 +12,7 @@ export default function LoginPage() {
   return (
     <>
       <LoginForm />
-      <p className="mt-4 text-center text-sm text-muted-foreground">
+      <p className="mt-4 text-center text-sm">
         Don&apos;t have an account?{' '}
         <Link
           href="/auth/register"

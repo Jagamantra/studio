@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -128,7 +129,7 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Full Name</FormLabel> {/* Ensured text size */}
-                <FormControl asChild>
+                <FormControl>
                   <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
                 <FormMessage />
@@ -141,7 +142,7 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Email</FormLabel> {/* Ensured text size */}
-                <FormControl asChild>
+                <FormControl>
                   <Input
                     type="email"
                     placeholder="name@example.com"
@@ -163,7 +164,7 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Password</FormLabel> {/* Ensured text size */}
-                <FormControl asChild>
+                <FormControl>
                   <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
                 <FormMessage />
@@ -176,7 +177,7 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Confirm Password</FormLabel> {/* Ensured text size */}
-                <FormControl asChild>
+                <FormControl>
                   <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
                 <FormMessage />
@@ -192,3 +193,4 @@ export function RegisterForm() {
     </div>
   );
 }
+

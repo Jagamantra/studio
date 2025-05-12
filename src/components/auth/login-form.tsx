@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -109,7 +110,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Email</FormLabel> {/* Ensured text size */}
-                <FormControl asChild>
+                <FormControl>
                   <Input
                     type="email"
                     placeholder="name@example.com"
@@ -136,7 +137,7 @@ export function LoginForm() {
                     Forgot password?
                   </Link>
                 </div>
-                <FormControl asChild>
+                <FormControl>
                   <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
                 <FormMessage />
@@ -166,3 +167,4 @@ export function LoginForm() {
     </div>
   );
 }
+
