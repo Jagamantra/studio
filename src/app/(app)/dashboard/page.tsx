@@ -1,16 +1,27 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react'; // Import React, useState, useEffect
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Users, ShieldQuestion, BarChart3, AlertTriangle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import type { UserProfile } from '@/types'; // Ensure UserProfile is imported
+
+// Define a dummy user for viewing the dashboard when Firebase isn't configured
+const DUMMY_USER_FOR_VIEWING: UserProfile = {
+  uid: 'dummy-dashboard-viewer-001',
+  email: 'viewer@example.com',
+  displayName: 'Demo User (Admin View)',
+  photoURL: 'https://picsum.photos/seed/demoviewer/40/40',
+  phoneNumber: null,
+  role: 'admin', // Assign 'admin' role to see all features on the dashboard
+};
 
 export default function DashboardPage() {
-  const { user, loading, isConfigured } = useAuth();
+  const { user: authUser, loading, isConfigured } = useAuth();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -25,26 +36,19 @@ export default function DashboardPage() {
     );
   }
 
-  if (!isConfigured) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <Card className="w-full max-w-lg text-center">
-          <CardHeader>
-            <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-            <CardTitle>Configuration Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Firebase is not configured correctly. Please contact an administrator or check your setup.
-              The application functionality may be limited.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
-  if (!user) {
+  // Determine the user profile to render on the dashboard
+  const userToRenderOnDashboard: UserProfile | null = (() => {
+    if (!isConfigured) {
+      // If Firebase is not configured, use the predefined dummy user for viewing
+      return DUMMY_USER_FOR_VIEWING;
+    }
+    // If Firebase is configured, use the actual authenticated user from AuthProvider
+    return authUser;
+  })();
+
+  // If no user can be determined for the dashboard (e.g., Firebase is configured but no one is logged in),
+  // then show an access denied message.
+  if (!userToRenderOnDashboard) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <Card className="w-full max-w-md text-center">
@@ -61,17 +65,35 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const isAdmin = user.role === 'admin';
+  
+  // Proceed with rendering the dashboard using userToRenderOnDashboard
+  const isAdmin = userToRenderOnDashboard.role === 'admin';
 
   return (
     <div className="flex-1 space-y-6">
       <div className="flex flex-col items-start justify-between space-y-2 sm:flex-row sm:items-center">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome back, {user.displayName || 'User'}!
+          Welcome back, {userToRenderOnDashboard.displayName || 'User'}!
         </p>
       </div>
+      
+      {!isConfigured && (
+         <Card className="mb-6 border-blue-500 bg-blue-50 dark:bg-blue-900/30">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <CardTitle className="text-blue-700 dark:text-blue-300">Demo Mode</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              Firebase is not configured. You are viewing the dashboard with sample data. Some interactive features might be limited.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -82,7 +104,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold capitalize">{user.role}</div>
+            <div className="text-2xl font-bold capitalize">{userToRenderOnDashboard.role}</div>
             <p className="text-xs text-muted-foreground">
               {isAdmin ? 'Full access to all features.' : 'Standard user access.'}
             </p>
@@ -168,3 +190,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
