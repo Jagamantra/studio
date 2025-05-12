@@ -19,6 +19,18 @@ const apiClient = axios.create({
   },
 });
 
+// Sample api request
+// export const fetchUsers = async (): Promise<UserProfile[]> => {
+//   try {
+//     const response = await apiClient.get('/users'); // Replace '/users' with your actual endpoint
+//     return response.data; // Assuming your API returns user data in response.data
+//   } catch (error) {
+//     console.error('Error fetching users:', error);
+//     // Handle errors appropriately, e.g., throw error or return empty array
+//     throw error;
+//   }
+// };
+
 // --- User Management ---
 export const fetchUsers = async (): Promise<UserProfile[]> => {
   console.log('API Service: Mock fetchUsers called');
