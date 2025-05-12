@@ -77,7 +77,17 @@ This application uses Genkit for AI-related functionalities like the Config Advi
 
 The application currently uses a mock API service layer located in `src/services/api.ts`. This layer simulates backend interactions and uses dummy data primarily from `src/data/dummy-data.ts`. This allows for full frontend development and testing without a live backend. User authentication is also handled by a dummy system, with user data persisted in local storage.
 
-**Connecting to Your Backend API:**
+### Data Persistence (Mock Setup)
+
+In the current mock setup, data is persisted in the browser's Local Storage:
+-   **User Session**: `AuthProvider` stores the current logged-in (dummy) user in `localStorage` (key: `genesis_current_dummy_user`). MFA verification status is also stored (key: `genesis_mfa_verified`).
+-   **Dummy User Database**: A list of all registered dummy users is stored in `localStorage` (key: `genesis_dummy_users`). This is managed by `src/services/api.ts` and used by the User Management features.
+-   **Theme Settings**: `ThemeProvider` stores theme preferences (mode, accent color, border radius, app version, app name) in `localStorage` (key prefix: `genesis-theme-`).
+-   **Config Advisor Inputs**: The `ConfigAdvisorPage` stores user inputs for the AI configuration analysis in `localStorage` (key: `configAdvisorInputs`).
+
+**Note**: This Local Storage persistence is for the mock/dummy setup. When you integrate a real backend API, this data would typically be stored in your backend database, and Local Storage would primarily be used for session tokens or minimal client-side preferences.
+
+## Connecting to Your Backend API
 
 To connect the Genesis Template to your actual backend API, follow these steps:
 

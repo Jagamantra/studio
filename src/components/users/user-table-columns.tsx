@@ -13,7 +13,7 @@ interface CreateUserTableColumnsProps {
   openDeleteDialog: (userData: UserProfile) => void;
   tableLoading: boolean;
   currentUserUid?: string | null;
-  isConfigured: boolean; // This will always be false in the current setup
+  // isConfigured: boolean; // No longer needed as app is always in mock mode
 }
 
 export function createUserTableColumns({ 
@@ -21,8 +21,10 @@ export function createUserTableColumns({
   openDeleteDialog, 
   tableLoading,
   currentUserUid,
-  isConfigured // Will be false
+  // isConfigured // This will always be false in the current setup
 }: CreateUserTableColumnsProps): ColumnDef<UserProfile>[] {
+  const isConfigured = false; // Application always runs in mock mode now
+
   return [
     { 
       accessorKey: "displayName", 

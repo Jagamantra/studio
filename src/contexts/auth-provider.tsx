@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
@@ -8,7 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import {
     DUMMY_USERS_STORAGE_KEY,
     CURRENT_DUMMY_USER_STORAGE_KEY,
-    MFA_VERIFIED_STORAGE_KEY, // Import MFA storage key
+    MFA_VERIFIED_STORAGE_KEY, 
     initialDummyUsersForAuth,
 } from '@/data/dummy-data';
 import * as api from '@/services/api';
@@ -23,14 +24,14 @@ interface MockFirebaseUser {
 
 interface AuthContextType {
   user: UserProfile | null;
-  firebaseUser: MockFirebaseUser | null;
+  firebaseUser: MockFirebaseUser | null; // This will be null as Firebase is removed
   loading: boolean;
   error: Error | null;
-  isConfigured: boolean;
-  isMfaVerified: boolean; // Added MFA status
+  isConfigured: boolean; // Will always be false
+  isMfaVerified: boolean; 
   logout: () => Promise<void>;
   setUser: Dispatch<SetStateAction<UserProfile | null>>;
-  setIsMfaVerified: (verified: boolean) => void; // Added setter for MFA status
+  setIsMfaVerified: (verified: boolean) => void; 
   loginWithDummyCredentials: (email: string, password?: string) => Promise<UserProfile | null>;
   registerDummyUser: (details: Omit<UserProfile, 'uid' | 'photoURL'> & { password?: string }) => Promise<UserProfile | null>;
   updateCurrentLocalUser: (updatedProfile: Partial<UserProfile>) => void;
@@ -40,14 +41,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [mockFirebaseUser, setMockFirebaseUser] = useState<MockFirebaseUser | null>(null);
+  const [mockFirebaseUser, setMockFirebaseUser] = useState<MockFirebaseUser | null>(null); // Will remain null
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isMfaVerified, setIsMfaVerifiedState] = useState(false); // MFA state
+  const [isMfaVerified, setIsMfaVerifiedState] = useState(false); 
   const router = useRouter();
   const pathname = usePathname();
 
-  const configured = false;
+  // Firebase is removed, so the application is always in "mock" mode.
+  const configured = false; 
 
   const getDummyUsersFromStorage = useCallback((): UserProfile[] => {
     if (typeof window === 'undefined') return [];
@@ -58,7 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const saveDummyUsersToStorage = useCallback((users: UserProfile[]) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(users));
-      api.resetMockUsers();
+      // Ensure mock API service layer reflects this change if it caches users
+      api.resetMockUsers(); 
       api.loadMockUsersFromStorage(DUMMY_USERS_STORAGE_KEY);
     }
   }, []);
@@ -68,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!localStorage.getItem(DUMMY_USERS_STORAGE_KEY)) {
         localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(initialDummyUsersForAuth));
       }
+      // Initialize the mock API service with users from local storage
       api.loadMockUsersFromStorage(DUMMY_USERS_STORAGE_KEY);
     }
   }, []);
@@ -92,13 +96,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const loggedInDummyUser: UserProfile = JSON.parse(storedUserJson);
         setUserProfile(loggedInDummyUser);
-        setMockFirebaseUser({
+        // mockFirebaseUser is kept for type consistency but will be null/not used for Firebase operations
+        setMockFirebaseUser({ 
           uid: loggedInDummyUser.uid,
           email: loggedInDummyUser.email,
           displayName: loggedInDummyUser.displayName,
           photoURL: loggedInDummyUser.photoURL,
           phoneNumber: loggedInDummyUser.phoneNumber,
         });
+
 
         const storedMfaVerified = localStorage.getItem(MFA_VERIFIED_STORAGE_KEY);
         if (storedMfaVerified === 'true') {
@@ -114,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setUserProfile(null);
       setMockFirebaseUser(null);
-      localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY); // Clear MFA if no user
+      localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY); 
     }
     setIsMfaVerifiedState(mfaFlag);
     setLoading(false);
@@ -131,25 +137,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isRegisterPage = pathname === '/auth/register';
     const isPublicRoot = pathname === '/';
 
-    if (contextDisplayUser) { // User object exists (logged in at some stage)
-      if (!isMfaVerified) { // MFA NOT completed
-        if (!isMfaPage) { // If not on MFA page, redirect to MFA page
+    if (contextDisplayUser) { 
+      if (!isMfaVerified) { 
+        if (!isMfaPage) { 
           router.replace('/auth/mfa');
         }
-        // If on MFA page, allow it.
-      } else { // MFA IS completed
-        if (isLoginPage || isRegisterPage || isMfaPage) { // If on login, register, or MFA page after verification
+      } else { 
+        if (isLoginPage || isRegisterPage || isMfaPage) { 
           router.replace('/dashboard');
         }
-        // Otherwise, allow access to other pages (e.g., /dashboard, /profile)
       }
-    } else { // No user object (not logged in)
-      if (!isAuthRoute && !isPublicRoot) { // If on a protected page (and not root)
+    } else { 
+      if (!isAuthRoute && !isPublicRoot) { 
         router.replace('/auth/login');
-      } else if (isPublicRoot) { // If on the root page, redirect to login
+      } else if (isPublicRoot) { 
         router.replace('/auth/login');
       }
-      // If already on an auth page, let them stay.
     }
   }, [contextDisplayUser, isMfaVerified, loading, pathname, router]);
 
@@ -158,13 +161,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const user = await api.loginUser(email, password);
+      const user = await api.loginUser(email, password); // Uses mock API
       setUserProfile(user);
-      setMockFirebaseUser(user as MockFirebaseUser);
+      setMockFirebaseUser(user as MockFirebaseUser); // Kept for type consistency
       if (typeof window !== 'undefined') {
         localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(user));
       }
-      setIsMfaVerified(false); // Require MFA after login
+      setIsMfaVerified(false); 
       router.push('/auth/mfa');
       return user;
     } catch (err: any) {
@@ -179,22 +182,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const newUser = await api.registerUser({ ...details, role: details.role || rolesConfig.defaultRole });
+      const newUser = await api.registerUser({ ...details, role: details.role || rolesConfig.defaultRole }); // Uses mock API
       setUserProfile(newUser);
-      setMockFirebaseUser(newUser as MockFirebaseUser);
+      setMockFirebaseUser(newUser as MockFirebaseUser); // Kept for type consistency
       if (typeof window !== 'undefined') {
         localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(newUser));
       }
 
+      // This part correctly updates the global list of dummy users used by the User Management page.
       const currentUsers = getDummyUsersFromStorage();
       currentUsers.push(newUser);
       saveDummyUsersToStorage(currentUsers);
 
-      setIsMfaVerified(false); // Require MFA after registration
+      setIsMfaVerified(false); 
       router.push('/auth/mfa');
       return newUser;
-    } catch (err: any)
-{
+    } catch (err: any) {
       setError(err);
       return null;
     } finally {
@@ -207,11 +210,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(CURRENT_DUMMY_USER_STORAGE_KEY);
-      localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY); // Clear MFA status on logout
+      localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY); 
     }
     setUserProfile(null);
-    setMockFirebaseUser(null);
-    setIsMfaVerified(false); // Reset MFA state
+    setMockFirebaseUser(null); // Clear mock Firebase user
+    setIsMfaVerified(false); 
     router.push('/auth/login');
     setLoading(false);
   }, [router, setIsMfaVerified]);
@@ -222,29 +225,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newProfile = { ...prev, ...updatedProfileData };
       if (typeof window !== 'undefined') {
         localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(newProfile));
+        // Update the user in the global list of dummy users as well
         const allUsers = getDummyUsersFromStorage();
         const userIndex = allUsers.findIndex(u => u.uid === newProfile.uid);
         if (userIndex > -1) {
-          allUsers[userIndex] = { ...allUsers[userIndex], ...newProfile };
+          allUsers[userIndex] = { ...allUsers[userIndex], ...newProfile }; // Ensure full update
           saveDummyUsersToStorage(allUsers);
         }
       }
       return newProfile;
     });
-     setMockFirebaseUser(prev => prev ? { ...prev, ...updatedProfileData } : null);
+     setMockFirebaseUser(prev => prev ? { ...prev, ...updatedProfileData } : null); // Kept for type consistency
   }, [getDummyUsersFromStorage, saveDummyUsersToStorage]);
 
 
   const contextValue = useMemo(() => ({
     user: contextDisplayUser,
-    firebaseUser: mockFirebaseUser,
+    firebaseUser: mockFirebaseUser, // This will be null or a mock structure, not a real Firebase user
     loading,
     error,
-    isConfigured: configured,
-    isMfaVerified, // Expose MFA status
+    isConfigured: configured, // Always false
+    isMfaVerified, 
     logout,
     setUser: setUserProfile,
-    setIsMfaVerified, // Expose MFA status setter
+    setIsMfaVerified, 
     loginWithDummyCredentials,
     registerDummyUser,
     updateCurrentLocalUser,

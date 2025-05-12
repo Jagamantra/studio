@@ -6,29 +6,30 @@ import type { UserProfile } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Users, ShieldQuestion, BarChart3, Info } from 'lucide-react'; // Changed AlertTriangle to Info for a less alarming icon
+import { Users, ShieldQuestion, BarChart3, Info } from 'lucide-react'; 
 import Image from 'next/image';
 
 interface DashboardV1ContentProps {
   userToRenderOnDashboard: UserProfile;
-  isConfigured: boolean; // Will be false as Firebase is removed
+  // isConfigured: boolean; // No longer needed as app is always in mock mode
 }
 
-export function DashboardV1Content({ userToRenderOnDashboard, isConfigured }: DashboardV1ContentProps) {
+export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1ContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
+  const isConfigured = false; // Application always runs in mock mode
+
   return (
     <>
-      {!isConfigured && ( // This condition is always true due to Firebase removal, message updated
+      {!isConfigured && ( 
          <Card className="mb-4 md:mb-6 border-primary bg-primary/10 dark:bg-primary/20">
           <CardHeader className="p-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <Info className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> {/* Changed icon */}
-              <CardTitle className="text-base sm:text-lg text-primary">Application Status: Mock Mode</CardTitle> {/* Updated Title */}
+              <Info className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> 
+              <CardTitle className="text-base sm:text-lg text-primary">Application Status: Mock Mode</CardTitle> 
             </div>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className="text-xs sm:text-sm text-primary/90 dark:text-primary/80">
-              {/* Updated Message */}
               This application is currently running with mock API services and dummy data. 
               All features are available for demonstration. The frontend is designed to be responsive and separate from backend concerns.
             </p>
@@ -133,4 +134,3 @@ export function DashboardV1Content({ userToRenderOnDashboard, isConfigured }: Da
     </>
   );
 }
-
