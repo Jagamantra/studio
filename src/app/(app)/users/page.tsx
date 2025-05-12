@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -8,13 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Loader2, UserPlus, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { initialMockUsersData } from '@/data/dummy-data';
+// import { initialMockUsersData } from '@/data/dummy-data'; // Data now comes from API service
+import * as api from '@/services/api'; // Import the API service
 import { UserFormDialog } from '@/components/users/user-form-dialog';
 import { UserDeleteDialog } from '@/components/users/user-delete-dialog';
 import { createUserTableColumns } from '@/components/users/user-table-columns';
 
 export default function UsersPage() {
-  const { user, loading: authLoading, isConfigured } = useAuth();
+  const { user, loading: authLoading, isConfigured } = useAuth(); // isConfigured will be false
   const { toast } = useToast();
   const [users, setUsers] = React.useState<UserProfile[]>([]);
   const [tableLoading, setTableLoading] = React.useState(false);
@@ -25,18 +27,22 @@ export default function UsersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingUser, setDeletingUser] = React.useState<UserProfile | null>(null);
 
-  React.useEffect(() => {
+  const fetchAndSetUsers = React.useCallback(async () => {
     setTableLoading(true);
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && !isConfigured) {
-        const storedUsers = localStorage.getItem('genesis_dummy_users');
-        setUsers(storedUsers ? JSON.parse(storedUsers) : initialMockUsersData);
-      } else {
-         setUsers(initialMockUsersData);
-      }
+    try {
+      const fetchedUsers = await api.fetchUsers();
+      setUsers(fetchedUsers);
+    } catch (error: any) {
+      toast({ title: "Error fetching users", description: error.message || "Could not load user data.", variant: "destructive" });
+      setUsers([]); // Set to empty array on error
+    } finally {
       setTableLoading(false);
-    }, 300);
-  }, [isConfigured]);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchAndSetUsers();
+  }, [fetchAndSetUsers]);
 
   const openAddUserModal = () => {
     setEditingUser(null);
@@ -56,47 +62,37 @@ export default function UsersPage() {
   const confirmDeleteUser = async () => {
     if (!deletingUser) return;
     setTableLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const updatedUsers = users.filter(u => u.uid !== deletingUser.uid);
-    setUsers(updatedUsers);
-    if (typeof window !== 'undefined' && !isConfigured) {
-      localStorage.setItem('genesis_dummy_users', JSON.stringify(updatedUsers));
+    try {
+      await api.deleteUser(deletingUser.uid);
+      toast({ title: "User Deleted", description: `${deletingUser.displayName} has been removed.` });
+      await fetchAndSetUsers(); // Re-fetch users to update the table
+    } catch (error: any) {
+      toast({ title: "Error Deleting User", description: error.message || "Could not delete user.", variant: "destructive" });
+    } finally {
+      setTableLoading(false);
+      setIsDeleteDialogOpen(false);
+      setDeletingUser(null);
     }
-
-    toast({ title: "User Deleted", description: `${deletingUser.displayName} has been removed.` });
-    setTableLoading(false);
-    setIsDeleteDialogOpen(false);
-    setDeletingUser(null);
   };
 
   const handleUserFormSubmit = async (values: Omit<UserProfile, 'uid' | 'photoURL' | 'password'> & { password?: string }) => {
     setTableLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    let updatedUsersList: UserProfile[];
-
-    if (editingUser) { 
-      updatedUsersList = users.map(u => 
-        u.uid === editingUser.uid ? { ...editingUser, ...values, password: u.password } : u 
-      );
-      toast({ title: "User Updated", description: `${values.displayName} has been updated.` });
-    } else { 
-      const newUser: UserProfile = {
-        uid: `mock-${Date.now()}`, 
-        ...values,
-        photoURL: null, 
-      };
-      updatedUsersList = [newUser, ...users];
-      toast({ title: "User Added", description: `${values.displayName} has been created.` });
+    try {
+      if (editingUser) { 
+        await api.updateUser(editingUser.uid, values);
+        toast({ title: "User Updated", description: `${values.displayName} has been updated.` });
+      } else { 
+        await api.addUser(values);
+        toast({ title: "User Added", description: `${values.displayName} has been created.` });
+      }
+      await fetchAndSetUsers(); // Re-fetch users to update the table
+    } catch (error: any) {
+      toast({ title: editingUser ? "Error Updating User" : "Error Adding User", description: error.message || "Operation failed.", variant: "destructive" });
+    } finally {
+      setTableLoading(false);
+      setIsUserModalOpen(false);
+      setEditingUser(null);
     }
-    setUsers(updatedUsersList);
-    if (typeof window !== 'undefined' && !isConfigured) {
-      localStorage.setItem('genesis_dummy_users', JSON.stringify(updatedUsersList));
-    }
-    setTableLoading(false);
-    setIsUserModalOpen(false);
-    setEditingUser(null);
   };
 
   const columns = React.useMemo(
@@ -106,12 +102,12 @@ export default function UsersPage() {
   
   const anyLoading = authLoading || tableLoading;
 
-  if (authLoading) {
+  if (authLoading && !users.length) { // Show loader if auth is loading AND users haven't been fetched yet
      return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   
-  const effectiveUserRole = user?.role;
-
+  // User role check - this uses the contextDisplayUser which respects dummy roles
+  const effectiveUserRole = user?.role; 
   if (effectiveUserRole !== 'admin') {
     return (
       <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
@@ -128,11 +124,11 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6"> {/* Removed flex-1 */}
+    <div className="space-y-4 md:space-y-6 min-w-0"> 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
         <Button onClick={openAddUserModal} disabled={anyLoading} size="sm">
-          {anyLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />} 
+          {tableLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />} 
           <span className="hidden sm:inline">Add User</span>
           <span className="sm:hidden">Add</span>
         </Button>
@@ -144,7 +140,7 @@ export default function UsersPage() {
         onOpenChange={setIsUserModalOpen}
         editingUser={editingUser}
         onSubmit={handleUserFormSubmit}
-        isLoading={anyLoading}
+        isLoading={tableLoading} // Form-specific loading tied to tableLoading
       />
       
       <UserDeleteDialog
@@ -152,7 +148,7 @@ export default function UsersPage() {
         onOpenChange={setIsDeleteDialogOpen}
         deletingUser={deletingUser}
         onConfirmDelete={confirmDeleteUser}
-        isLoading={anyLoading}
+        isLoading={tableLoading} // Dialog-specific loading
       />
     </div>
   );

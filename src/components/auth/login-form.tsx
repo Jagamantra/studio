@@ -5,8 +5,8 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; 
+// import { signInWithEmailAndPassword } from 'firebase/auth'; // Firebase removed
+// import { auth } from '@/lib/firebase';  // Firebase removed
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -37,7 +37,7 @@ export function LoginForm() {
   const [isClient, setIsClient] = React.useState(false);
   
   const authContext = useAuth(); 
-  const configured = authContext.isConfigured;
+  // const configured = authContext.isConfigured; // isConfigured will always be false
 
   React.useEffect(() => {
     setIsClient(true);
@@ -55,94 +55,51 @@ export function LoginForm() {
     setIsLoading(true);
     setFormError(null);
 
-    if (!isClient) { // Should not happen if button is disabled, but good check
+    if (!isClient) {
         setIsLoading(false);
         return;
     }
 
-    if (!configured) {
-      if (authContext.loginWithDummyCredentials) {
-        try {
-          const dummyUser = await authContext.loginWithDummyCredentials(data.email, data.password);
-          if (dummyUser) {
-            toast({
-              title: 'Dummy Login Successful',
-              description: `Welcome back, ${dummyUser.displayName || 'User'}!`,
-            });
-          } else {
-            const errMsg = authContext.error?.message || "Invalid dummy credentials.";
-            setFormError(errMsg);
-            toast({ title: 'Login Failed', description: errMsg, variant: 'destructive' });
-          }
-        } catch (err: any) {
-          const errMsg = err.message || "Dummy login failed.";
+    // Firebase is removed, directly use dummy login.
+    if (authContext.loginWithDummyCredentials) {
+      try {
+        const dummyUser = await authContext.loginWithDummyCredentials(data.email, data.password);
+        if (dummyUser) {
+          toast({
+            title: 'Login Successful',
+            description: `Welcome back, ${dummyUser.displayName || 'User'}! (Dummy Mode)`,
+          });
+          // Redirect is handled by AuthProvider
+        } else {
+          // loginWithDummyCredentials itself should set error in AuthContext or throw
+          const errMsg = authContext.error?.message || "Invalid dummy credentials.";
           setFormError(errMsg);
-          toast({ title: 'Login Error', description: errMsg, variant: 'destructive' });
-        } finally {
-          setIsLoading(false);
+          toast({ title: 'Login Failed', description: errMsg, variant: 'destructive' });
         }
-      } else {
-         setFormError("Dummy login function not available.");
-         setIsLoading(false);
+      } catch (err: any) {
+        const errMsg = err.message || "Dummy login process failed.";
+        setFormError(errMsg);
+        toast({ title: 'Login Error', description: errMsg, variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
       }
-      return;
-    }
-
-    try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
-      });
-      // Redirect is handled by AuthProvider
-    } catch (err: any) {
-      console.error("Login error:", err);
-      let errorMessage = 'An unexpected error occurred. Please try again.';
-      if (err.code) {
-        switch (err.code) {
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-          case 'auth/invalid-credential':
-            errorMessage = 'Invalid email or password.';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Please enter a valid email address.';
-            break;
-          case 'auth/user-disabled':
-            errorMessage = 'This account has been disabled.';
-            break;
-          case 'auth/invalid-api-key':
-          case 'auth/api-key-not-valid':
-          case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
-            errorMessage = 'Firebase API Key is invalid or missing. Please check your application configuration (.env.local file) and ensure NEXT_PUBLIC_FIREBASE_API_KEY matches the one from your Firebase project settings. Refer to README.md for detailed setup instructions. You may need to restart your development server after updating the .env.local file.';
-            break;
-          default:
-            errorMessage = `Login failed: ${err.message || 'Please check your credentials and try again.'}`;
-        }
-      } else if (err.message) {
-        errorMessage = `Login failed: ${err.message}`;
-      }
-      setFormError(errorMessage);
-      toast({
-        title: 'Login Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
+    } else {
+       setFormError("Login function not available in context.");
+       setIsLoading(false);
+       toast({ title: 'Login Error', description: "Login function not available.", variant: 'destructive' });
     }
   }
   
-  const firebaseNotConfiguredMessage = "Firebase authentication is not configured. Using dummy login. Create accounts via the register page. Default: admin@dummy.com / user@dummy.com, pass: password123";
+  const systemModeMessage = "Application is in Dummy Mode. Login with dummy credentials. Default: admin@dummy.com / user@dummy.com, pass: password123. You can register new dummy users.";
 
   return (
     <div className="grid gap-6">
-      {isClient && !configured && (
+      {isClient && ( // Simplified check, as Firebase is always "not configured"
         <Alert variant="default"> 
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="text-sm sm:text-base">Dummy Mode Active</AlertTitle>
+          <AlertTitle className="text-sm sm:text-base">System Mode</AlertTitle>
           <AlertDescription className="text-xs sm:text-sm">
-            {firebaseNotConfiguredMessage}
+            {systemModeMessage}
           </AlertDescription>
         </Alert>
       )}
@@ -183,7 +140,7 @@ export function LoginForm() {
               <FormItem>
                 <div className="flex items-center justify-between">
                   <FormLabel>Password</FormLabel>
-                  <Link href="#" className="text-sm font-medium text-primary hover:underline underline-offset-4">
+                  <Link href="#" className="text-sm font-medium text-primary hover:underline underline-offset-4" tabIndex={-1} onClick={(e)=>e.preventDefault()}>
                     Forgot password?
                   </Link>
                 </div>
@@ -210,9 +167,9 @@ export function LoginForm() {
           </span>
         </div>
       </div>
-      <Button variant="outline" type="button" disabled={isLoading || !isClient || (isClient && !configured)} className="w-full">
+      <Button variant="outline" type="button" disabled={true} className="w-full">
         <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-        GitHub {isClient && configured ? "(Coming Soon)" : "(Disabled)"}
+        GitHub (Coming Soon)
       </Button>
     </div>
   );

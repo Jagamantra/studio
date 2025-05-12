@@ -13,7 +13,7 @@ interface CreateUserTableColumnsProps {
   openDeleteDialog: (userData: UserProfile) => void;
   tableLoading: boolean;
   currentUserUid?: string | null;
-  isConfigured: boolean;
+  isConfigured: boolean; // This will always be false in the current setup
 }
 
 export function createUserTableColumns({ 
@@ -21,7 +21,7 @@ export function createUserTableColumns({
   openDeleteDialog, 
   tableLoading,
   currentUserUid,
-  isConfigured 
+  isConfigured // Will be false
 }: CreateUserTableColumnsProps): ColumnDef<UserProfile>[] {
   return [
     { 
@@ -68,7 +68,8 @@ export function createUserTableColumns({
               <DropdownMenuItem 
                 onClick={() => openDeleteDialog(row.original)} 
                 className="text-destructive focus:text-destructive focus:bg-destructive/10" 
-                disabled={tableLoading || (currentUserUid === row.original.uid && !isConfigured)}
+                // Since isConfigured is false, deleting current user is disallowed in dummy mode.
+                disabled={tableLoading || (currentUserUid === row.original.uid)}
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete User
               </DropdownMenuItem>

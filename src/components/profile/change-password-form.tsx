@@ -5,14 +5,16 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import type { User as FirebaseUser } from 'firebase/auth';
-import { updatePassword as firebaseUpdatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+// import type { User as FirebaseUser } from 'firebase/auth'; // Firebase type no longer needed
+// import { updatePassword as firebaseUpdatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'; // Firebase removed
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/contexts/auth-provider'; // To get current user
+import * as api from '@/services/api'; // Import API service
 
 const passwordFormSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required."),
@@ -26,13 +28,14 @@ const passwordFormSchema = z.object({
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 interface ChangePasswordFormProps {
-  firebaseUser: FirebaseUser | null;
+  // firebaseUser: FirebaseUser | null; // Replaced by user from useAuth
   anyLoading: boolean;
   setAnyLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function ChangePasswordForm({ firebaseUser, anyLoading, setAnyLoading }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ anyLoading, setAnyLoading }: ChangePasswordFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth(); // Get current user from context
   const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<PasswordFormValues>({
@@ -41,22 +44,21 @@ export function ChangePasswordForm({ firebaseUser, anyLoading, setAnyLoading }: 
   });
 
   async function onSubmit(data: PasswordFormValues) {
-    if (!firebaseUser || !firebaseUser.email) return;
+    if (!user || !user.uid) { // Check for user and user.uid
+        toast({ title: 'Error', description: 'User not found. Please log in again.', variant: 'destructive' });
+        return;
+    }
     setIsLoading(true);
     setAnyLoading(true);
     try {
-      const credential = EmailAuthProvider.credential(firebaseUser.email, data.currentPassword);
-      await reauthenticateWithCredential(firebaseUser, credential);
-      await firebaseUpdatePassword(firebaseUser, data.newPassword);
-      toast({ title: 'Password Updated', description: 'Your password has been changed successfully. You might be logged out for security.' });
+      // Use API service to change password
+      await api.changeUserPassword(user.uid, data.currentPassword, data.newPassword);
+      toast({ title: 'Password Updated', description: 'Your password has been changed successfully. (Mocked)' });
       form.reset();
     } catch (error: any) {
-      let desc = 'An error occurred.';
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        desc = 'Incorrect current password.';
-      } else if (error.code === 'auth/too-many-requests') {
-        desc = 'Too many attempts. Please try again later.';
-      }
+      let desc = error.message || 'An error occurred during password update.';
+      // Example: if your mock API sets specific error messages
+      // if (error.message === 'Incorrect current password.') { ... }
       toast({ title: 'Password Update Failed', description: desc, variant: 'destructive' });
     } finally {
       setIsLoading(false);

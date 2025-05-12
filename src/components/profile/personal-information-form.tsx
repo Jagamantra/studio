@@ -5,8 +5,8 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import type { User as FirebaseUser } from 'firebase/auth';
-import { updateProfile as firebaseUpdateProfile } from 'firebase/auth';
+// import type { User as FirebaseUser } from 'firebase/auth'; // Firebase types no longer needed
+// import { updateProfile as firebaseUpdateProfile } from 'firebase/auth'; // Firebase removed
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -15,11 +15,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Edit2, UserCircle } from 'lucide-react';
 import type { UserProfile } from '@/types';
+import { useAuth } from '@/contexts/auth-provider'; // For updating local user state
+import * as api from '@/services/api'; // Import API service
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters.').max(50, 'Name cannot exceed 50 characters.').optional(),
   email: z.string().email('Invalid email address.').optional(), 
-  phoneNumber: z.string().optional(), 
+  phoneNumber: z.string().optional().nullable(), 
   photoURL: z.string().url('Invalid URL for photo.').optional().nullable(), 
 });
 
@@ -27,14 +29,15 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface PersonalInformationFormProps {
   user: UserProfile;
-  firebaseUser: FirebaseUser | null;
-  setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  // firebaseUser: FirebaseUser | null; // No longer needed
+  setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>; // Kept for local state update via AuthContext
   anyLoading: boolean;
   setAnyLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function PersonalInformationForm({ user, firebaseUser, setUser, anyLoading, setAnyLoading }: PersonalInformationFormProps) {
+export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoading }: PersonalInformationFormProps) {
   const { toast } = useToast();
+  const { updateCurrentLocalUser } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(user?.photoURL || null);
@@ -44,7 +47,7 @@ export function PersonalInformationForm({ user, firebaseUser, setUser, anyLoadin
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       displayName: user?.displayName || '',
-      email: user?.email || '',
+      email: user?.email || '', // Email is typically not editable this way
       phoneNumber: user?.phoneNumber || '',
       photoURL: user?.photoURL || '',
     },
@@ -78,30 +81,32 @@ export function PersonalInformationForm({ user, firebaseUser, setUser, anyLoadin
   };
 
   async function onSubmit(data: ProfileFormValues) {
-    if (!firebaseUser) return;
+    if (!user) return; // Should not happen if user is on this page
     setIsLoading(true);
     setAnyLoading(true);
     try {
-      // If a new file was selected, previewUrl holds its data URI.
-      // Otherwise, use data.photoURL which might be the existing URL or null if cleared.
       const photoURLToUpdate = selectedFile ? previewUrl : data.photoURL;
 
-      await firebaseUpdateProfile(firebaseUser, {
+      // Use API service to update profile
+      const updatedProfile = await api.updateUserProfile(user.uid, {
         displayName: data.displayName,
-        photoURL: photoURLToUpdate, 
+        photoURL: photoURLToUpdate,
+        phoneNumber: data.phoneNumber,
       });
       
-      // Update local user state
-      setUser(prevUser => prevUser ? { ...prevUser, ...data, photoURL: photoURLToUpdate } : null);
-      form.reset({ ...data, photoURL: photoURLToUpdate }, { keepValues: true, keepDirty: false }); // Reset form with new values, clear dirty state
+      // Update user state in AuthContext and locally
+      updateCurrentLocalUser(updatedProfile); // This updates AuthContext's user state
+      setUser(updatedProfile); // This updates the local page's user state (might be redundant if AuthContext propagates fast enough)
+
+      form.reset({ ...updatedProfile, email: user.email }, { keepValues: true, keepDirty: false });
 
       toast({ title: 'Profile Updated', description: 'Your personal information has been saved.' });
     } catch (error: any) {
-      toast({ title: 'Update Failed', description: error.message, variant: 'destructive' });
+      toast({ title: 'Update Failed', description: error.message || "Could not update profile.", variant: 'destructive' });
     } finally {
       setIsLoading(false);
       setAnyLoading(false);
-      setSelectedFile(null); // Clear selected file after submission
+      setSelectedFile(null);
     }
   }
   
@@ -157,7 +162,7 @@ export function PersonalInformationForm({ user, firebaseUser, setUser, anyLoadin
                 <FormLabel htmlFor="photo-upload-info" className="block text-sm font-medium">Profile Picture</FormLabel>
                 <p id="photo-upload-info" className="text-xs text-muted-foreground">
                   Click the edit icon on the image to change.
-                  PNG, JPG, GIF up to 5MB.
+                  PNG, JPG, GIF up to 5MB. (Upload is mocked)
                 </p>
               </div>
             </div>
@@ -167,7 +172,7 @@ export function PersonalInformationForm({ user, firebaseUser, setUser, anyLoadin
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input placeholder="Your full name" {...field} disabled={isLoading || anyLoading} /></FormControl>
+                  <FormControl><Input placeholder="Your full name" {...field} value={field.value || ''} disabled={isLoading || anyLoading} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -178,8 +183,8 @@ export function PersonalInformationForm({ user, firebaseUser, setUser, anyLoadin
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email Address</FormLabel>
-                  <FormControl><Input type="email" placeholder="your@email.com" {...field} disabled /></FormControl>
-                  <FormDescription>Email address cannot be changed here for security reasons.</FormDescription>
+                  <FormControl><Input type="email" placeholder="your@email.com" {...field} value={field.value || ''} disabled /></FormControl>
+                  <FormDescription>Email address cannot be changed.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -190,7 +195,7 @@ export function PersonalInformationForm({ user, firebaseUser, setUser, anyLoadin
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Phone Number (Optional)</FormLabel>
-                  <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} disabled={isLoading || anyLoading} /></FormControl>
+                  <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} disabled={isLoading || anyLoading} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
