@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from '@/lib/firebase';
+import { auth } from '@/lib/firebase'; // isFirebaseConfigured is now from useAuth
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -21,11 +21,11 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useAuth } from '@/contexts/auth-provider'; // Import useAuth
+import { useAuth } from '@/contexts/auth-provider'; 
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
-  password: z.string().min(1, { message: 'Password is required.' }), // Min 1 for dummy login
+  password: z.string().min(1, { message: 'Password is required.' }), 
 });
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
@@ -33,11 +33,15 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 export function LoginForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [formError, setFormError] = React.useState<string | null>(null); // Renamed error to formError
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [isClient, setIsClient] = React.useState(false);
   
-  // Get isConfigured and dummy login methods from useAuth
   const authContext = useAuth(); 
   const configured = authContext.isConfigured;
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -52,7 +56,6 @@ export function LoginForm() {
     setFormError(null);
 
     if (!configured) {
-      // Use dummy login
       if (authContext.loginWithDummyCredentials) {
         try {
           const dummyUser = await authContext.loginWithDummyCredentials(data.email, data.password);
@@ -61,9 +64,8 @@ export function LoginForm() {
               title: 'Dummy Login Successful',
               description: `Welcome back, ${dummyUser.displayName || 'User'}!`,
             });
-            // AuthProvider handles redirection
           } else {
-            const errMsg = "Invalid dummy credentials.";
+            const errMsg = authContext.error?.message || "Invalid dummy credentials.";
             setFormError(errMsg);
             toast({ title: 'Login Failed', description: errMsg, variant: 'destructive' });
           }
@@ -81,14 +83,12 @@ export function LoginForm() {
       return;
     }
 
-    // Firebase login
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
       });
-      // AuthProvider will handle redirection
     } catch (err: any) {
       console.error("Login error:", err);
       let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -131,8 +131,8 @@ export function LoginForm() {
 
   return (
     <div className="grid gap-6">
-      {!configured && (
-        <Alert variant="default"> {/* Changed to default variant for info */}
+      {isClient && !configured && (
+        <Alert variant="default"> 
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Dummy Mode Active</AlertTitle>
           <AlertDescription>
@@ -204,9 +204,9 @@ export function LoginForm() {
           </span>
         </div>
       </div>
-      <Button variant="outline" type="button" disabled={isLoading || !configured} className="w-full">
+      <Button variant="outline" type="button" disabled={isLoading || (isClient && !configured)} className="w-full">
         <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-        GitHub {configured ? "(Coming Soon)" : "(Disabled)"}
+        GitHub {isClient && configured ? "(Coming Soon)" : "(Disabled)"}
       </Button>
     </div>
   );

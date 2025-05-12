@@ -1,6 +1,7 @@
 
 'use client';
 
+import React, { useState, useEffect } from 'react'; // Import React, useState, useEffect
 import { useAuth } from '@/contexts/auth-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,13 @@ import Image from 'next/image';
 
 export default function DashboardPage() {
   const { user, loading, isConfigured } = useAuth();
+  const [isClient, setIsClient] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient || loading) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -39,8 +45,6 @@ export default function DashboardPage() {
   }
   
   if (!user) {
-    // This case should ideally be handled by AuthProvider redirecting to login.
-    // However, as a fallback:
     return (
       <div className="flex flex-1 items-center justify-center">
         <Card className="w-full max-w-md text-center">
@@ -157,7 +161,6 @@ export default function DashboardPage() {
                  <Image src="https://picsum.photos/seed/dashboard2/400/200" alt="Feature placeholder 2" width={400} height={200} className="rounded-md mb-4" data-ai-hint="modern workspace" />
                 <h3 className="text-lg font-semibold mb-1">Explore Theme Options</h3>
                 <p className="text-sm text-muted-foreground mb-3">Adjust themes, colors, and more via the palette icon in the header.</p>
-                 {/* No button, as it's a header action */}
             </div>
         </CardContent>
       </Card>

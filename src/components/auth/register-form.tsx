@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; // isFirebaseConfigured is now from useAuth
+import { auth } from '@/lib/firebase'; 
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -22,7 +22,7 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from 'next/navigation';
 import { rolesConfig } from '@/config/roles.config';
-import { useAuth } from '@/contexts/auth-provider'; // Import useAuth
+import { useAuth } from '@/contexts/auth-provider'; 
 import type { UserProfile } from '@/types';
 
 const registerFormSchema = z.object({
@@ -45,10 +45,15 @@ export function RegisterForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [formError, setFormError] = React.useState<string | null>(null); // Renamed error to formError
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [isClient, setIsClient] = React.useState(false);
   
   const authContext = useAuth();
   const configured = authContext.isConfigured;
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -65,14 +70,13 @@ export function RegisterForm() {
     setFormError(null);
 
     if (!configured) {
-      // Use dummy registration
       if (authContext.registerDummyUser) {
         try {
           const newUserProfile: Omit<UserProfile, 'uid'> & { password?: string } = {
             displayName: data.displayName,
             email: data.email,
-            password: data.password, // Storing password for dummy check
-            role: rolesConfig.defaultRole, // Assign default role
+            password: data.password, 
+            role: rolesConfig.defaultRole, 
             photoURL: null,
             phoneNumber: null,
           };
@@ -82,7 +86,6 @@ export function RegisterForm() {
               title: 'Dummy Registration Successful',
               description: 'Your dummy account has been created. Redirecting...',
             });
-            // AuthProvider handles redirection
           } else {
              const errMsg = authContext.error?.message || "Failed to register dummy user.";
              setFormError(errMsg);
@@ -102,13 +105,11 @@ export function RegisterForm() {
       return;
     }
 
-    // Firebase registration
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       await updateProfile(userCredential.user, {
         displayName: data.displayName,
       });
-      // Firestore/Custom claims logic would go here if implementing server-side roles for Firebase
       toast({
         title: 'Registration Successful',
         description: 'Your account has been created. Redirecting...',
@@ -154,8 +155,8 @@ export function RegisterForm() {
 
   return (
     <div className="grid gap-6">
-      {!configured && (
-         <Alert variant="default"> {/* Changed to default variant for info */}
+      {isClient && !configured && (
+         <Alert variant="default"> 
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Dummy Mode Active</AlertTitle>
           <AlertDescription>

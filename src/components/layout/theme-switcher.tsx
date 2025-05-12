@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Moon, Sun, Palette, SquareRaduis, Check, ChevronsUpDown, GitBranch } from 'lucide-react';
+import { Moon, Sun, Palette, SquareRadical, Check, ChevronsUpDown, GitBranch } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -102,7 +102,7 @@ export function ThemeSwitcher() {
         {/* Border Radius */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
-            <SquareRaduis className="mr-2 h-4 w-4" />
+            <SquareRadical className="mr-2 h-4 w-4" />
             <span>Radius: {currentRadius?.name || 'Default'}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
