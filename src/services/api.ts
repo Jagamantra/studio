@@ -115,6 +115,24 @@ export const registerUser = async (userData: Omit<UserProfile, 'uid' | 'photoURL
     return addUser(userData); // Re-use the addUser logic
 };
 
+export const forgotPassword = async (email: string): Promise<void> => {
+  console.log(`API Service: Mock forgotPassword called for email: ${email}`);
+  // Simulate checking if user exists
+  const userExists = currentMockUsers.some(u => u.email === email);
+  if (!userExists) {
+    // In a real app, you might not want to reveal if an email exists or not for security reasons.
+    // For this mock, we can simulate a delay or a generic success message.
+    console.log(`API Service: Mock user with email ${email} not found, but pretending to send email.`);
+    // Simulate a delay
+    await new Promise(resolve => setTimeout(resolve, 700));
+    return Promise.resolve();
+  }
+  // Simulate sending a reset email
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  console.log(`API Service: Mock password reset email sent to ${email}.`);
+  return Promise.resolve();
+};
+
 
 // Function to reset mock users to initial state for testing or specific scenarios
 export const resetMockUsers = () => {
