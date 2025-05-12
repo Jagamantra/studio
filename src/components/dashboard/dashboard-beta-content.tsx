@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -15,9 +14,10 @@ interface DashboardBetaContentProps {
   userToRenderOnDashboard: UserProfile;
 }
 
+// Updated chartConfig to use direct CSS variable references
 const betaChartConfig = {
-  newUsers: { label: "New Users", color: "hsl(var(--chart-1))" },
-  churnedUsers: { label: "Churned Users", color: "hsl(var(--chart-2))" },
+  newUsers: { label: "New Users", color: "var(--chart-1)" }, // Changed from hsl(var(--chart-1))
+  churnedUsers: { label: "Churned Users", color: "var(--chart-2)" }, // Changed from hsl(var(--chart-2))
 } satisfies ChartConfig;
 
 
