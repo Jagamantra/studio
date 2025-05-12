@@ -37,15 +37,15 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
   return (
     <>
       {!isConfigured && (
-         <Card className="mb-4 md:mb-6 border-accent bg-accent/10 dark:bg-accent/20">
+         <Card className="mb-4 md:mb-6 border-primary bg-primary/10 dark:bg-primary/20">
           <CardHeader className="p-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
-              <CardTitle className="text-base sm:text-lg text-accent">Demo Mode</CardTitle>
+              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <CardTitle className="text-base sm:text-lg text-primary">Demo Mode</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-xs sm:text-sm text-accent/90 dark:text-accent/80">
+            <p className="text-xs sm:text-sm text-primary/90 dark:text-primary/80">
               Firebase is not configured. You are viewing the dashboard with sample data. Some interactive features might be limited.
             </p>
           </CardContent>
@@ -57,7 +57,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
             <CardTitle className="text-sm font-medium">
               Your Role
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="text-lg md:text-xl font-bold capitalize">{userToRenderOnDashboard.role}</div>
@@ -72,7 +72,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
                 <CardTitle className="text-sm font-medium">User Management</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="text-lg md:text-xl font-bold">Manage Users</div>
@@ -88,7 +88,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
                 <CardTitle className="text-sm font-medium">Config Advisor</CardTitle>
-                <ShieldQuestion className="h-4 w-4 text-muted-foreground" />
+                <ShieldQuestion className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="text-lg md:text-xl font-bold">AI Analyzer</div>
@@ -107,7 +107,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
            <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
                <CardTitle className="text-sm font-medium">My Activity</CardTitle>
-               <BarChart3 className="h-4 w-4 text-muted-foreground" />
+               <BarChart3 className="h-4 w-4 text-primary" />
              </CardHeader>
              <CardContent className="p-4 pt-0">
                <div className="text-lg md:text-xl font-bold">Coming Soon</div>
@@ -197,7 +197,7 @@ const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashb
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
                 <CardTitle className="text-sm font-medium">Your Role (Beta)</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent className="p-4 pt-0">
                 <div className="text-lg md:text-xl font-bold capitalize">{userToRenderOnDashboard.role}</div>
@@ -384,11 +384,11 @@ export default function DashboardPage() {
                   <Button 
                     variant={appVersion === 'dev' ? 'destructive' : 'ghost'} 
                     size="icon" 
-                    className="h-7 w-7 sm:h-8 sm:w-8" // Adjusted button size
+                    className="h-7 w-7 sm:h-8 sm:w-8" 
                   >
                     {appVersion === 'dev' ? 
-                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" /> :  // Adjusted icon size
-                      <GitBranch className="h-4 w-4 sm:h-5 sm:w-5" />       // Adjusted icon size
+                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" /> :  
+                      <GitBranch className="h-4 w-4 sm:h-5 sm:w-5" />       
                     }
                   </Button>
                 </TooltipTrigger>
