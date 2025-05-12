@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,9 +6,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, Info } from 'lucide-react';
-import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from '@/ai/flows/config-advisor';
+import { Loader2, ShieldQuestion, Lightbulb, Info } from 'lucide-react';
+import type { AnalyzeConfigInput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
 import { projectConfig as appProjectConfig } from '@/config/project.config'; 
@@ -17,6 +17,7 @@ import { placeholderSidebarConfigData, placeholderRolesConfigData } from '@/data
 import { ProjectConfigFormCard } from '@/components/config-advisor/project-config-form-card';
 import { RawConfigInputCard } from '@/components/config-advisor/raw-config-input-card';
 import { AISuggestionsDisplay } from '@/components/config-advisor/ai-suggestions-display';
+import { useAiConfigAnalysis } from '@/hooks/use-ai-config-analysis'; // Import the new hook
 
 const projectConfigFormSchema = z.object({
   appName: z.string().min(1, 'App name is required.').max(100, 'App name cannot exceed 100 characters.'),
@@ -48,6 +49,9 @@ export default function ConfigAdvisorPage() {
     availableAccentColors, 
     availableBorderRadii 
   } = useTheme();
+
+  // Use the custom hook for AI analysis state and logic
+  const { suggestions, isLoadingAi, error: aiError, performAnalysis, resetAnalysis } = useAiConfigAnalysis();
   
   const projectConfigForm = useForm<ProjectConfigFormValues>({
     resolver: zodResolver(projectConfigFormSchema),
@@ -62,12 +66,9 @@ export default function ConfigAdvisorPage() {
   const [sidebarConfigContent, setSidebarConfigContent] = useState('');
   const [rolesConfigContent, setRolesConfigContent] = useState('');
   
-  const [suggestions, setSuggestions] = useState<AnalyzeConfigOutput['suggestions'] | null>(null);
-  const [isLoadingAi, setIsLoadingAi] = useState(false); 
   const [isSavingProjectConfig, setIsSavingProjectConfig] = useState(false);
   const [isResettingProjectConfig, setIsResettingProjectConfig] = useState(false);
   const [isLoadingExamples, setIsLoadingExamples] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showPlaceholders, setShowPlaceholders] = useState(true); 
 
   useEffect(() => {
@@ -150,6 +151,7 @@ export default function ConfigAdvisorPage() {
     setSidebarConfigContent(placeholderSidebarConfigData);
     setRolesConfigContent(placeholderRolesConfigData);
     setShowPlaceholders(false); 
+    resetAnalysis(); // Clear previous AI suggestions
     setIsLoadingExamples(false);
     toast({
       title: 'Example Configurations Loaded',
@@ -162,7 +164,7 @@ export default function ConfigAdvisorPage() {
     const isValid = await projectConfigForm.trigger();
     if (isValid) {
       const projectConfigValues = projectConfigForm.getValues();
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500)); 
 
       setAppName(projectConfigValues.appName);
       const selectedAccent = availableAccentColors.find(c => c.name === projectConfigValues.defaultAccentColorName);
@@ -219,10 +221,6 @@ export default function ConfigAdvisorPage() {
   };
 
   const handleAnalyzeSubmit = async () => {
-    setIsLoadingAi(true);
-    setError(null);
-    setSuggestions(null);
-
     const projectConfigData = projectConfigForm.getValues();
     const generatedProjectConfigContent = `
 // project.config.ts
@@ -236,27 +234,13 @@ export const projectConfig = {
   defaultAppVersionId: '${projectConfigData.defaultAppVersionId}',
 };`.trim();
 
-    if (!generatedProjectConfigContent.trim() && !sidebarConfigContent.trim() && !rolesConfigContent.trim()) {
-        setError("Please provide content or configuration for at least one file to analyze.");
-        setIsLoadingAi(false);
-        return;
-    }
-
     const input: AnalyzeConfigInput = {
       projectConfig: generatedProjectConfigContent,
       sidebarConfig: sidebarConfigContent,
       rolesConfig: rolesConfigContent,
     };
 
-    try {
-      const result = await analyzeConfig(input);
-      setSuggestions(result.suggestions);
-    } catch (err: any) {
-      console.error('Error analyzing config:', err);
-      setError(err.message || 'Failed to get suggestions from AI. Ensure Genkit services are running if in local development (npm run genkit:dev).');
-    } finally {
-      setIsLoadingAi(false);
-    }
+    await performAnalysis(input); // Call the analysis function from the hook
   };
   
   if (authLoading) {
@@ -282,7 +266,7 @@ export const projectConfig = {
   const anyLoading = isLoadingAi || isSavingProjectConfig || isResettingProjectConfig || isLoadingExamples;
 
   return (
-    <div className="space-y-4 md:space-y-6"> {/* Removed flex-1 */}
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
         <div className="flex gap-2">
@@ -313,9 +297,9 @@ export const projectConfig = {
 
       <RawConfigInputCard
         sidebarConfigContent={sidebarConfigContent}
-        handleSidebarChange={(value) => { setSidebarConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false);}}
+        handleSidebarChange={(value) => { setSidebarConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false); resetAnalysis(); }}
         rolesConfigContent={rolesConfigContent}
-        handleRolesChange={(value) => { setRolesConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false);}}
+        handleRolesChange={(value) => { setRolesConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false); resetAnalysis(); }}
         showPlaceholders={showPlaceholders}
         placeholderSidebarConfigData={placeholderSidebarConfigData}
         placeholderRolesConfigData={placeholderRolesConfigData}
@@ -325,8 +309,9 @@ export const projectConfig = {
       <AISuggestionsDisplay
         suggestions={suggestions}
         isLoadingAi={isLoadingAi}
-        error={error}
+        error={aiError}
       />
     </div>
   );
 }
+
