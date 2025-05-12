@@ -21,8 +21,8 @@ export default {
   				foreground: 'hsl(var(--popover-foreground))'
   			},
   			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
+  				DEFAULT: 'var(--primary)', // Corrected: var() instead of hsl(var())
+  				foreground: 'var(--primary-foreground)' // Corrected
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
@@ -33,8 +33,8 @@ export default {
   				foreground: 'hsl(var(--muted-foreground))'
   			},
   			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
+  				DEFAULT: 'var(--accent)', // Corrected
+  				foreground: 'var(--accent-foreground)' // Corrected
   			},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
@@ -42,7 +42,7 @@ export default {
   			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
+  			ring: 'var(--ring)', // Corrected
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
@@ -51,14 +51,14 @@ export default {
   				'5': 'hsl(var(--chart-5))'
   			},
   			sidebar: {
-  				DEFAULT: 'hsl(var(--sidebar-background))',
-  				foreground: 'hsl(var(--sidebar-foreground))',
-  				primary: 'hsl(var(--sidebar-primary))',
-  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-  				accent: 'hsl(var(--sidebar-accent))',
-  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-  				border: 'hsl(var(--sidebar-border))',
-  				ring: 'hsl(var(--sidebar-ring))'
+  				DEFAULT: 'var(--sidebar-background)', // Corrected
+  				foreground: 'var(--sidebar-foreground)', // Corrected
+  				primary: 'var(--sidebar-primary)', // Corrected
+  				'primary-foreground': 'var(--sidebar-primary-foreground)', // Corrected
+  				accent: 'var(--sidebar-accent)', // Corrected
+  				'accent-foreground': 'var(--sidebar-accent-foreground)', // Corrected
+  				border: 'var(--sidebar-border)', // Corrected
+  				ring: 'var(--sidebar-ring)' // Corrected
   			}
   		},
   		borderRadius: {
