@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -85,31 +84,31 @@ export function LoginForm() {
   const systemModeMessage = "Application is running with mock API and dummy data. Default credentials: admin@dummy.com / user@dummy.com, pass: password123. New dummy users can be registered.";
 
   return (
-    <div className="grid gap-4"> {/* Reduced gap from gap-6 to gap-4 */}
+    <div className="grid gap-3 sm:gap-4"> {/* Reduced gap */}
       {isClient && ( 
-        <Alert variant="default"> 
+        <Alert variant="default" className="p-2 sm:p-3"> {/* Reduced padding */}
           <Info className="h-4 w-4" /> 
-          <AlertTitle className="text-xs sm:text-sm">System Mode</AlertTitle>
-          <AlertDescription className="text-[11px] sm:text-xs leading-tight sm:leading-normal">
+          <AlertTitle className="text-xs font-semibold">System Mode</AlertTitle> {/* Ensured small text */}
+          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight"> {/* Further reduced text size */}
             {systemModeMessage}
           </AlertDescription>
         </Alert>
       )}
       {formError && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="p-2 sm:p-3"> {/* Reduced padding */}
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="text-xs sm:text-sm">Error</AlertTitle> {/* Reduced font size */}
-          <AlertDescription className="text-[11px] sm:text-xs leading-tight sm:leading-normal">{formError}</AlertDescription> {/* Reduced font size */}
+          <AlertTitle className="text-xs font-semibold">Error</AlertTitle> {/* Ensured small text */}
+          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">{formError}</AlertDescription> {/* Further reduced text size */}
         </Alert>
       )}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"> {/* Reduced space-y from 6 to 4 */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4"> {/* Reduced space-y */}
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel className="text-sm">Email</FormLabel> {/* Ensured text size */}
                 <FormControl>
                   <Input
                     type="email"
@@ -119,6 +118,7 @@ export function LoginForm() {
                     autoCorrect="off"
                     disabled={isLoading || !isClient}
                     {...field}
+                    className="h-9 sm:h-10 text-sm" /* Adjusted input height and text */
                   />
                 </FormControl>
                 <FormMessage />
@@ -131,25 +131,25 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel>Password</FormLabel>
-                  <Link href="#" className="text-sm font-medium text-primary hover:underline underline-offset-4" tabIndex={-1} onClick={(e)=>e.preventDefault()}>
+                  <FormLabel className="text-sm">Password</FormLabel> {/* Ensured text size */}
+                  <Link href="#" className="text-xs sm:text-sm font-medium text-primary hover:underline underline-offset-4" tabIndex={-1} onClick={(e)=>e.preventDefault()}>
                     Forgot password?
                   </Link>
                 </div>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} />
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" /> {/* Adjusted input height and text */}
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" disabled={isLoading || !isClient}>
+          <Button type="submit" className="w-full h-9 sm:h-10 text-sm" disabled={isLoading || !isClient}> {/* Adjusted button height and text */}
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
         </form>
       </Form>
-      <div className="relative">
+      <div className="relative mt-3 sm:mt-4"> {/* Reduced margin */}
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
@@ -159,7 +159,7 @@ export function LoginForm() {
           </span>
         </div>
       </div>
-      <Button variant="outline" type="button" disabled={true} className="w-full">
+      <Button variant="outline" type="button" disabled={true} className="w-full h-9 sm:h-10 text-sm"> {/* Adjusted button height and text */}
         <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
         GitHub (Coming Soon)
       </Button>

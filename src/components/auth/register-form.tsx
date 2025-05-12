@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -104,33 +103,33 @@ export function RegisterForm() {
   const systemModeMessage = "Application is running with mock API and dummy data. Your data will be stored locally in your browser.";
 
   return (
-    <div className="grid gap-4"> {/* Reduced gap from gap-6 to gap-4 */}
+    <div className="grid gap-3 sm:gap-4"> {/* Reduced gap */}
       {isClient && ( 
-         <Alert variant="default"> 
+         <Alert variant="default" className="p-2 sm:p-3"> {/* Reduced padding */}
           <Info className="h-4 w-4" /> 
-          <AlertTitle className="text-xs sm:text-sm">System Mode</AlertTitle>
-          <AlertDescription className="text-[11px] sm:text-xs leading-tight sm:leading-normal">
+          <AlertTitle className="text-xs font-semibold">System Mode</AlertTitle> {/* Ensured small text */}
+          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight"> {/* Further reduced text size */}
             {systemModeMessage}
           </AlertDescription>
         </Alert>
       )}
        {formError && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="p-2 sm:p-3"> {/* Reduced padding */}
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="text-xs sm:text-sm">Error</AlertTitle> {/* Reduced font size */}
-          <AlertDescription className="text-[11px] sm:text-xs leading-tight sm:leading-normal">{formError}</AlertDescription> {/* Reduced font size */}
+          <AlertTitle className="text-xs font-semibold">Error</AlertTitle> {/* Ensured small text */}
+          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">{formError}</AlertDescription> {/* Further reduced text size */}
         </Alert>
       )}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3"> {/* Reduced space-y from 4 to 3 */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 sm:space-y-3"> {/* Reduced space-y */}
           <FormField
             control={form.control}
             name="displayName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel className="text-sm">Full Name</FormLabel> {/* Ensured text size */}
                 <FormControl>
-                  <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} />
+                  <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" /> {/* Adjusted input height and text */}
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -141,7 +140,7 @@ export function RegisterForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel className="text-sm">Email</FormLabel> {/* Ensured text size */}
                 <FormControl>
                   <Input
                     type="email"
@@ -151,6 +150,7 @@ export function RegisterForm() {
                     autoCorrect="off"
                     disabled={isLoading || !isClient}
                     {...field}
+                    className="h-9 sm:h-10 text-sm" /* Adjusted input height and text */
                   />
                 </FormControl>
                 <FormMessage />
@@ -162,9 +162,9 @@ export function RegisterForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel className="text-sm">Password</FormLabel> {/* Ensured text size */}
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} />
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" /> {/* Adjusted input height and text */}
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -175,15 +175,15 @@ export function RegisterForm() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
+                <FormLabel className="text-sm">Confirm Password</FormLabel> {/* Ensured text size */}
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} />
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" /> {/* Adjusted input height and text */}
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" disabled={isLoading || !isClient}>
+          <Button type="submit" className="w-full h-9 sm:h-10 text-sm" disabled={isLoading || !isClient}> {/* Adjusted button height and text */}
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Account
           </Button>

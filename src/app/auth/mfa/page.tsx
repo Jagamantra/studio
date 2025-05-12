@@ -76,39 +76,39 @@ export default function MfaPage() {
   return (
     <>
       {mockOtp && (
-        <Alert variant="default" className="mb-4">
+        <Alert variant="default" className="mb-3 sm:mb-4 p-2 sm:p-3"> {/* Reduced padding and margin */}
           <Info className="h-4 w-4" />
-          <AlertTitle className="text-xs sm:text-sm">Mock MFA Code</AlertTitle>
-          <AlertDescription className="text-[11px] sm:text-xs leading-tight sm:leading-normal">
-            For testing purposes, your One-Time Password is: <strong className="text-base sm:text-lg font-semibold tracking-wider">{mockOtp}</strong>
+          <AlertTitle className="text-xs font-semibold">Mock MFA Code</AlertTitle> {/* Ensured small text */}
+          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight"> {/* Further reduced text size */}
+            For testing purposes, your One-Time Password is: <strong className="text-sm sm:text-base font-semibold tracking-wider">{mockOtp}</strong>
           </AlertDescription>
         </Alert>
       )}
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <KeyRound className="h-6 w-6 sm:h-8 sm:w-8" />
+        <CardHeader className="text-center p-3 sm:p-4"> {/* Reduced padding */}
+          <div className="mx-auto mb-1 sm:mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/10 text-primary"> {/* Smaller icon container */}
+            <KeyRound className="h-5 w-5 sm:h-6 sm:w-6" /> {/* Smaller icon */}
           </div>
-          <CardTitle className="text-lg sm:text-xl">Two-Factor Authentication</CardTitle>
-          <CardDescription className="text-[11px] sm:text-xs">
+          <CardTitle className="text-base sm:text-lg">Two-Factor Authentication</CardTitle> {/* Smaller title */}
+          <CardDescription className="text-[10px] sm:text-xs"> {/* Smaller description */}
             Enter the 6-digit code shown in the alert above.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 p-3 sm:p-4"> {/* Reduced padding and space-y */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3"> {/* Reduced space-y */}
               <FormField
                 control={form.control}
                 name="otp"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>One-Time Password</FormLabel>
+                    <FormLabel className="text-xs sm:text-sm">One-Time Password</FormLabel> {/* Smaller label */}
                     <FormControl>
                       <Input
                         placeholder="Enter 6-digit OTP"
                         maxLength={6}
                         {...field}
-                        className="h-10 sm:h-12 text-center text-base sm:text-lg tracking-[0.2em] sm:tracking-[0.3em]"
+                        className="h-9 sm:h-10 text-center text-sm sm:text-base tracking-[0.15em] sm:tracking-[0.2em]" /* Smaller input and tracking */
                         disabled={isLoading}
                         autoComplete="one-time-code"
                         inputMode="numeric"
@@ -118,17 +118,17 @@ export default function MfaPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full h-9 sm:h-10 text-sm" disabled={isLoading}> {/* Smaller button */}
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Verify Code
               </Button>
             </form>
           </Form>
-          <div className="text-center text-sm">
-            <p className="text-muted-foreground text-xs">
+          <div className="text-center text-xs sm:text-sm"> {/* Smaller text */}
+            <p className="text-muted-foreground text-[10px] sm:text-xs"> {/* Smaller text */}
               This is a mock MFA screen. No real authentication is performed.
             </p>
-            <Button variant="link" className="mt-1 p-0 h-auto" asChild>
+            <Button variant="link" className="mt-1 p-0 h-auto text-xs sm:text-sm" asChild> {/* Smaller button */}
               <Link href="/auth/login">Back to Login</Link>
             </Button>
           </div>
