@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -12,7 +11,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AppSidebar />
       <SidebarInset> 
         <Header />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto bg-background">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden bg-background">
           {children}
         </main>
       </SidebarInset>
