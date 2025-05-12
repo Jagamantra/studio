@@ -4,6 +4,7 @@ import type { UserProfile } from '@/types';
 // For Auth Provider (Dummy Users)
 export const DUMMY_USERS_STORAGE_KEY = 'genesis_dummy_users';
 export const CURRENT_DUMMY_USER_STORAGE_KEY = 'genesis_current_dummy_user';
+export const MFA_VERIFIED_STORAGE_KEY = 'genesis_mfa_verified'; // Added for MFA status
 
 export const initialDummyUsersForAuth: UserProfile[] = [
   { uid: 'dummy-admin-001', email: 'admin@dummy.com', displayName: 'Dummy Admin', role: 'admin', photoURL: null, phoneNumber: null, password: 'password123' },
