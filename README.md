@@ -163,6 +163,7 @@ This file configures user roles and their permissions:
     *   The `AuthProvider` and page-level checks use this for route protection.
 -   **`defaultRole: Role`**: Specifies the role assigned to newly registered (dummy) users.
 
+
 ## Connecting to Your Backend API
 
 To connect the Genesis Template to your actual backend API, follow these steps:
@@ -213,5 +214,243 @@ To connect the Genesis Template to your actual backend API, follow these steps:
     *   Ensure the TypeScript types defined in `src/types/index.ts` (e.g., `UserProfile`) match the data structures your backend API expects and returns. Update these types as necessary.
 
 By following these steps, you can transition the Genesis Template from using its mock API to interacting with your live backend services.
-The folder structure utilizes Next.js App Router conventions, including route groups like `(app)` and `(auth)` to apply specific layouts to different sections of the application without affecting the URL paths. This is a standard and recommended practice. Components are primarily sourced from Shadcn UI, ensuring a consistent and modern look and feel.
+The folder structure utilizes Next.js App Router conventions. Components are primarily sourced from Shadcn UI, ensuring a consistent and modern look and feel.
+
+
+## Adding a New Page
+
+This section guides you on adding new pages to the application and configuring them within the existing structure.
+
+### 1. Create the Page File
+
+Create a new `.tsx` file inside the `src/app` directory. Follow Next.js's [App Router conventions](https://nextjs.org/docs/app/building-your-application/routing) for file naming and placement.
+
+*   For a simple page, place it directly in `src/app`. For example, `src/app/newpage/page.tsx`.
+*   For grouped routes or routes with layouts, you can use directories without affecting the URL path (e.g., `src/app/(main)/newpage/page.tsx`) or standard directories that become part of the URL path (e.g., `src/app/main/newpage/page.tsx`).
+
+**Example:**  `src/app/my-new-page/page.tsx` (This will be accessible at `/my-new-page`)
+
+```tsx
+// src/app/my-new-page/page.tsx
+'use client';
+
+import React from 'react';
+
+const MyNewPage = () => {
+  return (
+    <div>
+      <h1>My New Page</h1>
+      <p>This is a dynamically added page.</p>
+    </div>
+  );
+};
+
+export default MyNewPage;
 ```
+
+### 2. Add a Sidebar Item (Optional)
+
+If the new page should be accessible from the sidebar, update `src/config/sidebar.config.ts`.
+
+*   Import any necessary icons from `lucide-react`.
+*   Add a new `SidebarNavItem` object to the `items` array.
+
+```typescript
+// src/config/sidebar.config.ts
+import type { SidebarConfig, SidebarNavItem } from '@/types';
+import { LayoutDashboard, Users, UserCircle, Cog, ShieldQuestion, FileText, BarChart3, PlusCircle } from 'lucide-react';
+import { projectConfig } from './project.config'; // Import projectConfig
+
+const sidebarItems: SidebarNavItem[] = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    roles: ['admin', 'user'],
+  },
+  // ... other items
+  {
+    id: 'mynewpage',
+    label: 'My New Page',
+    href: '/my-new-page', // Match the file structure from Step 1
+    icon: PlusCircle, // Example icon
+    roles: ['admin', 'user'],  // Adjust roles as needed
+  },
+];
+
+// Conditionally add Config Advisor
+if (projectConfig.enableConfigAdvisor) {
+  sidebarItems.push({
+    id: 'config-advisor',
+    label: 'Config Advisor',
+    href: '/config-advisor',
+    icon: ShieldQuestion,
+    roles: ['admin'],
+  });
+}
+// ...
+
+export const sidebarConfig: SidebarConfig = {
+  items: sidebarItems,
+};
+```
+
+### 3. Configure Route Permissions (Optional)
+
+If the page requires specific roles for access, update `src/config/roles.config.ts`.
+
+*   Add the route to the `routePermissions` object, specifying the allowed roles.
+
+```typescript
+// src/config/roles.config.ts
+import type { RolesConfig } from '@/types';
+
+export const rolesConfig: RolesConfig = {
+  roles: ['admin', 'user', 'guest'],
+  routePermissions: {
+    '/dashboard': ['admin', 'user'],
+    '/users': ['admin'],
+    '/profile': ['admin', 'user'],
+    '/config-advisor': ['admin'],
+    '/my-new-page': ['admin', 'user'],  // Added permission rule
+    '/auth/login': ['guest'],
+    '/auth/register': ['guest'],
+    '/auth/mfa': ['guest'], 
+  },
+  defaultRole: 'user',
+};
+```
+The `AuthProvider` uses these permissions to protect routes. Ensure your middleware in `src/middleware.ts` also correctly handles routing based on authentication status.
+
+### 4. Integrate Theme Settings
+
+To use theme settings (accent color, border radius, etc.) on the new page, import the `useTheme` hook from `src/contexts/theme-provider.tsx`.
+
+```tsx
+// src/app/my-new-page/page.tsx
+'use client';
+
+import React from 'react';
+import { useTheme } from '@/contexts/theme-provider';
+import { Button } from '@/components/ui/button'; // Example component
+
+const MyNewPage = () => {
+  const { appName, accentColor, borderRadius } = useTheme();
+
+  return (
+    <div className="p-4">
+      <h1>{appName} - My New Page</h1>
+      <p style={{ color: `hsl(${accentColor})` }}>This text uses the current accent color.</p>
+      <Button style={{ borderRadius: borderRadius }}>Styled Button</Button>
+      {/* Page content */}
+    </div>
+  );
+};
+
+export default MyNewPage;
+```
+
+### 5. Handle Version-Specific Content
+
+To display different content or components based on the selected application version, use the `appVersion` property from the `useTheme` hook.
+
+```tsx
+// src/app/my-new-page/page.tsx
+'use client';
+
+import React from 'react';
+import { useTheme } from '@/contexts/theme-provider';
+
+const MyNewPage = () => {
+  const { appVersion } = useTheme();
+
+  return (
+    <div>
+      <h1>My New Page (Version: {appVersion})</h1>
+      {appVersion === 'v1.0.0' && <p>Content specific to Version 1.0.</p>}
+      {appVersion === 'v0.9.0-beta' && <p>This is content for the Beta Preview.</p>}
+      {appVersion === 'dev' && <p>Developer-specific features or information can be shown here.</p>}
+    </div>
+  );
+};
+
+export default MyNewPage;
+```
+
+### 6. Add "Appearance" Dropdown Options (Theme Switcher Integration)
+
+The Theme Switcher (`src/components/layout/theme-switcher.tsx`) provides options for mode, accent color, border radius, and app version. If your new page needs to directly interact with or display these options (beyond just using the theme context), you can:
+
+*   **Use the `useTheme` hook**: Access `theme`, `accentColor`, `borderRadius`, `appVersion`, and their respective setters (`setTheme`, `setAccentColor`, etc.).
+*   **Replicate Dropdown Logic**: If you need a similar dropdown structure within your page, you can adapt the JSX and logic from `ThemeSwitcher` or create a new component that consumes `useTheme` and `projectConfig.availableAccentColors`, `projectConfig.availableBorderRadii`, etc.
+
+**Example of a simple custom accent color picker within your page:**
+```tsx
+// src/app/my-new-page/page.tsx
+'use client';
+
+import React from 'react';
+import { useTheme } from '@/contexts/theme-provider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Shadcn UI
+import { Label } from '@/components/ui/label';
+
+const MyNewPage = () => {
+  const { accentColor, setAccentColor, availableAccentColors } = useTheme();
+
+  return (
+    <div>
+      <h1>My New Page</h1>
+      <div className="my-4">
+        <Label htmlFor="page-accent-selector">Select Accent Color:</Label>
+        <Select
+          value={accentColor} // This should match the HSL value string if a predefined color is selected
+          onValueChange={(newHslValue) => setAccentColor(newHslValue)}
+        >
+          <SelectTrigger id="page-accent-selector" className="w-[180px]">
+            <SelectValue placeholder="Select color" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableAccentColors.map(colorOption => (
+              <SelectItem key={colorOption.name} value={colorOption.hslValue}>
+                <div className="flex items-center">
+                  <div className="mr-2 h-4 w-4 rounded-full border" style={{ backgroundColor: `hsl(${colorOption.hslValue})` }} />
+                  {colorOption.name}
+                </div>
+              </SelectItem>
+            ))}
+            {/* You could add a custom color picker input here too */}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+};
+
+export default MyNewPage;
+```
+
+### 7. Creating a New Application Version
+
+To add a new application version that users can switch to:
+
+1.  **Define the Version**: Open `src/config/project.config.ts`.
+2.  **Add to `availableAppVersions`**: Add a new object to the `availableAppVersions` array. Each object should have a unique `id` (e.g., `'v2.0.0'`) and a user-friendly `name` (e.g., `'Version 2.0 Alpha'`).
+
+    ```typescript
+    // src/config/project.config.ts
+    export const projectConfig: ProjectConfig = {
+      // ... other settings
+      availableAppVersions: [
+        { name: 'Version 1.0', id: 'v1.0.0' },
+        { name: 'Beta Preview', id: 'v0.9.0-beta' },
+        { name: 'Dev Build', id: 'dev' },
+        { name: 'New Version 2.0', id: 'v2.0.0' }, // Example: New version added
+      ],
+      defaultAppVersionId: 'v1.0.0', // You might want to update this if the new version is default
+      // ...
+    };
+    ```
+3.  **Implement Version-Specific Logic**: Use the `appVersion` from the `useTheme` hook in your components and pages to conditionally render content or apply different styles/logic for this new version ID (as shown in "Handle Version-Specific Content" above).
+
+After these steps, the new version will appear in the version switcher dropdowns (in the `AppSidebar` and `ThemeSwitcher`), and your application can react to its selection.
