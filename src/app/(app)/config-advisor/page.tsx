@@ -2,27 +2,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText, Info } from 'lucide-react';
 import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
+import { projectConfig as appProjectConfig } from '@/config/project.config'; // Import actual config for defaults and options
 
-// Updated example config content for placeholders
-const placeholderProjectConfig = `
-// project.config.ts
-export const projectConfig = {
-  appName: 'My Awesome App',
-  defaultAccentColorName: 'Blue', // Try 'Rose' or 'Green'
-  defaultBorderRadiusName: 'Medium', // Options: 'Small', 'Large'
-  defaultAppVersionId: 'v1.0.0', // Also 'v0.9.0-beta', 'dev'
-};
-`.trim();
-
+// Placeholder content for textareas
 const placeholderSidebarConfig = `
 // sidebar.config.ts
 // import { User, Settings } from 'lucide-react';
@@ -48,74 +45,149 @@ export const rolesConfig = {
 };
 `.trim();
 
+const projectConfigFormSchema = z.object({
+  appName: z.string().min(1, 'App name is required.'),
+  defaultAccentColorName: z.string(),
+  defaultBorderRadiusName: z.string(),
+  defaultAppVersionId: z.string(),
+});
+
+type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;
+
+interface StoredConfigAdvisorInputs {
+    projectConfigFormData?: ProjectConfigFormValues;
+    sidebarConfigContent?: string;
+    rolesConfigContent?: string;
+}
 
 export default function ConfigAdvisorPage() {
   const { user, loading: authLoading } = useAuth();
-  const [projectConfigContent, setProjectConfigContent] = useState('');
+  
+  const projectConfigForm = useForm<ProjectConfigFormValues>({
+    resolver: zodResolver(projectConfigFormSchema),
+    defaultValues: {
+      appName: appProjectConfig.appName,
+      defaultAccentColorName: appProjectConfig.defaultAccentColorName,
+      defaultBorderRadiusName: appProjectConfig.defaultBorderRadiusName,
+      defaultAppVersionId: appProjectConfig.defaultAppVersionId,
+    },
+  });
+
   const [sidebarConfigContent, setSidebarConfigContent] = useState('');
   const [rolesConfigContent, setRolesConfigContent] = useState('');
+  
   const [suggestions, setSuggestions] = useState<AnalyzeConfigOutput['suggestions'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPlaceholders, setShowPlaceholders] = useState(true);
+  const [showPlaceholders, setShowPlaceholders] = useState(true); // Placeholder state for textareas
 
+  // Load initial data from localStorage or set defaults
   useEffect(() => {
-    // Check if user has previously entered any data to decide on showing placeholders
-    if (localStorage.getItem('configAdvisorInputs')) {
-        const storedInputs = JSON.parse(localStorage.getItem('configAdvisorInputs')!);
-        setProjectConfigContent(storedInputs.projectConfigContent || '');
-        setSidebarConfigContent(storedInputs.sidebarConfigContent || '');
-        setRolesConfigContent(storedInputs.rolesConfigContent || '');
-        setShowPlaceholders(!storedInputs.projectConfigContent && !storedInputs.sidebarConfigContent && !storedInputs.rolesConfigContent);
-    } else {
-      // If no stored inputs, set placeholders if user hasn't typed anything
-      if (!projectConfigContent && !sidebarConfigContent && !rolesConfigContent) {
-        setProjectConfigContent(placeholderProjectConfig);
-        setSidebarConfigContent(placeholderSidebarConfig);
-        setRolesConfigContent(placeholderRolesConfig);
-      }
+    if (typeof window !== 'undefined') {
+        const storedInputsJSON = localStorage.getItem('configAdvisorInputs');
+        if (storedInputsJSON) {
+            const storedInputs: StoredConfigAdvisorInputs = JSON.parse(storedInputsJSON);
+            if (storedInputs.projectConfigFormData) {
+                projectConfigForm.reset(storedInputs.projectConfigFormData);
+            }
+            setSidebarConfigContent(storedInputs.sidebarConfigContent || '');
+            setRolesConfigContent(storedInputs.rolesConfigContent || '');
+            
+            // Determine if placeholders should be shown
+            const projectFormIsDefault = JSON.stringify(projectConfigForm.getValues()) === JSON.stringify(projectConfigForm.formState.defaultValues);
+            setShowPlaceholders(
+              projectFormIsDefault &&
+              !storedInputs.sidebarConfigContent &&
+              !storedInputs.rolesConfigContent
+            );
+        } else {
+            // If no stored inputs, set placeholders true initially
+            setShowPlaceholders(true);
+            // And load defaults into form
+            projectConfigForm.reset({
+              appName: appProjectConfig.appName,
+              defaultAccentColorName: appProjectConfig.defaultAccentColorName,
+              defaultBorderRadiusName: appProjectConfig.defaultBorderRadiusName,
+              defaultAppVersionId: appProjectConfig.defaultAppVersionId,
+            });
+        }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run once on mount
 
+  // Persist changes to localStorage
+  const watchedProjectConfig = projectConfigForm.watch();
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        const currentInputs: StoredConfigAdvisorInputs = {
+            projectConfigFormData: watchedProjectConfig,
+            sidebarConfigContent,
+            rolesConfigContent,
+        };
+        localStorage.setItem('configAdvisorInputs', JSON.stringify(currentInputs));
+        
+        // Hide placeholders if any form has changed from default or textareas have content
+        const projectFormIsDefaultOrEmpty = !watchedProjectConfig.appName || 
+            (watchedProjectConfig.appName === appProjectConfig.appName &&
+             watchedProjectConfig.defaultAccentColorName === appProjectConfig.defaultAccentColorName &&
+             watchedProjectConfig.defaultBorderRadiusName === appProjectConfig.defaultBorderRadiusName &&
+             watchedProjectConfig.defaultAppVersionId === appProjectConfig.defaultAppVersionId
+            );
 
-  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string, fieldName: string) => {
+        if (!projectFormIsDefaultOrEmpty || sidebarConfigContent || rolesConfigContent) {
+            setShowPlaceholders(false);
+        }
+    }
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, appProjectConfig]);
+
+
+  const handleTextareaChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
     setter(value);
-    setShowPlaceholders(false); // Hide placeholders once user starts typing
-    // Persist current inputs
-    localStorage.setItem('configAdvisorInputs', JSON.stringify({
-        projectConfigContent: fieldName === 'projectConfigContent' ? value : projectConfigContent,
-        sidebarConfigContent: fieldName === 'sidebarConfigContent' ? value : sidebarConfigContent,
-        rolesConfigContent: fieldName === 'rolesConfigContent' ? value : rolesConfigContent,
-    }));
+    if (value.trim() !== '') {
+      setShowPlaceholders(false);
+    }
   };
   
   const loadExampleConfigs = () => {
-    setProjectConfigContent(placeholderProjectConfig);
+    projectConfigForm.reset({
+      appName: appProjectConfig.appName,
+      defaultAccentColorName: appProjectConfig.defaultAccentColorName,
+      defaultBorderRadiusName: appProjectConfig.defaultBorderRadiusName,
+      defaultAppVersionId: appProjectConfig.defaultAppVersionId,
+    });
     setSidebarConfigContent(placeholderSidebarConfig);
     setRolesConfigContent(placeholderRolesConfig);
-    setShowPlaceholders(false); // User explicitly loaded examples
-    localStorage.setItem('configAdvisorInputs', JSON.stringify({
-        projectConfigContent: placeholderProjectConfig,
-        sidebarConfigContent: placeholderSidebarConfig,
-        rolesConfigContent: placeholderRolesConfig
-    }));
+    setShowPlaceholders(false); 
   };
-
 
   const handleSubmit = async () => {
     setIsLoading(true);
     setError(null);
     setSuggestions(null);
 
-    if (!projectConfigContent.trim() && !sidebarConfigContent.trim() && !rolesConfigContent.trim()) {
-        setError("Please provide content for at least one configuration file to analyze.");
+    const projectConfigData = projectConfigForm.getValues();
+    
+    const generatedProjectConfigContent = `
+// project.config.ts
+export const projectConfig = {
+  appName: '${projectConfigData.appName}',
+  availableAccentColors: ${JSON.stringify(appProjectConfig.availableAccentColors, null, 2)},
+  defaultAccentColorName: '${projectConfigData.defaultAccentColorName}',
+  availableBorderRadii: ${JSON.stringify(appProjectConfig.availableBorderRadii, null, 2)},
+  defaultBorderRadiusName: '${projectConfigData.defaultBorderRadiusName}',
+  availableAppVersions: ${JSON.stringify(appProjectConfig.availableAppVersions, null, 2)},
+  defaultAppVersionId: '${projectConfigData.defaultAppVersionId}',
+};
+    `.trim();
+
+    if (!generatedProjectConfigContent.trim() && !sidebarConfigContent.trim() && !rolesConfigContent.trim()) {
+        setError("Please provide content or configuration for at least one file to analyze.");
         setIsLoading(false);
         return;
     }
 
     const input: AnalyzeConfigInput = {
-      projectConfig: projectConfigContent,
+      projectConfig: generatedProjectConfigContent,
       sidebarConfig: sidebarConfigContent,
       rolesConfig: rolesConfigContent,
     };
@@ -150,7 +222,6 @@ export default function ConfigAdvisorPage() {
     );
   }
 
-
   return (
     <div className="flex-1 space-y-4 md:space-y-6 p-1 sm:p-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -172,35 +243,101 @@ export default function ConfigAdvisorPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl md:text-2xl">Input Configuration Files</CardTitle>
+          <CardTitle className="text-xl md:text-2xl">Project Configuration (project.config.ts)</CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            Paste the content of your configuration files below. The AI will analyze them for potential improvements. You can also load example configurations to see how it works.
+            Modify your project settings. The AI will analyze the generated file content.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...projectConfigForm}>
+            <form className="space-y-4">
+              <FormField
+                control={projectConfigForm.control}
+                name="appName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>App Name</FormLabel>
+                    <FormControl><Input {...field} disabled={isLoading} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={projectConfigForm.control}
+                name="defaultAccentColorName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default Accent Color</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select accent color" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {appProjectConfig.availableAccentColors.map(color => (
+                          <SelectItem key={color.name} value={color.name}>{color.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={projectConfigForm.control}
+                name="defaultBorderRadiusName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default Border Radius</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select border radius" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {appProjectConfig.availableBorderRadii.map(radius => (
+                          <SelectItem key={radius.name} value={radius.name}>{radius.name} ({radius.value})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={projectConfigForm.control}
+                name="defaultAppVersionId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default App Version</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select app version" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {appProjectConfig.availableAppVersions.map(version => (
+                          <SelectItem key={version.id} value={version.id}>{version.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl md:text-2xl">Raw Configuration Files</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            Paste the content of your other configuration files below for AI analysis.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <label htmlFor="projectConfig" className="block text-sm font-medium mb-1">
-              project.config.ts
-            </label>
-            <Textarea
-              id="projectConfig"
-              placeholder={showPlaceholders ? "Example project.config.ts content..." : "Paste content of project.config.ts here..."}
-              value={projectConfigContent}
-              onChange={(e) => handleInputChange(setProjectConfigContent, e.target.value, 'projectConfigContent')}
-              rows={8}
-              className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
-              disabled={isLoading}
-            />
-          </div>
           <div>
             <label htmlFor="sidebarConfig" className="block text-sm font-medium mb-1">
               sidebar.config.ts
             </label>
             <Textarea
               id="sidebarConfig"
-              placeholder={showPlaceholders ? "Example sidebar.config.ts content..." : "Paste content of sidebar.config.ts here..."}
+              placeholder={showPlaceholders && !sidebarConfigContent ? "Example sidebar.config.ts content..." : "Paste content of sidebar.config.ts here..."}
               value={sidebarConfigContent}
-              onChange={(e) => handleInputChange(setSidebarConfigContent, e.target.value, 'sidebarConfigContent')}
+              onChange={(e) => handleTextareaChange(setSidebarConfigContent, e.target.value)}
               rows={8}
               className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
               disabled={isLoading}
@@ -212,9 +349,9 @@ export default function ConfigAdvisorPage() {
             </label>
             <Textarea
               id="rolesConfig"
-              placeholder={showPlaceholders ? "Example roles.config.ts content..." : "Paste content of roles.config.ts here..."}
+              placeholder={showPlaceholders && !rolesConfigContent ? "Example roles.config.ts content..." : "Paste content of roles.config.ts here..."}
               value={rolesConfigContent}
-              onChange={(e) => handleInputChange(setRolesConfigContent, e.target.value, 'rolesConfigContent')}
+              onChange={(e) => handleTextareaChange(setRolesConfigContent, e.target.value)}
               rows={8}
               className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
               disabled={isLoading}
@@ -283,4 +420,3 @@ export default function ConfigAdvisorPage() {
     </div>
   );
 }
-
