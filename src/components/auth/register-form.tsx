@@ -94,7 +94,7 @@ export function RegisterForm() {
       router.push('/dashboard'); 
 
     } catch (err: any) {
-      console.error(err);
+      console.error("Registration error:", err); // Log the full error for debugging
       let errorMessage = 'An unexpected error occurred. Please try again.';
        if (err.code) {
         switch (err.code) {
@@ -107,9 +107,16 @@ export function RegisterForm() {
           case 'auth/weak-password':
             errorMessage = 'The password is too weak.';
             break;
+          case 'auth/invalid-api-key':
+          case 'auth/api-key-not-valid': // Firebase might use this or a similar code
+             errorMessage = 'Firebase API Key is invalid. Please check your application configuration (.env.local) and ensure it matches the one from your Firebase project. Refer to README.md for setup instructions.';
+            break;
           default:
-            errorMessage = 'Registration failed. Please try again.';
+            // Use Firebase's message if available, otherwise a generic one
+            errorMessage = `Registration failed: ${err.message || 'Please try again.'}`;
         }
+      } else if (err.message) {
+        errorMessage = `Registration failed: ${err.message}`;
       }
       setError(errorMessage);
       toast({
@@ -128,7 +135,7 @@ export function RegisterForm() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Configuration Error</AlertTitle>
         <AlertDescription>
-          Firebase authentication is not configured. Registration is disabled.
+          Firebase authentication is not configured. Please set up your Firebase environment variables in `.env.local` as described in the README. Registration functionality is disabled.
         </AlertDescription>
       </Alert>
     );

@@ -58,7 +58,7 @@ export function LoginForm() {
       });
       // AuthProvider will handle redirection
     } catch (err: any) {
-      console.error(err);
+      console.error("Login error:", err); // Log the full error for debugging
       let errorMessage = 'An unexpected error occurred. Please try again.';
       if (err.code) {
         switch (err.code) {
@@ -73,9 +73,16 @@ export function LoginForm() {
           case 'auth/user-disabled':
             errorMessage = 'This account has been disabled.';
             break;
+          case 'auth/invalid-api-key':
+          case 'auth/api-key-not-valid': // Firebase might use this or a similar code
+            errorMessage = 'Firebase API Key is invalid. Please check your application configuration (.env.local) and ensure it matches the one from your Firebase project. Refer to README.md for setup instructions.';
+            break;
           default:
-            errorMessage = 'Login failed. Please check your credentials.';
+            // Use Firebase's message if available, otherwise a generic one
+            errorMessage = `Login failed: ${err.message || 'Please check your credentials and try again.'}`;
         }
+      } else if (err.message) {
+        errorMessage = `Login failed: ${err.message}`;
       }
       setError(errorMessage);
       toast({
@@ -94,7 +101,7 @@ export function LoginForm() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Configuration Error</AlertTitle>
         <AlertDescription>
-          Firebase authentication is not configured. Please set up your Firebase environment variables. Login functionality is disabled.
+          Firebase authentication is not configured. Please set up your Firebase environment variables in `.env.local` as described in the README. Login functionality is disabled.
         </AlertDescription>
       </Alert>
     );
