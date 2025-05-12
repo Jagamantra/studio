@@ -42,7 +42,7 @@ interface AuthContextType {
   error: Error | null;
   isConfigured: boolean;
   logout: () => Promise<void>;
-  setUser: Dispatch<SetStateAction<UserProfile | null>>;
+  setUser: Dispatch<SetStateAction<UserProfile | null>>; // This sets the "actual" internal user state
   // Dummy auth methods
   loginWithDummyCredentials?: (email: string, password?: string) => Promise<UserProfile | null>;
   registerDummyUser?: (details: Omit<UserProfile, 'uid'> & { password?: string }) => Promise<UserProfile | null>;
@@ -51,7 +51,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [actualUser, setActualUser] = useState<UserProfile | null>(null); // Renamed to distinguish from context user
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUserJson = localStorage.getItem(CURRENT_DUMMY_USER_KEY);
       if (storedUserJson) {
         const loggedInDummyUser: UserProfile = JSON.parse(storedUserJson);
-        setUser(loggedInDummyUser);
+        setActualUser(loggedInDummyUser);
         setFirebaseUser({
           uid: loggedInDummyUser.uid,
           email: loggedInDummyUser.email,
@@ -88,30 +88,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           photoURL: loggedInDummyUser.photoURL,
           phoneNumber: loggedInDummyUser.phoneNumber,
           getIdTokenResult: async () => ({
-            claims: { role: loggedInDummyUser.role },
+            claims: { role: loggedInDummyUser.role }, // Reflects the actual role of the dummy user
             token: 'dummy-token',
           } as Partial<IdTokenResult> as IdTokenResult),
         } as FirebaseUser);
       } else {
-        // If no dummy user is logged in, and Firebase is not configured,
-        // default to a preview admin user for the AuthContext.
-        // This ensures admin-specific sidebar links are visible by default for preview.
         const previewAdminUser: UserProfile = {
           uid: 'preview-admin-default-000',
           email: 'preview@admin.genesis',
           displayName: 'Preview Admin',
-          role: 'admin', // Crucial for showing admin links
+          role: 'admin',
           photoURL: null,
           phoneNumber: null,
         };
-        setUser(previewAdminUser);
-        setFirebaseUser({ // Mock a FirebaseUser object for this preview admin
+        setActualUser(previewAdminUser);
+        setFirebaseUser({ 
           uid: previewAdminUser.uid,
           email: previewAdminUser.email,
           displayName: previewAdminUser.displayName,
           photoURL: previewAdminUser.photoURL,
           phoneNumber: previewAdminUser.phoneNumber,
-          // Mock getIdTokenResult to provide the admin role
           getIdTokenResult: async () => ({
             claims: { role: previewAdminUser.role },
             token: 'dummy-preview-token',
@@ -119,10 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } as FirebaseUser);
       }
       setLoading(false);
-      return; // Skip Firebase auth listener setup
+      return; 
     }
 
-    // Firebase is configured, proceed with Firebase auth
     const unsubscribe = onAuthStateChanged(
       auth,
       async (currentFirebaseUser) => {
@@ -130,39 +125,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (currentFirebaseUser) {
           try {
             const userProfile = await fetchUserProfile(currentFirebaseUser);
-            setUser(userProfile);
+            setActualUser(userProfile);
           } catch (e) {
             console.error("Error fetching user profile:", e);
             setError(e instanceof Error ? e : new Error('Failed to fetch profile'));
-            setUser(null);
+            setActualUser(null);
           }
         } else {
-          setUser(null);
+          setActualUser(null);
         }
         setLoading(false);
       },
       (err) => {
         console.error("Auth state change error:", err);
         setError(err);
-        setUser(null);
+        setActualUser(null);
         setFirebaseUser(null);
         setLoading(false);
       }
     );
     return () => unsubscribe();
   }, [configured]);
+  
+  // This derived user is what gets exposed via the context.
+  // If not configured, it ensures the role is 'admin' for UI purposes.
+  const contextUser = useMemo(() => {
+    if (!configured && actualUser) {
+      return { ...actualUser, role: 'admin' as Role };
+    }
+    return actualUser;
+  }, [actualUser, configured]);
 
   useEffect(() => {
-    if (!loading) { // Only redirect after initial auth state is resolved
+    if (!loading) { 
       const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/mfa');
-      if (user && isAuthPage) {
+      // Use contextUser for redirection logic as this reflects the "effective" user for the UI
+      if (contextUser && isAuthPage) {
         router.replace('/dashboard');
-      } else if (!user && !isAuthPage && pathname !== '/' && !pathname.startsWith('/api')) {
-        // Allow access to homepage for unauthenticated users, redirect others to login
-        // router.replace('/login');
+      } else if (!contextUser && !isAuthPage && pathname !== '/' && !pathname.startsWith('/api')) {
+         // router.replace('/login'); // Commented out to allow access to pages when no user for preview
       }
     }
-  }, [user, loading, pathname, router]);
+  }, [contextUser, loading, pathname, router]);
 
   const getDummyUsers = (): UserProfile[] => {
     if (typeof window === 'undefined') return [];
@@ -185,8 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const dummyUsers = getDummyUsers();
     const foundUser = dummyUsers.find(u => u.email === email);
 
-    if (foundUser && (!foundUser.password || foundUser.password === password)) { // Simple password check
-      setUser(foundUser);
+    if (foundUser && (!foundUser.password || foundUser.password === password)) { 
+      setActualUser(foundUser); // Set the actual logged-in dummy user
       setFirebaseUser({
         uid: foundUser.uid,
         email: foundUser.email,
@@ -199,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       setLoading(false);
       router.push('/dashboard');
-      return foundUser;
+      return foundUser; // Return the actual user profile
     }
     setError(new Error("Invalid dummy credentials."));
     setLoading(false);
@@ -221,12 +225,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const newUser: UserProfile = {
       ...details,
       uid: `dummy-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      role: details.role || rolesConfig.defaultRole, // Ensure role is set
+      role: details.role || rolesConfig.defaultRole, 
     };
     dummyUsers.push(newUser);
     saveDummyUsers(dummyUsers);
     
-    setUser(newUser);
+    setActualUser(newUser); // Set the actual registered dummy user
     setFirebaseUser({
       uid: newUser.uid,
       email: newUser.email,
@@ -239,16 +243,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setLoading(false);
     router.push('/dashboard');
-    return newUser;
+    return newUser; // Return the actual user profile
   };
 
   const dummyLogout = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(CURRENT_DUMMY_USER_KEY);
     }
-    setUser(null);
-    setFirebaseUser(null);
-    // After dummy logout, set to preview admin to keep admin links visible
+    // After dummy logout, set to preview admin
      const previewAdminUser: UserProfile = {
         uid: 'preview-admin-default-000',
         email: 'preview@admin.genesis',
@@ -257,14 +259,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoURL: null,
         phoneNumber: null,
       };
-    setUser(previewAdminUser);
+    setActualUser(previewAdminUser); // Set actual user to preview admin
     setFirebaseUser({
         uid: previewAdminUser.uid,
         email: previewAdminUser.email,
         displayName: previewAdminUser.displayName,
         getIdTokenResult: async () => ({ claims: { role: previewAdminUser.role }, token: 'dummy-preview-token' } as Partial<IdTokenResult> as IdTokenResult),
     } as FirebaseUser);
-    router.push('/login'); // Still redirect to login, but AuthContext retains preview admin
+    router.push('/login'); 
   };
 
   const logout = async () => {
@@ -272,11 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (configured && auth) {
       try {
         await firebaseSignOut(auth);
-        // setUser and setFirebaseUser will be updated by onAuthStateChanged which sets user to null
-        // Then, for the sidebar to show admin links after logout (in unconfigured mode),
-        // we might want to explicitly set a preview admin if !configured after signout.
-        // However, onAuthStateChanged will set user to null.
-        // The logic in the main useEffect handles the !configured case.
+        // onAuthStateChanged will set actualUser and firebaseUser to null
       } catch (e) {
         console.error("Firebase Logout error:", e);
         setError(e instanceof Error ? e : new Error('Failed to logout from Firebase'));
@@ -289,15 +287,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const contextValue = useMemo(() => ({
-    user,
+    user: contextUser, // This is the (potentially role-modified) user for consumers
     firebaseUser,
     loading,
     error,
     isConfigured: configured,
     logout,
-    setUser,
+    setUser: setActualUser, // Expose the setter for the "actual" user state
     ...(configured ? {} : { loginWithDummyCredentials, registerDummyUser })
-  }), [user, firebaseUser, loading, error, configured, logout]); // Removed setUser from deps as it's stable
+  }), [contextUser, firebaseUser, loading, error, configured, logout, setActualUser]);
 
   return (
     <AuthContext.Provider value={contextValue}>
@@ -313,4 +311,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
