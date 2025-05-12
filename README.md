@@ -17,11 +17,13 @@ To get started with the Genesis Template:
     pnpm install
     ```
 3.  **Set up Firebase Environment Variables**:
-    *   Locate the `.env.example` file in the root of your project. This file serves as a template.
-    *   Create a new file named `.env.local` in the root of your project by copying `.env.example` or creating it from scratch.
-        *   Using `.env.local` is crucial as it's ignored by Git by default (`.gitignore` should include it) and ensures your credentials are not committed.
+    *   A file named `.env` has been provided in the root of your project with placeholder values.
+    *   You should copy this file to `.env.local` (if you prefer to keep `.env` as a template or for other environments). `.env.local` is ignored by Git by default and ensures your credentials are not committed.
+        ```bash
+        cp .env .env.local
+        ```
     *   Open your `.env.local` file.
-    *   You need to populate it with your Firebase project's configuration.
+    *   You **must** populate it with your Firebase project's configuration, replacing the placeholder values.
     *   **Where to find your Firebase config values**:
         1.  Go to the [Firebase Console](https://console.firebase.google.com/).
         2.  Select your Firebase project (or create one if you haven't).
@@ -40,20 +42,20 @@ To get started with the Genesis Template:
               measurementId: "G-XXXXXXXXXX" // Optional
             };
             ```
-    *   Copy these values into your `.env.local` file, prefixing each variable name with `NEXT_PUBLIC_`. **It is critical that the variable names in `.env.local` exactly match those used in `src/lib/firebase.ts` and shown in `.env.example`.**
-    *   **Example `.env.local` content**:
+    *   Copy these values into your `.env.local` file, replacing the placeholder values. **It is critical that the variable names in `.env.local` exactly match those used in `src/lib/firebase.ts` and shown in the `.env` file.**
+    *   **Example `.env.local` content (after you've filled it with your actual keys)**:
         ```env
-        NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
-        NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
-        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
-        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="123456789012"
-        NEXT_PUBLIC_FIREBASE_APP_ID="1:123456789012:web:XXXXXXXXXXXXXXXXXXXXXX"
-        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="G-XXXXXXXXXX" # This one is optional
+        NEXT_PUBLIC_FIREBASE_API_KEY="REPLACE_WITH_YOUR_FIREBASE_API_KEY"
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="REPLACE_WITH_YOUR_FIREBASE_AUTH_DOMAIN"
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID="REPLACE_WITH_YOUR_FIREBASE_PROJECT_ID"
+        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="REPLACE_WITH_YOUR_FIREBASE_STORAGE_BUCKET"
+        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="REPLACE_WITH_YOUR_FIREBASE_MESSAGING_SENDER_ID"
+        NEXT_PUBLIC_FIREBASE_APP_ID="REPLACE_WITH_YOUR_FIREBASE_APP_ID"
+        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="REPLACE_WITH_YOUR_FIREBASE_MEASUREMENT_ID" # This one is optional
         ```
     *   **Crucial**:
         *   Ensure there are no extra spaces or quotes around the values unless they are part of the value itself (which is rare for these config keys).
-        *   **Double-check `NEXT_PUBLIC_FIREBASE_API_KEY`**. This is the most common source of "invalid API key" errors. Copy it exactly.
+        *   **Double-check `NEXT_PUBLIC_FIREBASE_API_KEY`**. This is the most common source of "invalid API key" errors. Copy it exactly from your Firebase project.
         *   Save the `.env.local` file.
 
 4.  **Restart your development server**:
@@ -94,15 +96,15 @@ This application uses Genkit for AI-related functionalities like the Config Advi
 ## Troubleshooting Firebase Errors
 
 -   **"Configuration Error: Firebase authentication is not configured..." (UI Alert)**:
-    This alert means that essential Firebase configuration variables (like `NEXT_PUBLIC_FIREBASE_API_KEY` or `NEXT_PUBLIC_FIREBASE_PROJECT_ID`) are missing or empty in your environment.
-    *   Ensure your `.env.local` file exists in the project root. If not, copy `.env.example` to `.env.local`.
-    *   Verify that the variable names in `.env.local` start with `NEXT_PUBLIC_` and match those in `src/lib/firebase.ts` and `.env.example`.
+    This alert means that essential Firebase configuration variables (like `NEXT_PUBLIC_FIREBASE_API_KEY` or `NEXT_PUBLIC_FIREBASE_PROJECT_ID`) are missing, empty, or still have placeholder values in your environment.
+    *   Ensure your `.env.local` file exists in the project root and contains your actual Firebase project credentials, not placeholders.
+    *   Verify that the variable names in `.env.local` start with `NEXT_PUBLIC_` and match those in `src/lib/firebase.ts` and the `.env` template file.
     *   Make sure you've populated the values from your Firebase project console.
     *   Make sure you've **restarted your Next.js development server** after creating or modifying `.env.local`.
 
 -   **`Firebase: Error (auth/invalid-api-key)` or `Firebase: Error (auth/api-key-not-valid)` or `Firebase: Error (auth/api-key-not-valid.-please-pass-a-valid-api-key.)` (Console or UI Error)**:
-    This is a very common error. It means the `NEXT_PUBLIC_FIREBASE_API_KEY` value in your `.env.local` file is incorrect, not recognized by your Firebase project, or possibly malformed.
-    *   **Action:** You need to obtain the correct API key from your Firebase project and put it in your `.env.local` file.
+    This is a very common error. It means the `NEXT_PUBLIC_FIREBASE_API_KEY` value in your `.env.local` file is incorrect, not recognized by your Firebase project, or possibly malformed. It might also mean you are still using a placeholder value.
+    *   **Action:** You need to obtain the correct API key from your Firebase project and put it in your `.env.local` file, replacing any placeholder.
     *   **Double, triple-check** that you've copied the `apiKey` value **exactly** from your Firebase project settings (see step 3 in "Getting Started").
     *   Ensure there are no leading/trailing spaces or typos.
     *   Verify the API key is for the correct Firebase project.
@@ -111,5 +113,4 @@ This application uses Genkit for AI-related functionalities like the Config Advi
     *   **Restart your Next.js development server** after any changes to `.env.local`.
     *   If the problem persists after verifying the key, try regenerating the Firebase config snippet in the Firebase console for your web app and re-copying all values.
 
-Refer to `src/lib/firebase.ts` to see how environment variables are consumed and `.env.example` for the required variable names. If problems persist, ensure your Firebase project and web app registration are correctly set up in the Firebase Console.
-```
+Refer to `src/lib/firebase.ts` to see how environment variables are consumed and the `.env` file (or `.env.example` if you created one) for the required variable names. If problems persist, ensure your Firebase project and web app registration are correctly set up in the Firebase Console.
