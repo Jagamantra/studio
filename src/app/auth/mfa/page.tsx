@@ -103,7 +103,7 @@ export default function MfaPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs sm:text-sm">One-Time Password</FormLabel> {/* Smaller label */}
-                    <FormControl>
+                    <FormControl asChild>
                       <Input
                         placeholder="Enter 6-digit OTP"
                         maxLength={6}

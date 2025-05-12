@@ -128,8 +128,8 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Full Name</FormLabel> {/* Ensured text size */}
-                <FormControl>
-                  <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" /> {/* Adjusted input height and text */}
+                <FormControl asChild>
+                  <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -141,7 +141,7 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Email</FormLabel> {/* Ensured text size */}
-                <FormControl>
+                <FormControl asChild>
                   <Input
                     type="email"
                     placeholder="name@example.com"
@@ -163,8 +163,8 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Password</FormLabel> {/* Ensured text size */}
-                <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" /> {/* Adjusted input height and text */}
+                <FormControl asChild>
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -176,8 +176,8 @@ export function RegisterForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Confirm Password</FormLabel> {/* Ensured text size */}
-                <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" /> {/* Adjusted input height and text */}
+                <FormControl asChild>
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

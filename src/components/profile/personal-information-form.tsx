@@ -172,7 +172,9 @@ export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoadi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input placeholder="Your full name" {...field} value={field.value || ''} disabled={isLoading || anyLoading} /></FormControl>
+                  <FormControl asChild>
+                    <Input placeholder="Your full name" {...field} value={field.value || ''} disabled={isLoading || anyLoading} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -183,7 +185,9 @@ export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoadi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email Address</FormLabel>
-                  <FormControl><Input type="email" placeholder="your@email.com" {...field} value={field.value || ''} disabled /></FormControl>
+                  <FormControl asChild>
+                    <Input type="email" placeholder="your@email.com" {...field} value={field.value || ''} disabled />
+                  </FormControl>
                   <FormDescription>Email address cannot be changed.</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -195,7 +199,9 @@ export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoadi
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Phone Number (Optional)</FormLabel>
-                  <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} disabled={isLoading || anyLoading} /></FormControl>
+                  <FormControl asChild>
+                    <Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} disabled={isLoading || anyLoading} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

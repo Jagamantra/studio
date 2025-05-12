@@ -109,7 +109,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm">Email</FormLabel> {/* Ensured text size */}
-                <FormControl>
+                <FormControl asChild>
                   <Input
                     type="email"
                     placeholder="name@example.com"
@@ -136,8 +136,8 @@ export function LoginForm() {
                     Forgot password?
                   </Link>
                 </div>
-                <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" /> {/* Adjusted input height and text */}
+                <FormControl asChild>
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

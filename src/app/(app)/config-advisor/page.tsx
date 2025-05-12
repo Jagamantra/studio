@@ -203,8 +203,8 @@ export default function ConfigAdvisorPage() {
     const originalAppVersionId = appProjectConfig.defaultAppVersionId;
 
     setAppName(originalAppName);
-    setAccentColor(originalAccentHsl);
-    setBorderRadius(originalBorderRadiusValue);
+    if(originalAccentHsl) setAccentColor(originalAccentHsl);
+    if(originalBorderRadiusValue) setBorderRadius(originalBorderRadiusValue);
     setAppVersion(originalAppVersionId);
 
     projectConfigForm.reset({
@@ -266,7 +266,7 @@ export const projectConfig = {
   const anyLoading = isLoadingAi || isSavingProjectConfig || isResettingProjectConfig || isLoadingExamples;
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6 min-w-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
         <div className="flex gap-2">
@@ -314,4 +314,3 @@ export const projectConfig = {
     </div>
   );
 }
-

@@ -86,7 +86,9 @@ export function ChangePasswordForm({ anyLoading, setAnyLoading }: ChangePassword
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Current Password</FormLabel>
-                  <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading || anyLoading} /></FormControl>
+                  <FormControl asChild>
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading || anyLoading} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -97,7 +99,9 @@ export function ChangePasswordForm({ anyLoading, setAnyLoading }: ChangePassword
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
-                  <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading || anyLoading} /></FormControl>
+                  <FormControl asChild>
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading || anyLoading} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -108,7 +112,9 @@ export function ChangePasswordForm({ anyLoading, setAnyLoading }: ChangePassword
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Confirm New Password</FormLabel>
-                  <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading || anyLoading} /></FormControl>
+                  <FormControl asChild>
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading || anyLoading} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

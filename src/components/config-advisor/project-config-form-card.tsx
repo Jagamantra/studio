@@ -50,7 +50,9 @@ export function ProjectConfigFormCard({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>App Name</FormLabel>
-                  <FormControl><Input {...field} disabled={anyLoading} /></FormControl>
+                  <FormControl asChild>
+                    <Input {...field} disabled={anyLoading} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -62,7 +64,9 @@ export function ProjectConfigFormCard({
                 <FormItem>
                   <FormLabel>Default Accent Color</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select accent color" /></SelectTrigger></FormControl>
+                    <FormControl asChild>
+                      <SelectTrigger><SelectValue placeholder="Select accent color" /></SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       {availableAccentColors.map(color => (
                         <SelectItem key={color.name} value={color.name}>{color.name}</SelectItem>
@@ -80,7 +84,9 @@ export function ProjectConfigFormCard({
                 <FormItem>
                   <FormLabel>Default Border Radius</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select border radius" /></SelectTrigger></FormControl>
+                    <FormControl asChild>
+                      <SelectTrigger><SelectValue placeholder="Select border radius" /></SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       {availableBorderRadii.map(radius => (
                         <SelectItem key={radius.name} value={radius.name}>{radius.name} ({radius.value})</SelectItem>
@@ -98,7 +104,9 @@ export function ProjectConfigFormCard({
                 <FormItem>
                   <FormLabel>Default App Version</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select app version" /></SelectTrigger></FormControl>
+                    <FormControl asChild>
+                      <SelectTrigger><SelectValue placeholder="Select app version" /></SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       {appProjectConfigAvailableAppVersions.map(version => (
                         <SelectItem key={version.id} value={version.id}>{version.name}</SelectItem>

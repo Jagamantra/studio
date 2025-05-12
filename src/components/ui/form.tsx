@@ -105,29 +105,24 @@ FormLabel.displayName = "FormLabel"
 
 const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
-  // Omit 'asChild' from props if we are hardcoding it, otherwise allow it.
-  // Forcing asChild is safer for FormControl's accessibility role.
-  Omit<React.ComponentPropsWithoutRef<typeof Slot>, "asChild">
->(({ children, ...props }, ref) => { // Explicitly destructure children
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+  React.ComponentPropsWithoutRef<typeof Slot> // Allow props to contain `children` and `asChild`
+>(({ ...props }, ref) => { // All props, including `children` and `asChild`, are in `props`
+  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
 
   return (
-    <Slot
+    <Slot // Slot will use props.children. If props.asChild is true, it will merge.
       ref={ref}
       id={formItemId}
       aria-describedby={
         !error
-          ? `${formDescriptionId}`
+          ? formDescriptionId
           : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={!!error}
-      {...props} // Spread other props from usage of FormControl
-      asChild // Force Slot to merge props with its child
-    >
-      {children} {/* Pass children from FormControl to Slot */}
-    </Slot>
-  )
-})
+      {...props} // This {...props} includes `children` and `asChild` if they were passed to FormControl
+    />
+  );
+});
 FormControl.displayName = "FormControl"
 
 const FormDescription = React.forwardRef<
