@@ -39,17 +39,27 @@ export function ThemeSwitcher() {
     availableBorderRadii,
   } = useTheme();
 
+  const colorInputRef = React.useRef<HTMLInputElement>(null);
+
   const currentRadius = availableBorderRadii.find(br => br.value === borderRadius);
   const currentVersion = projectConfig.availableAppVersions.find(v => v.id === appVersion);
 
   const currentPredefinedAccent = availableAccentColors.find(ac => ac.hslValue === accentColor);
   
+  // Determine the HEX value for the color input. If current accentColor is HSL, convert or use default.
+  // For simplicity, if it's an HSL value from predefined, use its hex. Otherwise, if it's already hex, use it.
+  // If it's a custom HSL (not in predefined), this input might not perfectly reflect it.
+  // The color input type="color" expects a hex value.
   const colorInputValue = currentPredefinedAccent 
     ? currentPredefinedAccent.hexValue 
-    : (accentColor.startsWith('#') ? accentColor : projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hexValue || '#000000');
+    : (accentColor.startsWith('#') ? accentColor : projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hexValue || '#008080');
+
 
   const accentDisplayName = currentPredefinedAccent ? currentPredefinedAccent.name : 'Custom';
-  const accentDisplayColorValue = currentPredefinedAccent ? `hsl(${currentPredefinedAccent.hslValue})` : accentColor;
+  // Use HSL for display if it's from predefined or seems like HSL, otherwise use the raw accentColor (could be HEX)
+  const accentDisplayColorValue = currentPredefinedAccent 
+    ? `hsl(${currentPredefinedAccent.hslValue})` 
+    : (accentColor.includes(' ') && !accentColor.startsWith('hsl(') ? `hsl(${accentColor})` : accentColor);
 
 
   return (
@@ -95,12 +105,13 @@ export function ThemeSwitcher() {
             <span>Accent: {accentDisplayName}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className="p-2"> {/* Added padding to SubContent */}
+            <DropdownMenuSubContent className="p-2">
               <ScrollArea className="h-auto max-h-40">
                 <DropdownMenuRadioGroup
-                  value={currentPredefinedAccent ? accentColor : ""} 
+                  // Ensure value matches HSL string if a predefined color is selected
+                  value={currentPredefinedAccent ? currentPredefinedAccent.hslValue : ""} 
                   onValueChange={(newHslValue) => { 
-                    setAccentColor(newHslValue);
+                    setAccentColor(newHslValue); // setAccentColor expects HSL or HEX
                   }}
                 >
                   {availableAccentColors.map((colorOption: AccentColor) => (
@@ -111,16 +122,32 @@ export function ThemeSwitcher() {
                   ))}
                 </DropdownMenuRadioGroup>
               </ScrollArea>
-              <div className="mt-2 pt-2 border-t border-border"> {/* Added border-t and pt-2 for separation */}
-                <Label htmlFor="custom-color-picker" className="text-xs font-medium text-muted-foreground px-1">
-                  Custom Color
-                </Label>
+              <div className="mt-2 pt-2 border-t border-border">
+                <div className="flex items-center justify-between px-1">
+                  <Label htmlFor="custom-color-trigger" className="text-xs font-medium text-muted-foreground">
+                    Custom Color
+                  </Label>
+                  <Button
+                    id="custom-color-trigger"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 rounded-full p-0 border"
+                    onClick={() => colorInputRef.current?.click()}
+                    aria-label="Pick custom accent color"
+                  >
+                    <div 
+                      className="h-4 w-4 rounded-full" 
+                      style={{ backgroundColor: colorInputValue }} // Shows current custom color (HEX)
+                    /> 
+                  </Button>
+                </div>
                 <Input
-                  id="custom-color-picker"
+                  ref={colorInputRef}
+                  id="custom-color-picker-hidden"
                   type="color"
-                  className="mt-1 h-8 w-full p-0.5 border rounded-md cursor-pointer focus-visible:ring-1 focus-visible:ring-ring"
-                  value={colorInputValue} 
-                  onChange={(e) => setAccentColor(e.target.value)} 
+                  className="hidden" // Hidden input, triggered programmatically
+                  value={colorInputValue} // Must be HEX
+                  onChange={(e) => setAccentColor(e.target.value)} // e.target.value will be HEX
                 />
               </div>
             </DropdownMenuSubContent>
