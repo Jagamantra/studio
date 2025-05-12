@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 
 export type AccentColor = {
@@ -70,5 +71,10 @@ export type ThemeSettings = {
   appVersion: string; // ID of the app version
   appName: string; 
 };
+
+// This type is defined in config-advisor/page.tsx but used in its child components.
+// If it were to be used more broadly, it could stay here.
+// For now, child components import it from the page.
+// export type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;
 
 

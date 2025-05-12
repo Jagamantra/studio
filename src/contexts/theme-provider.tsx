@@ -2,7 +2,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { projectConfig } from '@/config/project.config';
 import type { ThemeSettings, AccentColor, BorderRadiusOption } from '@/types';
@@ -18,12 +18,19 @@ interface ThemeProviderState extends ThemeSettings {
   availableBorderRadii: BorderRadiusOption[];
 }
 
-const defaultAccentHslValue = projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0].hslValue;
+const getInitialAccentHsl = () => {
+  return projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0]?.hslValue || '180 100% 25%';
+};
+
+const getInitialBorderRadius = () => {
+  return projectConfig.availableBorderRadii.find(r => r.name === projectConfig.defaultBorderRadiusName)?.value || projectConfig.availableBorderRadii[0]?.value || '0.5rem';
+};
+
 
 const initialState: ThemeProviderState = {
   theme: 'system',
-  accentColor: defaultAccentHslValue,
-  borderRadius: projectConfig.availableBorderRadii.find(r => r.name === projectConfig.defaultBorderRadiusName)?.value || projectConfig.availableBorderRadii[0].value,
+  accentColor: getInitialAccentHsl(),
+  borderRadius: getInitialBorderRadius(),
   appVersion: projectConfig.defaultAppVersionId,
   appName: projectConfig.appName, 
   setTheme: () => null,
@@ -50,22 +57,29 @@ export function ThemeProvider({
     `${storageKey}-mode`,
     defaultTheme
   );
-  const [accentColor, setAccentColorState] = useLocalStorage<string>(
+  const [accentColor, setAccentColorInternal] = useLocalStorage<string>(
     `${storageKey}-accent`,
     initialState.accentColor 
   );
-  const [borderRadius, setBorderRadiusState] = useLocalStorage<string>(
+  const [borderRadius, setBorderRadiusInternal] = useLocalStorage<string>(
     `${storageKey}-radius`,
     initialState.borderRadius
   );
-  const [appVersion, setAppVersionState] = useLocalStorage<string>(
+  const [appVersion, setAppVersionInternal] = useLocalStorage<string>(
     `${storageKey}-version`,
     initialState.appVersion
   );
-  const [appName, setAppNameState] = useLocalStorage<string>(
+  const [appName, setAppNameInternal] = useLocalStorage<string>(
     `${storageKey}-app-name`,
     initialState.appName
   );
+
+  // Create stable setters
+  const setTheme = useCallback((newTheme: 'light' | 'dark' | 'system') => setThemeState(newTheme), [setThemeState]);
+  const setAccentColor = useCallback((newAccentColor: string) => setAccentColorInternal(newAccentColor), [setAccentColorInternal]);
+  const setBorderRadius = useCallback((newBorderRadius: string) => setBorderRadiusInternal(newBorderRadius), [setBorderRadiusInternal]);
+  const setAppVersion = useCallback((newAppVersion: string) => setAppVersionInternal(newAppVersion), [setAppVersionInternal]);
+  const setAppName = useCallback((newAppName: string) => setAppNameInternal(newAppName), [setAppNameInternal]);
 
 
   useEffect(() => {
@@ -93,9 +107,7 @@ export function ThemeProvider({
       const defaultColor = projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName) || projectConfig.availableAccentColors[0];
       const parts = defaultColor.hslValue.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?%)\s*(\d+(?:\.\d+)?%)/);
       if (parts && parts.length === 4) {
-        h = parts[1]; 
-        s = parts[2]; 
-        l = parts[3]; 
+        [ , h, s, l] = parts;
       } else {
         h = "180"; s = "100%"; l = "25%"; 
       }
@@ -114,19 +126,26 @@ export function ThemeProvider({
     } else {
       const parts = accentColor.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?%)\s*(\d+(?:\.\d+)?%)/);
       if (parts && parts.length === 4) {
-        h = parts[1]; 
-        s = parts[2]; 
-        l = parts[3]; 
+        [ , h, s, l] = parts;
       } else {
-        console.warn(`Invalid HSL string format: ${accentColor}. Reverting to default.`);
-        applyDefaultAccent();
+        // Check if it's a valid HSL without % for S and L, try to parse if so
+        const plainHslParts = accentColor.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?)/);
+        if (plainHslParts && plainHslParts.length === 4) {
+            h = plainHslParts[1];
+            s = `${plainHslParts[2]}%`;
+            l = `${plainHslParts[3]}%`;
+        } else {
+            console.warn(`Invalid HSL string format: ${accentColor}. Reverting to default.`);
+            applyDefaultAccent();
+        }
       }
     }
 
     root.style.setProperty('--accent-h', h);
     root.style.setProperty('--accent-s', s);
     root.style.setProperty('--accent-l', l);
-
+    
+    // This ensures primary also updates if accent changes
     root.style.setProperty('--primary-h', h);
     root.style.setProperty('--primary-s', s);
     root.style.setProperty('--primary-l', l);
@@ -145,7 +164,7 @@ export function ThemeProvider({
     root.style.setProperty('--accent-foreground', finalFgHslString);
     root.style.setProperty('--primary-foreground', finalFgHslString);
 
-    root.style.setProperty('--ring-h', h);
+    root.style.setProperty('--ring-h', h); // Keep ring hue consistent with accent
 
   }, [accentColor, theme]);
 
@@ -163,14 +182,15 @@ export function ThemeProvider({
     borderRadius,
     appVersion,
     appName, 
-    setTheme: setThemeState,
-    setAccentColor: setAccentColorState,
-    setBorderRadius: setBorderRadiusState,
-    setAppVersion: setAppVersionState,
-    setAppName: setAppNameState, 
+    setTheme,
+    setAccentColor,
+    setBorderRadius,
+    setAppVersion,
+    setAppName, 
     availableAccentColors: projectConfig.availableAccentColors,
     availableBorderRadii: projectConfig.availableBorderRadii,
-  }), [theme, accentColor, borderRadius, appVersion, appName, setThemeState, setAccentColorState, setBorderRadiusState, setAppVersionState, setAppNameState]);
+  }), [theme, accentColor, borderRadius, appVersion, appName, 
+      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName]);
 
   return (
     <ThemeProviderContext.Provider value={value}>
@@ -186,3 +206,4 @@ export const useTheme = () => {
   }
   return context;
 };
+

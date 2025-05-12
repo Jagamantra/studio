@@ -6,14 +6,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText, Info, Save, RotateCcw } from 'lucide-react';
+import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, Info } from 'lucide-react';
 import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
@@ -21,6 +15,9 @@ import { projectConfig as appProjectConfig } from '@/config/project.config';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/contexts/theme-provider';
 import { placeholderSidebarConfigData, placeholderRolesConfigData } from '@/data/dummy-data';
+import { ProjectConfigFormCard } from '@/components/config-advisor/project-config-form-card';
+import { RawConfigInputCard } from '@/components/config-advisor/raw-config-input-card';
+import { AISuggestionsDisplay } from '@/components/config-advisor/ai-suggestions-display';
 
 const projectConfigFormSchema = z.object({
   appName: z.string().min(1, 'App name is required.').max(100, 'App name cannot exceed 100 characters.'),
@@ -29,7 +26,7 @@ const projectConfigFormSchema = z.object({
   defaultAppVersionId: z.string({required_error: "App version is required."}),
 });
 
-type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;
+export type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;
 
 interface StoredConfigAdvisorInputs {
     projectConfigFormData?: ProjectConfigFormValues;
@@ -119,7 +116,6 @@ export default function ConfigAdvisorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
 
-
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -142,14 +138,6 @@ export default function ConfigAdvisorPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
-
-
-  const handleTextareaChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
-    setter(value);
-    if (value.trim() !== '') {
-      setShowPlaceholders(false);
-    }
-  };
   
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
@@ -175,25 +163,15 @@ export default function ConfigAdvisorPage() {
     const isValid = await projectConfigForm.trigger();
     if (isValid) {
       const projectConfigValues = projectConfigForm.getValues();
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
 
       setAppName(projectConfigValues.appName);
-
-      const selectedAccent = availableAccentColors.find(
-        (color) => color.name === projectConfigValues.defaultAccentColorName
-      );
-      if (selectedAccent) {
-        setAccentColor(selectedAccent.hslValue); 
-      }
-
-      const selectedRadius = availableBorderRadii.find(
-        (radius) => radius.name === projectConfigValues.defaultBorderRadiusName
-      );
-      if (selectedRadius) {
-        setBorderRadius(selectedRadius.value);
-      }
-      
+      const selectedAccent = availableAccentColors.find(c => c.name === projectConfigValues.defaultAccentColorName);
+      if (selectedAccent) setAccentColor(selectedAccent.hslValue);
+      const selectedRadius = availableBorderRadii.find(r => r.name === projectConfigValues.defaultBorderRadiusName);
+      if (selectedRadius) setBorderRadius(selectedRadius.value);
       setAppVersion(projectConfigValues.defaultAppVersionId);
+      
       projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false }); 
 
       toast({
@@ -212,26 +190,18 @@ export default function ConfigAdvisorPage() {
 
   const handleResetProjectConfig = async () => {
     setIsResettingProjectConfig(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate async operation
     
     const originalAppName = appProjectConfig.appName;
     const originalAccentColorName = appProjectConfig.defaultAccentColorName;
-    const originalAccentColorData = appProjectConfig.availableAccentColors.find(c => c.name === originalAccentColorName);
-    const originalAccentColorHsl = originalAccentColorData?.hslValue;
-
+    const originalAccentHsl = availableAccentColors.find(c => c.name === originalAccentColorName)?.hslValue || defaultAccentHslValue;
     const originalBorderRadiusName = appProjectConfig.defaultBorderRadiusName;
-    const originalBorderRadiusData = appProjectConfig.availableBorderRadii.find(r => r.name === originalBorderRadiusName);
-    const originalBorderRadiusValue = originalBorderRadiusData?.value;
-    
+    const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value || initialState.borderRadius;
     const originalAppVersionId = appProjectConfig.defaultAppVersionId;
 
     setAppName(originalAppName);
-    if (originalAccentColorHsl) {
-      setAccentColor(originalAccentColorHsl);
-    }
-    if (originalBorderRadiusValue) {
-      setBorderRadius(originalBorderRadiusValue);
-    }
+    setAccentColor(originalAccentHsl);
+    setBorderRadius(originalBorderRadiusValue);
     setAppVersion(originalAppVersionId);
 
     projectConfigForm.reset({
@@ -253,7 +223,6 @@ export default function ConfigAdvisorPage() {
     setSuggestions(null);
 
     const projectConfigData = projectConfigForm.getValues();
-    
     const generatedProjectConfigContent = `
 // project.config.ts
 export const projectConfig = {
@@ -264,8 +233,7 @@ export const projectConfig = {
   defaultBorderRadiusName: '${projectConfigData.defaultBorderRadiusName}',
   availableAppVersions: ${JSON.stringify(appProjectConfig.availableAppVersions, null, 2)},
   defaultAppVersionId: '${projectConfigData.defaultAppVersionId}',
-};
-    `.trim();
+};`.trim();
 
     if (!generatedProjectConfigContent.trim() && !sidebarConfigContent.trim() && !rolesConfigContent.trim()) {
         setError("Please provide content or configuration for at least one file to analyze.");
@@ -284,7 +252,7 @@ export const projectConfig = {
       setSuggestions(result.suggestions);
     } catch (err: any) {
       console.error('Error analyzing config:', err);
-      setError(err.message || 'Failed to get suggestions from AI. Please ensure Genkit services are running if in local development (npm run genkit:dev).');
+      setError(err.message || 'Failed to get suggestions from AI. Ensure Genkit services are running if in local development (npm run genkit:dev).');
     } finally {
       setIsLoadingAi(false);
     }
@@ -322,211 +290,40 @@ export const projectConfig = {
             Load Examples
           </Button>
           <Button onClick={handleAnalyzeSubmit} disabled={anyLoading} size="sm">
-            {isLoadingAi ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Lightbulb className="mr-2 h-4 w-4" />
-            )}
+            {isLoadingAi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
             Analyze Configurations
           </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl md:text-2xl">Project Configuration (project.config.ts)</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Modify your project settings. Changes saved here will apply globally. The AI will analyze the generated file content.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...projectConfigForm}>
-            <form className="space-y-4">
-              <FormField
-                control={projectConfigForm.control}
-                name="appName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>App Name</FormLabel>
-                    <FormControl><Input {...field} disabled={anyLoading} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={projectConfigForm.control}
-                name="defaultAccentColorName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default Accent Color</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select accent color" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {availableAccentColors.map(color => (
-                          <SelectItem key={color.name} value={color.name}>{color.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={projectConfigForm.control}
-                name="defaultBorderRadiusName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default Border Radius</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select border radius" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {availableBorderRadii.map(radius => (
-                          <SelectItem key={radius.name} value={radius.name}>{radius.name} ({radius.value})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={projectConfigForm.control}
-                name="defaultAppVersionId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default App Version</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select app version" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {appProjectConfig.availableAppVersions.map(version => (
-                          <SelectItem key={version.id} value={version.id}>{version.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="border-t px-6 py-4 flex justify-end space-x-2">
-            <Button 
-                onClick={handleResetProjectConfig} 
-                disabled={anyLoading}
-                variant="outline"
-                size="sm"
-            >
-                {isResettingProjectConfig ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
-                Reset Changes
-            </Button>
-            <Button 
-                onClick={handleSaveProjectConfig} 
-                disabled={!projectConfigForm.formState.isDirty || anyLoading}
-                size="sm"
-            >
-                {isSavingProjectConfig ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save & Apply Project Settings
-            </Button>
-        </CardFooter>
-      </Card>
+      <ProjectConfigFormCard
+        projectConfigForm={projectConfigForm}
+        anyLoading={anyLoading}
+        isSavingProjectConfig={isSavingProjectConfig}
+        isResettingProjectConfig={isResettingProjectConfig}
+        handleSaveProjectConfig={handleSaveProjectConfig}
+        handleResetProjectConfig={handleResetProjectConfig}
+        availableAccentColors={availableAccentColors}
+        availableBorderRadii={availableBorderRadii}
+        appProjectConfigAvailableAppVersions={appProjectConfig.availableAppVersions}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl md:text-2xl">Raw Configuration Files</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Paste the content of your other configuration files below for AI analysis.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label htmlFor="sidebarConfig" className="block text-sm font-medium mb-1">
-              sidebar.config.ts
-            </label>
-            <Textarea
-              id="sidebarConfig"
-              placeholder={showPlaceholders && !sidebarConfigContent ? placeholderSidebarConfigData : "Paste content of sidebar.config.ts here..."}
-              value={sidebarConfigContent}
-              onChange={(e) => handleTextareaChange(setSidebarConfigContent, e.target.value)}
-              rows={8}
-              className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
-              disabled={anyLoading}
-            />
-          </div>
-          <div>
-            <label htmlFor="rolesConfig" className="block text-sm font-medium mb-1">
-              roles.config.ts
-            </label>
-            <Textarea
-              id="rolesConfig"
-              placeholder={showPlaceholders && !rolesConfigContent ? placeholderRolesConfigData : "Paste content of roles.config.ts here..."}
-              value={rolesConfigContent}
-              onChange={(e) => handleTextareaChange(setRolesConfigContent, e.target.value)}
-              rows={8}
-              className="font-mono text-xs min-h-[100px] sm:min-h-[150px]"
-              disabled={anyLoading}
-            />
-          </div>
-        </CardContent>
-         <CardFooter>
-          <p className="text-xs text-muted-foreground">
-            Note: The AI analysis is based on general best practices and the provided content. Always review suggestions carefully before implementing.
-          </p>
-        </CardFooter>
-      </Card>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {isLoadingAi && !suggestions && ( 
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-sm text-muted-foreground">Analyzing configurations, please wait...</p>
-        </div>
-      )}
-
-      {suggestions && suggestions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl md:text-2xl">AI Suggestions</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Here are the AI-powered suggestions to improve your configurations:
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {suggestions.map((suggestion, index) => (
-                <AccordionItem value={`item-${index}`} key={index}>
-                  <AccordionTrigger className="text-sm hover:no-underline">
-                    <div className="flex items-center gap-2 text-left w-full">
-                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="font-semibold min-w-[130px] sm:min-w-[150px]">{suggestion.file}:</span>
-                        <span className="truncate flex-1 ">{suggestion.suggestion}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert px-2 leading-relaxed">
-                    <p><strong>Suggestion:</strong> {suggestion.suggestion}</p>
-                    <p><strong>Reason:</strong> {suggestion.reason}</p>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
-      )}
-
-      {suggestions && suggestions.length === 0 && !isLoadingAi && (
-         <Alert>
-            <Lightbulb className="h-4 w-4" />
-            <AlertTitle>No Specific Suggestions</AlertTitle>
-            <AlertDescription className="text-xs sm:text-sm">The AI analyzer did not find any specific critical issues or suggestions for the provided configurations. They appear to be well-structured based on the analysis criteria. You can try providing more detailed or different configurations for further analysis.</AlertDescription>
-        </Alert>
-      )}
+      <RawConfigInputCard
+        sidebarConfigContent={sidebarConfigContent}
+        handleSidebarChange={(value) => { setSidebarConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false);}}
+        rolesConfigContent={rolesConfigContent}
+        handleRolesChange={(value) => { setRolesConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false);}}
+        showPlaceholders={showPlaceholders}
+        placeholderSidebarConfigData={placeholderSidebarConfigData}
+        placeholderRolesConfigData={placeholderRolesConfigData}
+        anyLoading={anyLoading}
+      />
+      
+      <AISuggestionsDisplay
+        suggestions={suggestions}
+        isLoadingAi={isLoadingAi}
+        error={error}
+      />
     </div>
   );
 }
