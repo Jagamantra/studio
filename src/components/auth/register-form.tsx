@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Info } from 'lucide-react'; // Changed AlertTriangle to Info for system mode
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 // import { useRouter } from 'next/navigation'; // Not directly needed if AuthProvider handles redirect
 import { rolesConfig } from '@/config/roles.config';
@@ -88,17 +88,17 @@ export function RegisterForm() {
         if (dummyUser) {
           toast({
             title: 'Registration Successful',
-            description: 'Your dummy account has been created. Redirecting...',
+            description: 'Your mock account has been created. Redirecting...',
           });
            // Redirect is handled by AuthProvider after dummy user is set
         } else {
            // registerDummyUser itself should set error in AuthContext or throw
-           const errMsg = authContext.error?.message || "Failed to register dummy user.";
+           const errMsg = authContext.error?.message || "Failed to register mock user.";
            setFormError(errMsg);
            toast({ title: 'Registration Failed', description: errMsg, variant: 'destructive' });
         }
       } catch (err: any) {
-        const errMsg = err.message || "Dummy registration process failed.";
+        const errMsg = err.message || "Mock registration process failed.";
         setFormError(errMsg);
         toast({ title: 'Registration Error', description: errMsg, variant: 'destructive' });
       } finally {
@@ -111,13 +111,13 @@ export function RegisterForm() {
     }
   }
   
-  const systemModeMessage = "Application is in Dummy Mode. Your data will be stored locally in your browser.";
+  const systemModeMessage = "Application is running with mock API and dummy data. Your data will be stored locally in your browser.";
 
   return (
     <div className="grid gap-6">
-      {isClient && ( // Simplified check
+      {isClient && ( 
          <Alert variant="default"> 
-          <AlertTriangle className="h-4 w-4" />
+          <Info className="h-4 w-4" /> {/* Changed Icon */}
           <AlertTitle className="text-sm sm:text-base">System Mode</AlertTitle>
           <AlertDescription className="text-xs sm:text-sm">
             {systemModeMessage}
@@ -202,3 +202,4 @@ export function RegisterForm() {
     </div>
   );
 }
+

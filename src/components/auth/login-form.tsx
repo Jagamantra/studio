@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Info } from 'lucide-react'; // Changed AlertTriangle to Info for system mode
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/auth-provider'; 
 
@@ -67,17 +67,17 @@ export function LoginForm() {
         if (dummyUser) {
           toast({
             title: 'Login Successful',
-            description: `Welcome back, ${dummyUser.displayName || 'User'}! (Dummy Mode)`,
+            description: `Welcome back, ${dummyUser.displayName || 'User'}! (Mock API Mode)`,
           });
           // Redirect is handled by AuthProvider
         } else {
           // loginWithDummyCredentials itself should set error in AuthContext or throw
-          const errMsg = authContext.error?.message || "Invalid dummy credentials.";
+          const errMsg = authContext.error?.message || "Invalid mock credentials.";
           setFormError(errMsg);
           toast({ title: 'Login Failed', description: errMsg, variant: 'destructive' });
         }
       } catch (err: any) {
-        const errMsg = err.message || "Dummy login process failed.";
+        const errMsg = err.message || "Mock login process failed.";
         setFormError(errMsg);
         toast({ title: 'Login Error', description: errMsg, variant: 'destructive' });
       } finally {
@@ -90,13 +90,13 @@ export function LoginForm() {
     }
   }
   
-  const systemModeMessage = "Application is in Dummy Mode. Login with dummy credentials. Default: admin@dummy.com / user@dummy.com, pass: password123. You can register new dummy users.";
+  const systemModeMessage = "Application is running with mock API and dummy data. Default credentials: admin@dummy.com / user@dummy.com, pass: password123. New dummy users can be registered.";
 
   return (
     <div className="grid gap-6">
-      {isClient && ( // Simplified check, as Firebase is always "not configured"
+      {isClient && ( 
         <Alert variant="default"> 
-          <AlertTriangle className="h-4 w-4" />
+          <Info className="h-4 w-4" /> {/* Changed Icon */}
           <AlertTitle className="text-sm sm:text-base">System Mode</AlertTitle>
           <AlertDescription className="text-xs sm:text-sm">
             {systemModeMessage}
@@ -174,3 +174,4 @@ export function LoginForm() {
     </div>
   );
 }
+

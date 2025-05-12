@@ -14,7 +14,7 @@ export const isFirebaseConfigured = (): boolean => {
 // It's recommended to remove such imports throughout the application.
 
 console.warn(
-  "Firebase integration has been removed or disabled. The application will use dummy data and mock services."
+  "Firebase integration has been removed. The application is using a mock API service layer with dummy data."
 );
 
 // Explicitly export undefined for any services that might still be imported elsewhere,
@@ -23,3 +23,4 @@ export const app = undefined;
 export const auth = undefined;
 // export const db = undefined;
 // export const storage = undefined;
+

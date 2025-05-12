@@ -6,29 +6,31 @@ import type { UserProfile } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Users, ShieldQuestion, BarChart3, AlertTriangle } from 'lucide-react';
+import { Users, ShieldQuestion, BarChart3, Info } from 'lucide-react'; // Changed AlertTriangle to Info for a less alarming icon
 import Image from 'next/image';
 
 interface DashboardV1ContentProps {
   userToRenderOnDashboard: UserProfile;
-  isConfigured: boolean;
+  isConfigured: boolean; // Will be false as Firebase is removed
 }
 
 export function DashboardV1Content({ userToRenderOnDashboard, isConfigured }: DashboardV1ContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
   return (
     <>
-      {!isConfigured && (
+      {!isConfigured && ( // This condition is always true due to Firebase removal, message updated
          <Card className="mb-4 md:mb-6 border-primary bg-primary/10 dark:bg-primary/20">
           <CardHeader className="p-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              <CardTitle className="text-base sm:text-lg text-primary">Demo Mode</CardTitle>
+              <Info className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> {/* Changed icon */}
+              <CardTitle className="text-base sm:text-lg text-primary">Application Status: Mock Mode</CardTitle> {/* Updated Title */}
             </div>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className="text-xs sm:text-sm text-primary/90 dark:text-primary/80">
-              Firebase is not configured. You are viewing the dashboard with sample data. Some interactive features might be limited.
+              {/* Updated Message */}
+              This application is currently running with mock API services and dummy data. 
+              All features are available for demonstration. The frontend is designed to be responsive and separate from backend concerns.
             </p>
           </CardContent>
         </Card>
@@ -131,3 +133,4 @@ export function DashboardV1Content({ userToRenderOnDashboard, isConfigured }: Da
     </>
   );
 }
+
