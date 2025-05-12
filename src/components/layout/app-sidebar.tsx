@@ -9,7 +9,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarTrigger, // Desktop sidebar trigger
-  SidebarMenuButton, // For version switcher like button
+  // SidebarMenuButton, // For version switcher like button. Not used directly here anymore.
   useSidebar,
 } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/layout/main-nav';
@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/auth-provider';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem, // Added missing import
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
