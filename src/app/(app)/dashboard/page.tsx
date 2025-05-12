@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -85,7 +84,7 @@ export default function DashboardPage() {
 
   return (
     <TooltipProvider>
-      <div className="space-y-4 md:space-y-6 p-1 sm:p-0"> {/* Removed flex-1 */}
+      <div className="space-y-4 md:space-y-6"> {/* Removed flex-1 and adjusted padding */}
         <div className="flex flex-col items-start justify-between space-y-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -118,4 +117,3 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
-
