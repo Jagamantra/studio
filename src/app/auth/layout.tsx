@@ -29,7 +29,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           </p>
         </div>
         
-        <div className="w-full">
+        <div className="w-full mb-8">
             {children}
         </div>
 
