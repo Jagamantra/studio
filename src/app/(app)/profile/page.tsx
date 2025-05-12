@@ -1,7 +1,7 @@
 
 'use client';
 
-import *_React from 'react'; // Avoids TSError: ⨯ Unable to compile TypeScript - Should be React not _React
+import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -55,7 +55,7 @@ type AdvancedSettingsFormValues = z.infer<typeof advancedSettingsSchema>;
 export default function ProfilePage() {
   const { user, firebaseUser, setUser, logout, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [_ReactIsLoading, setIsLoading] = _React.useState({ profile: false, password: false, advanced: false }); // Renamed React to _React
+  const [_ReactIsLoading, setIsLoading] = React.useState({ profile: false, password: false, advanced: false });
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -80,7 +80,7 @@ export default function ProfilePage() {
     },
   });
 
-  _React.useEffect(() => {
+  React.useEffect(() => {
     if (user) {
       profileForm.reset({
         displayName: user.displayName || '',
@@ -368,3 +368,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
