@@ -116,5 +116,3 @@ export function DashboardBetaContent({ userToRenderOnDashboard }: DashboardBetaC
     </Tabs>
   );
 }
-
-```
