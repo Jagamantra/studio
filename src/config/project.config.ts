@@ -15,7 +15,6 @@ export const projectConfig: ProjectConfig = {
     { name: 'Small', value: '0.3rem' },
     { name: 'Medium', value: '0.5rem' },
     { name: 'Large', value: '0.75rem' },
-    // { name: 'Full', value: '9999px' }, // Removed "Full" option
   ],
   defaultBorderRadiusName: 'Medium',
   availableAppVersions: [
@@ -25,3 +24,4 @@ export const projectConfig: ProjectConfig = {
   ],
   defaultAppVersionId: 'v1.0.0',
 };
+
