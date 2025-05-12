@@ -17,6 +17,7 @@ import type { ChartConfig } from '@/components/ui/chart';
 import { BarChart as RechartsBarChartComponent, CartesianGrid, XAxis, YAxis, Bar } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
+import { projectConfig } from '@/config/project.config'; // Added import
 
 // Define a dummy user for viewing the dashboard when Firebase isn't configured
 const DUMMY_USER_FOR_VIEWING: UserProfile = {
@@ -274,7 +275,7 @@ const DashboardDevContent = ({ userToRenderOnDashboard }: { userToRenderOnDashbo
             <div><strong>User:</strong> <span className="font-mono">{userToRenderOnDashboard.displayName} ({userToRenderOnDashboard.email})</span></div>
             <div><strong>Role:</strong> <Badge variant={userToRenderOnDashboard.role === 'admin' ? 'default' : 'secondary'}>{userToRenderOnDashboard.role}</Badge></div>
             <div><strong>Theme Mode:</strong> <span className="font-mono capitalize">{theme}</span></div>
-            <div><strong>Accent Color:</strong> <span className="font-mono p-1 rounded" style={{backgroundColor: accentColor.startsWith('#') ? accentColor : `hsl(${accentColor})`, color: 'var(--accent-foreground)'}}>{accentColor}</span></div>
+            <div><strong>Accent Color:</strong> <span className="font-mono p-1 rounded" style={{backgroundColor: accentColor.startsWith('#') ? accentColor : `hsl(${accentColor})`, color: 'hsl(var(--accent-foreground))'}}>{accentColor}</span></div>
             <div><strong>Border Radius:</strong> <span className="font-mono">{borderRadius}</span></div>
           </CardContent>
         </Card>
