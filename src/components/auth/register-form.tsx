@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from '@/lib/firebase';
+import { auth } from '@/lib/firebase'; // isFirebaseConfigured is now from useAuth
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -22,9 +22,8 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from 'next/navigation';
 import { rolesConfig } from '@/config/roles.config';
-// If using Firestore to store user profiles including roles:
-// import { doc, setDoc } from "firebase/firestore"; 
-// import { db } from "@/lib/firebase";
+import { useAuth } from '@/contexts/auth-provider'; // Import useAuth
+import type { UserProfile } from '@/types';
 
 const registerFormSchema = z.object({
   displayName: z.string().min(2, { message: 'Name must be at least 2 characters.' }).max(50, { message: 'Name must be at most 50 characters.' }),
@@ -37,7 +36,7 @@ const registerFormSchema = z.object({
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"], // path of error
+  path: ["confirmPassword"],
 });
 
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
@@ -46,8 +45,10 @@ export function RegisterForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const configured = isFirebaseConfigured();
+  const [formError, setFormError] = React.useState<string | null>(null); // Renamed error to formError
+  
+  const authContext = useAuth();
+  const configured = authContext.isConfigured;
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -60,41 +61,61 @@ export function RegisterForm() {
   });
 
   async function onSubmit(data: RegisterFormValues) {
+    setIsLoading(true);
+    setFormError(null);
+
     if (!configured) {
-      setError("Firebase is not configured. Registration is disabled. Please check your .env.local file and ensure Firebase variables are set correctly as per README.md.");
+      // Use dummy registration
+      if (authContext.registerDummyUser) {
+        try {
+          const newUserProfile: Omit<UserProfile, 'uid'> & { password?: string } = {
+            displayName: data.displayName,
+            email: data.email,
+            password: data.password, // Storing password for dummy check
+            role: rolesConfig.defaultRole, // Assign default role
+            photoURL: null,
+            phoneNumber: null,
+          };
+          const dummyUser = await authContext.registerDummyUser(newUserProfile);
+          if (dummyUser) {
+            toast({
+              title: 'Dummy Registration Successful',
+              description: 'Your dummy account has been created. Redirecting...',
+            });
+            // AuthProvider handles redirection
+          } else {
+             const errMsg = authContext.error?.message || "Failed to register dummy user.";
+             setFormError(errMsg);
+             toast({ title: 'Registration Failed', description: errMsg, variant: 'destructive' });
+          }
+        } catch (err: any) {
+          const errMsg = err.message || "Dummy registration failed.";
+          setFormError(errMsg);
+          toast({ title: 'Registration Error', description: errMsg, variant: 'destructive' });
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setFormError("Dummy registration function not available.");
+        setIsLoading(false);
+      }
       return;
     }
-    setIsLoading(true);
-    setError(null);
+
+    // Firebase registration
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       await updateProfile(userCredential.user, {
         displayName: data.displayName,
       });
-
-      // If setting custom claims for role, this needs to be done via a backend function.
-      // For client-side role assignment (e.g., to Firestore):
-      // await setDoc(doc(db, "users", userCredential.user.uid), {
-      //   uid: userCredential.user.uid,
-      //   displayName: data.displayName,
-      //   email: data.email,
-      //   role: rolesConfig.defaultRole, // Assign default role
-      //   createdAt: new Date(),
-      // });
-      // After setting custom claims or Firestore role, you might need to refresh the token for claims to take effect.
-      // await userCredential.user.getIdToken(true);
-
-
+      // Firestore/Custom claims logic would go here if implementing server-side roles for Firebase
       toast({
         title: 'Registration Successful',
         description: 'Your account has been created. Redirecting...',
       });
-      // AuthProvider will handle redirection to dashboard typically
-      // but can explicitly redirect if needed after ensuring auth state propagates
       router.push('/dashboard'); 
-
     } catch (err: any) {
-      console.error("Registration error:", err); // Log the full error for debugging
+      console.error("Registration error:", err);
       let errorMessage = 'An unexpected error occurred. Please try again.';
        if (err.code) {
         switch (err.code) {
@@ -109,17 +130,16 @@ export function RegisterForm() {
             break;
           case 'auth/invalid-api-key':
           case 'auth/api-key-not-valid': 
-          case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.': // Added specific error code
+          case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
              errorMessage = 'Firebase API Key is invalid or missing. Please check your application configuration (.env.local file) and ensure NEXT_PUBLIC_FIREBASE_API_KEY matches the one from your Firebase project settings. Refer to README.md for detailed setup instructions. You may need to restart your development server after updating the .env.local file.';
             break;
           default:
-            // Use Firebase's message if available, otherwise a generic one
             errorMessage = `Registration failed: ${err.message || 'Please try again.'}`;
         }
       } else if (err.message) {
         errorMessage = `Registration failed: ${err.message}`;
       }
-      setError(errorMessage);
+      setFormError(errorMessage);
       toast({
         title: 'Registration Failed',
         description: errorMessage,
@@ -130,25 +150,24 @@ export function RegisterForm() {
     }
   }
   
-  if (!configured) {
-    return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Configuration Error</AlertTitle>
-        <AlertDescription>
-           Firebase authentication is not configured. Please set up your Firebase environment variables in `.env.local` as described in the README.md and `.env.example`. Registration functionality is disabled. You must restart your development server after updating the `.env.local` file.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const firebaseNotConfiguredMessage = "Firebase authentication is not configured. Using dummy registration. Your data will be stored locally in your browser.";
 
   return (
     <div className="grid gap-6">
-       {error && (
+      {!configured && (
+         <Alert variant="default"> {/* Changed to default variant for info */}
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Dummy Mode Active</AlertTitle>
+          <AlertDescription>
+            {firebaseNotConfiguredMessage}
+          </AlertDescription>
+        </Alert>
+      )}
+       {formError && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{formError}</AlertDescription>
         </Alert>
       )}
       <Form {...form}>

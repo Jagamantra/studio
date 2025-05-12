@@ -21,10 +21,11 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAuth } from '@/contexts/auth-provider'; // Import useAuth
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  password: z.string().min(1, { message: 'Password is required.' }), // Min 1 for dummy login
 });
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
@@ -32,8 +33,11 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 export function LoginForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const configured = isFirebaseConfigured();
+  const [formError, setFormError] = React.useState<string | null>(null); // Renamed error to formError
+  
+  // Get isConfigured and dummy login methods from useAuth
+  const authContext = useAuth(); 
+  const configured = authContext.isConfigured;
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -44,12 +48,40 @@ export function LoginForm() {
   });
 
   async function onSubmit(data: LoginFormValues) {
+    setIsLoading(true);
+    setFormError(null);
+
     if (!configured) {
-      setError("Firebase is not configured. Login is disabled. Please check your .env.local file and ensure Firebase variables are set correctly as per README.md.");
+      // Use dummy login
+      if (authContext.loginWithDummyCredentials) {
+        try {
+          const dummyUser = await authContext.loginWithDummyCredentials(data.email, data.password);
+          if (dummyUser) {
+            toast({
+              title: 'Dummy Login Successful',
+              description: `Welcome back, ${dummyUser.displayName || 'User'}!`,
+            });
+            // AuthProvider handles redirection
+          } else {
+            const errMsg = "Invalid dummy credentials.";
+            setFormError(errMsg);
+            toast({ title: 'Login Failed', description: errMsg, variant: 'destructive' });
+          }
+        } catch (err: any) {
+          const errMsg = err.message || "Dummy login failed.";
+          setFormError(errMsg);
+          toast({ title: 'Login Error', description: errMsg, variant: 'destructive' });
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+         setFormError("Dummy login function not available.");
+         setIsLoading(false);
+      }
       return;
     }
-    setIsLoading(true);
-    setError(null);
+
+    // Firebase login
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
@@ -58,7 +90,7 @@ export function LoginForm() {
       });
       // AuthProvider will handle redirection
     } catch (err: any) {
-      console.error("Login error:", err); // Log the full error for debugging
+      console.error("Login error:", err);
       let errorMessage = 'An unexpected error occurred. Please try again.';
       if (err.code) {
         switch (err.code) {
@@ -75,17 +107,16 @@ export function LoginForm() {
             break;
           case 'auth/invalid-api-key':
           case 'auth/api-key-not-valid':
-          case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.': // Added specific error code
+          case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
             errorMessage = 'Firebase API Key is invalid or missing. Please check your application configuration (.env.local file) and ensure NEXT_PUBLIC_FIREBASE_API_KEY matches the one from your Firebase project settings. Refer to README.md for detailed setup instructions. You may need to restart your development server after updating the .env.local file.';
             break;
           default:
-            // Use Firebase's message if available, otherwise a generic one
             errorMessage = `Login failed: ${err.message || 'Please check your credentials and try again.'}`;
         }
       } else if (err.message) {
         errorMessage = `Login failed: ${err.message}`;
       }
-      setError(errorMessage);
+      setFormError(errorMessage);
       toast({
         title: 'Login Failed',
         description: errorMessage,
@@ -95,26 +126,25 @@ export function LoginForm() {
       setIsLoading(false);
     }
   }
-
-  if (!configured) {
-    return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Configuration Error</AlertTitle>
-        <AlertDescription>
-          Firebase authentication is not configured. Please set up your Firebase environment variables in `.env.local` as described in the README.md and `.env.example`. Login functionality is disabled. You must restart your development server after updating the `.env.local` file.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  
+  const firebaseNotConfiguredMessage = "Firebase authentication is not configured. Using dummy login. Create accounts via the register page. Default: admin@dummy.com / user@dummy.com, pass: password123";
 
   return (
     <div className="grid gap-6">
-      {error && (
+      {!configured && (
+        <Alert variant="default"> {/* Changed to default variant for info */}
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Dummy Mode Active</AlertTitle>
+          <AlertDescription>
+            {firebaseNotConfiguredMessage}
+          </AlertDescription>
+        </Alert>
+      )}
+      {formError && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{formError}</AlertDescription>
         </Alert>
       )}
       <Form {...form}>
@@ -174,11 +204,9 @@ export function LoginForm() {
           </span>
         </div>
       </div>
-      {/* Placeholder for social logins */}
-      <Button variant="outline" type="button" disabled={isLoading} className="w-full">
-        {/* <GitHubLogo className="mr-2 h-4 w-4" /> */}
+      <Button variant="outline" type="button" disabled={isLoading || !configured} className="w-full">
         <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-        GitHub (Coming Soon)
+        GitHub {configured ? "(Coming Soon)" : "(Disabled)"}
       </Button>
     </div>
   );

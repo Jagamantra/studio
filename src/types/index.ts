@@ -55,6 +55,7 @@ export type UserProfile = {
   photoURL: string | null;
   phoneNumber: string | null;
   role: Role;
+  password?: string; // For dummy authentication system
   // Advanced settings example
   receiveNotifications?: boolean;
   interfaceDensity?: 'compact' | 'comfortable' | 'spacious';
@@ -67,3 +68,4 @@ export type ThemeSettings = {
   borderRadius: string; // CSS rem/px value
   appVersion: string; // ID of the app version
 };
+
