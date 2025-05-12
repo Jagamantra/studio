@@ -40,176 +40,8 @@ interface UserFormDialogProps {
   isLoading: boolean;
 }
 
+// Export the corrected version
 export function UserFormDialog({ isOpen, onOpenChange, editingUser, onSubmit, isLoading }: UserFormDialogProps) {
-  
-  const userFormSchema = userFormSchemaBase.extend({
-    password: editingUser ? z.string().optional() : z.string().min(8, { message: "Password must be at least 8 characters for new users." })
-  });
-  
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: {
-      displayName: '',
-      email: '',
-      role: 'user',
-      phoneNumber: '',
-      password: '',
-    },
-  });
-
-  React.useEffect(() => {
-    if (editingUser) {
-      form.reset({
-        displayName: editingUser.displayName || '',
-        email: editingUser.email || '',
-        role: editingUser.role,
-        phoneNumber: editingUser.phoneNumber || '',
-        password: '', 
-      });
-    } else {
-      form.reset({
-        displayName: '',
-        email: '',
-        role: 'user',
-        phoneNumber: '',
-        password: '',
-      });
-    }
-  }, [editingUser, form, isOpen]);
-
-  const handleFormSubmit = async (values: UserFormValues) => {
-    await onSubmit(values);
-    // Form reset is handled by useEffect when isOpen changes or editingUser changes
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg"> {/* Slightly wider for two columns */}
-        <DialogHeader>
-          <DialogTitle className="text-lg md:text-xl">{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
-          <DialogDescription>
-            {editingUser ? `Update details for ${editingUser.displayName}.` : 'Enter details for the new user.'}
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          {/* Make the form itself scrollable if content overflows */}
-          <form 
-            onSubmit={form.handleSubmit(handleFormSubmit)} 
-            className="py-2 pr-2 max-h-[65vh] overflow-y-auto" // Added max-h, overflow, and pr for scrollbar
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3"> {/* Grid for form fields */}
-              <FormField
-                control={form.control}
-                name="displayName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl><Input placeholder="John Doe" {...field} disabled={isLoading} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" placeholder="name@example.com" {...field} disabled={!!editingUser || isLoading} /></FormControl>
-                    {editingUser && <FormDescription className="text-xs">Email cannot be changed.</FormDescription>}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {rolesConfig.roles.filter(role => role !== 'guest').map(role => ( 
-                          <SelectItem key={role} value={role} className="capitalize">
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number (Optional)</FormLabel>
-                    <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} disabled={isLoading} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {!editingUser && (
-                <div className="sm:col-span-2"> {/* Password field spans both columns on sm+ screens */}
-                  <FormField
-                    control={form.control}
-                    name="password" 
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading} /></FormControl>
-                        <FormDescription className="text-xs">Required for new users. Min 8 characters.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-          </form>
-        </Form>
-        <DialogFooter className="pt-4 sticky bottom-0 bg-background pb-6 px-6 -mx-6 border-t"> {/* Make footer sticky */}
-          <DialogClose asChild>
-            <Button type="button" variant="outline" size="sm" disabled={isLoading}>Cancel</Button>
-          </DialogClose>
-          <Button type="submit" form="user-form-id" size="sm" disabled={isLoading || !form.formState.isDirty && !!editingUser && !form.formState.touchedFields}>
-            {/* The submit button needs to be linked to the form using form attribute if outside the form tag,
-                but here we are submitting programmatically or it's inside the FormProvider.
-                For safety, let's assume it's handled by FormProvider.
-                The form.handleSubmit is on the <form> tag. Button type submit will trigger it.
-            */}
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {editingUser ? 'Save Changes' : 'Create User'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// To ensure the submit button in the footer works correctly with the form that's now potentially a child of a scrollable div,
-// it's best practice to give the form an ID and use the `form` attribute on the submit button.
-// However, since the Button is a child of Form {...form} through DialogFooter, React Hook Form's context should handle it.
-// For robustness, I'll assign an ID to the form and link the button.
-
-// Re-evaluating the structure:
-// The DialogFooter is outside the <form> element within the DialogContent's direct children.
-// So, the submit button indeed needs to be linked via the form's ID.
-
-// Let's adjust the previous form:
-// <form id="user-dialog-form" onSubmit={...} className="...">
-// And the submit button:
-// <Button type="submit" form="user-dialog-form" ... >
-
-// Corrected handleFormSubmit on the form and button link:
-export function UserFormDialogCorrected({ isOpen, onOpenChange, editingUser, onSubmit, isLoading }: UserFormDialogProps) {
   const formId = React.useId(); // Create a unique ID for the form
 
   const userFormSchema = userFormSchemaBase.extend({
@@ -228,22 +60,24 @@ export function UserFormDialogCorrected({ isOpen, onOpenChange, editingUser, onS
   });
 
   React.useEffect(() => {
-    if (editingUser) {
-      form.reset({
-        displayName: editingUser.displayName || '',
-        email: editingUser.email || '',
-        role: editingUser.role,
-        phoneNumber: editingUser.phoneNumber || '',
-        password: '', 
-      });
-    } else {
-      form.reset({
-        displayName: '',
-        email: '',
-        role: 'user',
-        phoneNumber: '',
-        password: '',
-      });
+    if (isOpen) { // Reset form only when dialog opens
+      if (editingUser) {
+        form.reset({
+          displayName: editingUser.displayName || '',
+          email: editingUser.email || '',
+          role: editingUser.role,
+          phoneNumber: editingUser.phoneNumber || '',
+          password: '', 
+        });
+      } else {
+        form.reset({
+          displayName: '',
+          email: '',
+          role: 'user',
+          phoneNumber: '',
+          password: '',
+        });
+      }
     }
   }, [editingUser, form, isOpen]);
 
@@ -257,99 +91,103 @@ export function UserFormDialogCorrected({ isOpen, onOpenChange, editingUser, onS
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[85vh]"> {/* DialogContent is flex col with max height */}
         <DialogHeader>
           <DialogTitle className="text-lg md:text-xl">{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
           <DialogDescription>
             {editingUser ? `Update details for ${editingUser.displayName}.` : 'Enter details for the new user.'}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form 
-            id={formId} // Assign the unique ID here
-            onSubmit={form.handleSubmit(internalFormSubmit)} 
-            className="py-2 pr-3 max-h-[60vh] overflow-y-auto space-y-0" // Removed space-y-4, using grid gap instead
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4"> {/* Grid for form fields with gap */}
-              <FormField
-                control={form.control}
-                name="displayName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl><Input placeholder="John Doe" {...field} disabled={isLoading} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+        
+        {/* Scrollable area for the form */}
+        <div className="flex-grow overflow-y-auto py-4 pr-3"> {/* pr-3 for scrollbar space */}
+          <Form {...form}>
+            <form 
+              id={formId} // Assign the unique ID here
+              onSubmit={form.handleSubmit(internalFormSubmit)} 
+              className="space-y-0" // Remove space-y-0 if grid handles all spacing
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5"> {/* Grid for form fields, increased gap-y */}
+                <FormField
+                  control={form.control}
+                  name="displayName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl><Input placeholder="John Doe" {...field} disabled={isLoading} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl><Input type="email" placeholder="name@example.com" {...field} disabled={!!editingUser || isLoading} /></FormControl>
+                      {editingUser && <FormDescription className="text-xs">Email cannot be changed.</FormDescription>}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {rolesConfig.roles.filter(role => role !== 'guest').map(role => ( 
+                            <SelectItem key={role} value={role} className="capitalize">
+                              {role}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number (Optional)</FormLabel>
+                      <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} disabled={isLoading} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {!editingUser && (
+                  <div className="sm:col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="password" 
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading} /></FormControl>
+                          <FormDescription className="text-xs">Required for new users. Min 8 characters.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" placeholder="name@example.com" {...field} disabled={!!editingUser || isLoading} /></FormControl>
-                    {editingUser && <FormDescription className="text-xs">Email cannot be changed.</FormDescription>}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {rolesConfig.roles.filter(role => role !== 'guest').map(role => ( 
-                          <SelectItem key={role} value={role} className="capitalize">
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number (Optional)</FormLabel>
-                    <FormControl><Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} disabled={isLoading} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {!editingUser && (
-                <div className="sm:col-span-2">
-                  <FormField
-                    control={form.control}
-                    name="password" 
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isLoading} /></FormControl>
-                        <FormDescription className="text-xs">Required for new users. Min 8 characters.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-          </form>
-        </Form>
-        {/* DialogFooter is outside the FormProvider's direct <form> child, so button needs `form` attr */}
-        <DialogFooter className="pt-4 sm:pt-6 border-t -mx-6 px-6 pb-6 sticky bottom-0 bg-background z-10">
+              </div>
+            </form>
+          </Form>
+        </div>
+        
+        <DialogFooter className="pt-4 border-t mt-auto"> {/* Footer styling for bottom placement */}
           <DialogClose asChild>
             <Button type="button" variant="outline" size="sm" disabled={isLoading}>Cancel</Button>
           </DialogClose>
@@ -367,6 +205,3 @@ export function UserFormDialogCorrected({ isOpen, onOpenChange, editingUser, onS
     </Dialog>
   );
 }
-// Export the corrected version
-export { UserFormDialogCorrected as UserFormDialog };
-
