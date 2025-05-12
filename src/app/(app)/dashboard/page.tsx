@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -14,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
-import { BarChart as RechartsBarChartComponent, CartesianGrid, XAxis, YAxis, Bar } from 'recharts';
+import { BarChart as RechartsBarChartComponent, CartesianGrid, XAxis, YAxis, Bar, Tooltip as RechartsTooltip, Legend as RechartsLegend } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { projectConfig } from '@/config/project.config';
@@ -161,8 +160,8 @@ const betaChartData = [
 ];
 
 const betaChartConfig = {
-  newUsers: { label: "New Users", color: "hsl(var(--chart-1))" },
-  churnedUsers: { label: "Churned Users", color: "hsl(var(--chart-2))" },
+  newUsers: { label: "New Users", color: "var(--chart-1)" }, // Use base accent shade
+  churnedUsers: { label: "Churned Users", color: "var(--chart-2)" }, // Use secondary accent shade
 } satisfies ChartConfig;
 
 const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashboard: UserProfile }) => {
@@ -218,7 +217,7 @@ const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashb
           </CardHeader>
           <CardContent className="pl-0 sm:pl-2 pr-2 sm:pr-4 pb-4">
             <ChartContainer config={betaChartConfig} className="min-h-[200px] sm:min-h-[250px] w-full">
-              <RechartsBarChartComponent data={betaChartData} margin={{ top: 5, right: 5, left: -30, bottom: 5 }}>
+              <RechartsBarChartComponent accessibilityLayer data={betaChartData} margin={{ top: 5, right: 5, left: -30, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="month"
@@ -388,7 +387,7 @@ export default function DashboardPage() {
                   >
                     {appVersion === 'dev' ? 
                       <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" /> :  
-                      <GitBranch className="h-4 w-4 sm:h-5 sm:w-5" />       
+                      <GitBranch className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />       
                     }
                   </Button>
                 </TooltipTrigger>
