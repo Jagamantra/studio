@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -90,30 +89,30 @@ export function MainNav({ items }: MainNavProps) {
       <SidebarMenuItem key={item.id}>
         <Link href={href} passHref legacyBehavior>
           <ButtonComponent
-            asChild={!isSubItem} // SidebarMenuButton uses slot, SubButton is an 'a' tag by default.
-            // For SubButton, if we want it to be a Link, we might need to wrap it or ensure its props are passed correctly.
-            // The provided shadcn sidebar does not make SubButton a link automatically.
-            // We will use an 'a' tag for sub-buttons and a Button with Link for main items.
-            className={cn(isSubItem && "pl-4")} // Indent sub-items if needed
+            asChild={!isSubItem} 
+            className={cn(isSubItem && "pl-4")} 
             isActive={isActive}
             aria-disabled={item.disabled}
-            disabled={item.disabled} // Added disabled prop
+            disabled={item.disabled}
             tooltip={sidebarState === 'collapsed' ? item.label : undefined}
           >
             {isSubItem ? (
-              // For SubButtons (which are 'a' tags), content goes directly inside
+              // SidebarMenuSubButton defaults to an 'a' tag, asChild is false.
+              // It can have multiple children via a fragment.
               <>
                 <Icon />
                 <span>{item.label}</span>
                 {item.disabled && <Badge variant="outline" className="ml-auto">Soon</Badge>}
               </>
             ) : (
-              // For MenuButtons (which are <button> or Slot), content needs to be structured
-              <>
+              // SidebarMenuButton has asChild=true, so it renders a Slot.
+              // The child of Slot must be a single React Element. This span serves that purpose.
+              // The Slot will merge its props (className, data-attributes, href from Link) onto this span.
+              <span>
                 <Icon />
                 <span>{item.label}</span>
                 {item.disabled && <Badge variant="outline" className="ml-auto">Soon</Badge>}
-              </>
+              </span>
             )}
           </ButtonComponent>
         </Link>
