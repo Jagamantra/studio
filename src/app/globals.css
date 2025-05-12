@@ -114,19 +114,20 @@
     --ring-s: var(--accent-s);
     --ring-l: calc(var(--accent-l) - 10%); /* Ring lightness slightly darker for dark mode accent */
 
+    /* Updated to #000000 (black) for dark mode backgrounds */
+    --background: 0 0% 0%; 
+    --foreground: 220 10% 95%; /* Kept foreground for contrast */
 
-    --background: 220 20% 10%; 
-    --foreground: 220 10% 95%; 
+    --card: 0 0% 0%; 
+    --card-foreground: 220 10% 95%; /* Kept foreground for contrast */
 
-    --card: 220 20% 13%;
-    --card-foreground: 220 10% 95%;
-
-    --popover: 220 20% 13%;
-    --popover-foreground: 220 10% 95%;
+    --popover: 0 0% 0%; 
+    --popover-foreground: 220 10% 95%; /* Kept foreground for contrast */
 
     --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
     --primary-foreground: hsl(0, 0%, var(--accent-foreground-l-light-theme));
 
+    /* Consider if secondary and muted should also be pure black or slightly off-black for hierarchy */
     --secondary: 220 15% 30%; 
     --secondary-foreground: 220 10% 85%;
 
@@ -139,8 +140,9 @@
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 15% 25%;
-    --input: 220 15% 25%;
+    /* Borders might need to be slightly visible against black background */
+    --border: 220 15% 15%; /* Adjusted to be slightly off-black */
+    --input: 220 15% 15%;  /* Adjusted to be slightly off-black */
     --ring: hsl(var(--ring-h), var(--ring-s), clamp(0%, var(--ring-l), 100%));
 
     /* Dynamic Chart Colors based on Accent Color for Dark Theme */
@@ -172,9 +174,9 @@
     --chart-5: hsl(var(--chart-5-h), var(--chart-5-s), var(--chart-5-l));
 
     /* Sidebar specific variables for dark mode */
-    --sidebar-background-raw: 220 20% 8%;
+    --sidebar-background-raw: 0 0% 0%; /* Updated to black */
     --sidebar-foreground-raw: 220 10% 90%;
-    --sidebar-border-raw: 220 15% 20%;
+    --sidebar-border-raw: 220 15% 10%; /* Adjusted to be slightly off-black */
 
     --sidebar-background: hsl(var(--sidebar-background-raw));
     --sidebar-foreground: hsl(var(--sidebar-foreground-raw));
