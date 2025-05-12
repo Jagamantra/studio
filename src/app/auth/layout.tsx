@@ -4,12 +4,18 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/theme-provider'; 
+import { ThemeSwitcher } from '@/components/layout/theme-switcher'; // Import ThemeSwitcher
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   const { appName } = useTheme(); 
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4 sm:p-6 md:p-8">
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-muted/40 p-4 sm:p-6 md:p-8">
+      {/* ThemeSwitcher added to top-right corner */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 z-50">
+        <ThemeSwitcher />
+      </div>
+
       <div className="w-full max-w-md">
         <div className="mb-6 sm:mb-8 flex flex-col items-center text-center">
           <Link href="/" className="mb-4 inline-block">

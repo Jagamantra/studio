@@ -5,8 +5,6 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-// import { signInWithEmailAndPassword } from 'firebase/auth'; // Firebase removed
-// import { auth } from '@/lib/firebase';  // Firebase removed
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -19,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Loader2, AlertTriangle, Info } from 'lucide-react'; // Changed AlertTriangle to Info for system mode
+import { Loader2, AlertTriangle, Info } from 'lucide-react'; 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/auth-provider'; 
 
@@ -37,7 +35,6 @@ export function LoginForm() {
   const [isClient, setIsClient] = React.useState(false);
   
   const authContext = useAuth(); 
-  // const configured = authContext.isConfigured; // isConfigured will always be false
 
   React.useEffect(() => {
     setIsClient(true);
@@ -60,18 +57,13 @@ export function LoginForm() {
         return;
     }
 
-    // Firebase is removed, directly use dummy login.
     if (authContext.loginWithDummyCredentials) {
       try {
         const dummyUser = await authContext.loginWithDummyCredentials(data.email, data.password);
         if (dummyUser) {
-          toast({
-            title: 'Login Successful',
-            description: `Welcome back, ${dummyUser.displayName || 'User'}! (Mock API Mode)`,
-          });
-          // Redirect is handled by AuthProvider
+          // Toast for login success is now handled after MFA verification
+          // Redirection to MFA is handled by loginWithDummyCredentials
         } else {
-          // loginWithDummyCredentials itself should set error in AuthContext or throw
           const errMsg = authContext.error?.message || "Invalid mock credentials.";
           setFormError(errMsg);
           toast({ title: 'Login Failed', description: errMsg, variant: 'destructive' });
@@ -96,7 +88,7 @@ export function LoginForm() {
     <div className="grid gap-6">
       {isClient && ( 
         <Alert variant="default"> 
-          <Info className="h-4 w-4" /> {/* Changed Icon */}
+          <Info className="h-4 w-4" /> 
           <AlertTitle className="text-sm sm:text-base">System Mode</AlertTitle>
           <AlertDescription className="text-xs sm:text-sm">
             {systemModeMessage}
@@ -174,4 +166,3 @@ export function LoginForm() {
     </div>
   );
 }
-

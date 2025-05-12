@@ -10,7 +10,7 @@ import {
     DUMMY_USERS_STORAGE_KEY, 
     CURRENT_DUMMY_USER_STORAGE_KEY, 
     initialDummyUsersForAuth, 
-    previewAdminUserProfile, 
+    // previewAdminUserProfile, // No longer using previewAdmin for initial state
 } from '@/data/dummy-data';
 import * as api from '@/services/api'; 
 
@@ -87,48 +87,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         console.error("Error parsing stored dummy user:", e);
         localStorage.removeItem(CURRENT_DUMMY_USER_STORAGE_KEY); 
-        setUserProfile(previewAdminUserProfile); 
-        setMockFirebaseUser(previewAdminUserProfile as MockFirebaseUser);
+        setUserProfile(null); 
+        setMockFirebaseUser(null);
       }
     } else {
-      setUserProfile(previewAdminUserProfile);
-      setMockFirebaseUser(previewAdminUserProfile as MockFirebaseUser);
+      setUserProfile(null);
+      setMockFirebaseUser(null);
     }
     setLoading(false);
   }, []);
   
   const contextDisplayUser = useMemo(() => {
-    if (!configured && userProfile) {
-      return userProfile;
-    }
     return userProfile;
-  }, [userProfile, configured]);
+  }, [userProfile]);
 
   useEffect(() => {
-    if (loading) return; // Don't do anything if still loading initial auth state
+    if (loading) return; 
 
     const isAuthPage = pathname.startsWith('/auth/');
-    // const isMfaPage = pathname === '/auth/mfa'; // Not strictly needed for this revised logic
-    // const isLoginPage = pathname === '/auth/login'; // Not strictly needed for this revised logic
-    // const isRegisterPage = pathname === '/auth/register'; // Not strictly needed for this revised logic
     const isPublicRoot = pathname === '/';
 
-    // If a real user is logged in (not the previewAdmin)
-    if (contextDisplayUser && contextDisplayUser.uid !== previewAdminUserProfile.uid) {
-      // User is logged in.
-      // The login/register functions will push to /auth/mfa.
-      // The MFA page will push to /dashboard upon success.
-      // If a logged-in user (post-MFA) tries to access /auth/login or /auth/register again,
-      // they will currently stay there. This is a simplification to fix the MFA flow.
-      // A more robust solution would involve an `mfaCompleted` state to redirect them to /dashboard.
-      // For now, we prioritize fixing the MFA flow.
-    } else {
-      // No "real" user is logged in (current user is previewAdmin or null before previewAdmin is set)
-      // If not on an auth page and not on the root page (which handles its own redirect),
-      // redirect to login.
-      if (!isAuthPage && !isPublicRoot) {
+    if (contextDisplayUser) { 
+        // User object exists. Login/Register functions redirect to /auth/mfa.
+        // MFA page handles redirection to /dashboard upon success.
+        // If user is "logged in" (user object exists) but tries to access login/register again,
+        // they should be redirected to /auth/mfa (if not already there or on dashboard).
+        if ((pathname === '/auth/login' || pathname === '/auth/register') && pathname !== '/auth/mfa') {
+             router.replace('/auth/mfa');
+        }
+        // If user is "logged in" and on a non-auth page other than dashboard, direct to MFA.
+        // This handles cases where user might try to access protected routes directly.
+        // MFA page will then take them to dashboard if verified.
+        else if (!isAuthPage && pathname !== '/dashboard') {
+            router.replace('/auth/mfa');
+        }
+
+    } else { 
+      // No user object (contextDisplayUser is null) - User is not authenticated.
+      if (!isAuthPage && !isPublicRoot) { // If on a protected page
         router.replace('/auth/login');
+      } else if (isPublicRoot) { // If on the root page
+        router.replace('/auth/login'); 
       }
+      // If already on an auth page (e.g., /auth/login, /auth/register, /auth/mfa), let them stay.
     }
   }, [contextDisplayUser, loading, pathname, router]);
 
@@ -143,10 +144,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(user));
       }
-      router.push('/auth/mfa'); 
+      router.push('/auth/mfa'); // Redirect to MFA after setting user
       return user;
     } catch (err: any) {
       setError(err);
+      // Toast for login failure is handled in LoginForm
       return null;
     } finally {
       setLoading(false); 
@@ -168,10 +170,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUsers.push(newUser);
       saveDummyUsersToStorage(currentUsers);
 
-      router.push('/auth/mfa'); 
+      router.push('/auth/mfa'); // Redirect to MFA after setting user
       return newUser;
     } catch (err: any) {
       setError(err);
+      // Toast for registration failure is handled in RegisterForm
       return null;
     } finally {
       setLoading(false);
@@ -184,8 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(CURRENT_DUMMY_USER_STORAGE_KEY);
     }
-    setUserProfile(previewAdminUserProfile); 
-    setMockFirebaseUser(previewAdminUserProfile as MockFirebaseUser);
+    setUserProfile(null); 
+    setMockFirebaseUser(null);
     router.push('/auth/login'); 
     setLoading(false);
   }, [router]);

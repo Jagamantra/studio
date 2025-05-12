@@ -5,8 +5,6 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-// import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'; // Firebase removed
-// import { auth } from '@/lib/firebase'; // Firebase removed
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -18,9 +16,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle, Info } from 'lucide-react'; // Changed AlertTriangle to Info for system mode
+import { Loader2, AlertTriangle, Info } from 'lucide-react'; 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-// import { useRouter } from 'next/navigation'; // Not directly needed if AuthProvider handles redirect
 import { rolesConfig } from '@/config/roles.config';
 import { useAuth } from '@/contexts/auth-provider'; 
 import type { UserProfile } from '@/types';
@@ -43,13 +40,11 @@ type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
 export function RegisterForm() {
   const { toast } = useToast();
-  // const router = useRouter(); // AuthProvider handles redirect
   const [isLoading, setIsLoading] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isClient, setIsClient] = React.useState(false);
   
   const authContext = useAuth();
-  // const configured = authContext.isConfigured; // isConfigured will always be false
 
   React.useEffect(() => {
     setIsClient(true);
@@ -74,7 +69,6 @@ export function RegisterForm() {
         return;
     }
 
-    // Firebase is removed, directly use dummy registration.
     if (authContext.registerDummyUser) {
       try {
         const newUserProfile: Omit<UserProfile, 'uid' | 'photoURL'> & { password?: string } = {
@@ -86,13 +80,9 @@ export function RegisterForm() {
         };
         const dummyUser = await authContext.registerDummyUser(newUserProfile);
         if (dummyUser) {
-          toast({
-            title: 'Registration Successful',
-            description: 'Your mock account has been created. Redirecting...',
-          });
-           // Redirect is handled by AuthProvider after dummy user is set
+          // Toast for registration success is now handled after MFA verification
+          // Redirection to MFA is handled by registerDummyUser
         } else {
-           // registerDummyUser itself should set error in AuthContext or throw
            const errMsg = authContext.error?.message || "Failed to register mock user.";
            setFormError(errMsg);
            toast({ title: 'Registration Failed', description: errMsg, variant: 'destructive' });
@@ -117,7 +107,7 @@ export function RegisterForm() {
     <div className="grid gap-6">
       {isClient && ( 
          <Alert variant="default"> 
-          <Info className="h-4 w-4" /> {/* Changed Icon */}
+          <Info className="h-4 w-4" /> 
           <AlertTitle className="text-sm sm:text-base">System Mode</AlertTitle>
           <AlertDescription className="text-xs sm:text-sm">
             {systemModeMessage}
@@ -202,4 +192,3 @@ export function RegisterForm() {
     </div>
   );
 }
-

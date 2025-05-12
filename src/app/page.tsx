@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-provider';
 import { Loader2 } from 'lucide-react';
-import { previewAdminUserProfile } from '@/data/dummy-data'; 
 
 export default function HomePage() {
   const router = useRouter();
@@ -13,12 +12,15 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!loading) {
-      if (user && user.uid !== previewAdminUserProfile.uid) {
-        // A "real" user is logged in
+      if (user) { 
+        // User object exists. This means the login/registration process has started.
+        // AuthProvider will redirect to /auth/mfa if necessary.
+        // MfaPage will redirect to /dashboard upon successful verification.
+        // If the user lands on '/' and has a user object, assume they should go to dashboard
+        // as AuthProvider should have already handled the MFA redirection if needed.
         router.replace('/dashboard');
       } else {
-        // No "real" user logged in (user is previewAdminUserProfile or null before previewAdmin is set)
-        // Redirect to login page.
+        // No user object, means not authenticated.
         router.replace('/auth/login');
       }
     }
@@ -34,4 +36,3 @@ export default function HomePage() {
     </div>
   );
 }
-
