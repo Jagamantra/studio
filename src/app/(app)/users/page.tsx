@@ -129,15 +129,15 @@ export default function UsersPage() {
   ];
 
   if (authLoading) {
-     return <div className="flex flex-1 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+     return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   if (user?.role !== 'admin') {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold">Access Denied</h1>
-        <p className="text-muted-foreground mt-2">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 text-center">
+        <ShieldAlert className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
+        <h1 className="text-xl md:text-2xl font-bold">Access Denied</h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-2">
           You do not have permission to view this page. Please contact an administrator if you believe this is an error.
         </p>
         <Button asChild className="mt-6">
@@ -149,10 +149,10 @@ export default function UsersPage() {
 
 
   return (
-    <div className="flex-1 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-        <Button onClick={handleAddUser} disabled={isLoading}>
+    <div className="flex-1 space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
+        <Button onClick={handleAddUser} disabled={isLoading} size="sm">
           <UserPlus className="mr-2 h-4 w-4" /> Add User
         </Button>
       </div>
@@ -160,9 +160,9 @@ export default function UsersPage() {
 
       {/* Add/Edit User Dialog (Simplified) */}
       <Dialog open={isAddUserDialogOpen || isEditUserDialogOpen} onOpenChange={isEditUserDialogOpen ? setIsEditUserDialogOpen : setIsAddUserDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
+            <DialogTitle className="text-lg md:text-xl">{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
             <DialogDescription>
               {editingUser ? `Update details for ${editingUser.displayName}.` : 'Enter details for the new user.'}
             </DialogDescription>
@@ -170,17 +170,17 @@ export default function UsersPage() {
           <div className="grid gap-4 py-4">
             {/* Basic form example, use react-hook-form for real implementation */}
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Name</Label>
-              <Input id="name" defaultValue={editingUser?.displayName || ''} className="col-span-3" />
+              <Label htmlFor="name" className="text-right text-xs sm:text-sm">Name</Label>
+              <Input id="name" defaultValue={editingUser?.displayName || ''} className="col-span-3 h-9" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">Email</Label>
-              <Input id="email" type="email" defaultValue={editingUser?.email || ''} className="col-span-3" />
+              <Label htmlFor="email" className="text-right text-xs sm:text-sm">Email</Label>
+              <Input id="email" type="email" defaultValue={editingUser?.email || ''} className="col-span-3 h-9" />
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">Role</Label>
+              <Label htmlFor="role" className="text-right text-xs sm:text-sm">Role</Label>
               {/* Replace with Select component from shadcn/ui */}
-              <select id="role" defaultValue={editingUser?.role || 'user'} className="col-span-3 p-2 border rounded-md">
+              <select id="role" defaultValue={editingUser?.role || 'user'} className="col-span-3 h-9 p-2 border rounded-md text-xs sm:text-sm">
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
               </select>
@@ -188,12 +188,12 @@ export default function UsersPage() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" size="sm">Cancel</Button>
             </DialogClose>
             <Button onClick={() => { /* TODO: Implement save logic */ 
               toast({title: "Action Placeholder", description: "Save functionality not fully implemented."});
               isEditUserDialogOpen ? setIsEditUserDialogOpen(false) : setIsAddUserDialogOpen(false);
-            }}>
+            }} size="sm">
               {editingUser ? 'Save Changes' : 'Create User'}
             </Button>
           </DialogFooter>
@@ -204,15 +204,15 @@ export default function UsersPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg md:text-xl">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm">
               This action cannot be undone. This will permanently delete the user account 
               for <span className="font-semibold">{deletingUser?.displayName}</span> and remove their data from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isLoading}>
+            <AlertDialogCancel disabled={isLoading} size="sm">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isLoading} size="sm">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete User
             </AlertDialogAction>

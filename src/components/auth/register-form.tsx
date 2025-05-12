@@ -69,6 +69,11 @@ export function RegisterForm() {
     setIsLoading(true);
     setFormError(null);
 
+    if (!isClient) { // Should not happen if button is disabled
+        setIsLoading(false);
+        return;
+    }
+
     if (!configured) {
       if (authContext.registerDummyUser) {
         try {
@@ -86,6 +91,7 @@ export function RegisterForm() {
               title: 'Dummy Registration Successful',
               description: 'Your dummy account has been created. Redirecting...',
             });
+             // Redirect is handled by AuthProvider after dummy user is set
           } else {
              const errMsg = authContext.error?.message || "Failed to register dummy user.";
              setFormError(errMsg);
@@ -105,16 +111,19 @@ export function RegisterForm() {
       return;
     }
 
+    // Firebase registration
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       await updateProfile(userCredential.user, {
         displayName: data.displayName,
       });
+      // Firestore document for role/profile would be created here in a real app
+      // For this template, role is primarily via custom claims or fetched profile
       toast({
         title: 'Registration Successful',
         description: 'Your account has been created. Redirecting...',
       });
-      router.push('/dashboard'); 
+      // router.push('/dashboard'); // AuthProvider will handle redirect
     } catch (err: any) {
       console.error("Registration error:", err);
       let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -158,8 +167,8 @@ export function RegisterForm() {
       {isClient && !configured && (
          <Alert variant="default"> 
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Dummy Mode Active</AlertTitle>
-          <AlertDescription>
+          <AlertTitle className="text-sm sm:text-base">Dummy Mode Active</AlertTitle>
+          <AlertDescription className="text-xs sm:text-sm">
             {firebaseNotConfiguredMessage}
           </AlertDescription>
         </Alert>
@@ -167,8 +176,8 @@ export function RegisterForm() {
        {formError && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{formError}</AlertDescription>
+          <AlertTitle className="text-sm sm:text-base">Error</AlertTitle>
+          <AlertDescription className="text-xs sm:text-sm">{formError}</AlertDescription>
         </Alert>
       )}
       <Form {...form}>
@@ -180,7 +189,7 @@ export function RegisterForm() {
               <FormItem>
                 <FormLabel>Full Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" disabled={isLoading} {...field} />
+                  <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -199,7 +208,7 @@ export function RegisterForm() {
                     autoCapitalize="none"
                     autoComplete="email"
                     autoCorrect="off"
-                    disabled={isLoading}
+                    disabled={isLoading || !isClient}
                     {...field}
                   />
                 </FormControl>
@@ -214,7 +223,7 @@ export function RegisterForm() {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading} {...field} />
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -227,13 +236,13 @@ export function RegisterForm() {
               <FormItem>
                 <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading} {...field} />
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || !isClient}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Account
           </Button>

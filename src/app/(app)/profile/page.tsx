@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud, ShieldCheck, Settings2, UserCircle } from 'lucide-react';
+import { Loader2, UploadCloud, ShieldCheck, Settings2, UserCircle, Edit2 } from 'lucide-react';
 import { updateProfile as firebaseUpdateProfile, updatePassword as firebaseUpdatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -58,6 +58,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = React.useState({ profile: false, password: false, advanced: false });
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
 
   const profileForm = useForm<ProfileFormValues>({
@@ -182,13 +183,13 @@ export default function ProfilePage() {
     return names[0][0].toUpperCase() + names[names.length - 1][0].toUpperCase();
   };
 
-  if (authLoading) return <div className="flex flex-1 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  if (!user) return <div className="flex flex-1 items-center justify-center"><p>Please log in to view your profile.</p></div>;
+  if (authLoading) return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  if (!user) return <div className="flex flex-1 items-center justify-center p-4"><p>Please log in to view your profile.</p></div>;
 
   return (
-    <div className="flex-1 space-y-8">
+    <div className="flex-1 space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Profile</h1>
       </div>
 
       {/* Personal Information */}
@@ -197,7 +198,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3">
             <UserCircle className="h-6 w-6 text-primary" />
             <div>
-              <CardTitle>Personal Information</CardTitle>
+              <CardTitle className="text-xl md:text-2xl">Personal Information</CardTitle>
               <CardDescription>Update your personal details and profile picture.</CardDescription>
             </div>
           </div>
@@ -205,22 +206,39 @@ export default function ProfilePage() {
         <Form {...profileForm}>
           <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
             <CardContent className="space-y-6">
-              <div className="flex items-center space-x-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={previewUrl || undefined} alt={user.displayName || 'User'} data-ai-hint="person face" />
-                  <AvatarFallback className="text-3xl">{getInitials(user.displayName)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-grow space-y-1">
-                  <FormLabel htmlFor="photo-upload">Profile Picture</FormLabel>
-                  <Input 
-                    id="photo-upload" 
-                    type="file" 
-                    className="max-w-xs" 
-                    onChange={handleFileChange}
-                    accept="image/png, image/jpeg, image/gif" 
+              <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:space-x-6">
+                <div className="relative">
+                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+                    <AvatarImage src={previewUrl || undefined} alt={user.displayName || 'User'} data-ai-hint="person face" />
+                    <AvatarFallback className="text-3xl">{getInitials(user.displayName)}</AvatarFallback>
+                  </Avatar>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background shadow-md"
+                    onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading.profile}
-                  /> 
-                  <FormDescription>PNG, JPG, GIF up to 5MB. Select a file to preview.</FormDescription>
+                    aria-label="Change profile picture"
+                  >
+                    <Edit2 className="h-4 w-4"/>
+                  </Button>
+                  <Input 
+                      id="photo-upload" 
+                      type="file" 
+                      ref={fileInputRef}
+                      className="hidden" 
+                      onChange={handleFileChange}
+                      accept="image/png, image/jpeg, image/gif" 
+                      disabled={isLoading.profile}
+                    /> 
+                </div>
+                <div className="flex-grow space-y-1 w-full sm:w-auto text-center sm:text-left">
+                  <FormLabel htmlFor="photo-upload-info" className="block text-sm font-medium">Profile Picture</FormLabel>
+                  <p id="photo-upload-info" className="text-xs text-muted-foreground">
+                    Click the edit icon on the image to change.
+                    PNG, JPG, GIF up to 5MB.
+                  </p>
                 </div>
               </div>
               <FormField
@@ -273,7 +291,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-6 w-6 text-primary" />
             <div>
-              <CardTitle>Change Password</CardTitle>
+              <CardTitle className="text-xl md:text-2xl">Change Password</CardTitle>
               <CardDescription>Update your account password. Ensure it's strong and unique.</CardDescription>
             </div>
           </div>
@@ -330,7 +348,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3">
             <Settings2 className="h-6 w-6 text-primary" />
             <div>
-              <CardTitle>Advanced Settings</CardTitle>
+              <CardTitle className="text-xl md:text-2xl">Advanced Settings</CardTitle>
               <CardDescription>Customize your application experience.</CardDescription>
             </div>
           </div>
@@ -345,7 +363,7 @@ export default function ProfilePage() {
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Email Notifications</FormLabel>
-                      <FormDescription>
+                      <FormDescription className="text-xs sm:text-sm">
                         Receive updates and important announcements via email.
                       </FormDescription>
                     </div>
@@ -377,7 +395,7 @@ export default function ProfilePage() {
                         <SelectItem value="spacious">Spacious</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormDescription>
+                    <FormDescription className="text-xs sm:text-sm">
                       Adjust the spacing and size of UI elements. (This is a conceptual setting)
                     </FormDescription>
                     <FormMessage />

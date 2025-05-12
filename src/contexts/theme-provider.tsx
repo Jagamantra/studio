@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -82,11 +83,12 @@ export function ThemeProvider({
 
     const applyDefaultAccent = () => {
       const defaultColor = projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName) || projectConfig.availableAccentColors[0];
-      const parts = defaultColor.hslValue.match(/(\d+)\s*(\d+%)\s*(\d+%)/);
+      // Use the corrected regex for parsing default HSL as well
+      const parts = defaultColor.hslValue.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?%)\s*(\d+(?:\.\d+)?%)/);
       if (parts && parts.length === 4) {
-        h = parts[1];
-        s = parts[2];
-        l = parts[3];
+        h = parts[1]; // e.g., "180" or "221.2"
+        s = parts[2]; // e.g., "100%" or "83.2%"
+        l = parts[3]; // e.g., "25%" or "53.3%"
       } else {
         // Fallback for ultimate safety, should not be reached if config is valid
         h = "180"; s = "100%"; l = "25%"; 
@@ -104,11 +106,12 @@ export function ThemeProvider({
         applyDefaultAccent();
       }
     } else {
-      const parts = accentColor.match(/(\d+)\s*(\d+%)\s*(\d+%)/);
+      // Corrected regex to handle decimal points in H, S, L values
+      const parts = accentColor.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?%)\s*(\d+(?:\.\d+)?%)/);
       if (parts && parts.length === 4) {
-        h = parts[1];
-        s = parts[2];
-        l = parts[3];
+        h = parts[1]; // e.g., "180" or "221.2"
+        s = parts[2]; // e.g., "100%" or "83.2%"
+        l = parts[3]; // e.g., "25%" or "53.3%"
       } else {
         console.warn(`Invalid HSL string format: ${accentColor}. Reverting to default.`);
         applyDefaultAccent();
@@ -123,33 +126,24 @@ export function ThemeProvider({
     root.style.setProperty('--primary-s', s);
     root.style.setProperty('--primary-l', l);
     
-    // These lines ensure --accent and --primary are full HSL strings for Tailwind
-    // They are now derived from the h,s,l components set above
-    // root.style.setProperty('--accent', `hsl(${h}, ${s}, ${l})`);
-    // root.style.setProperty('--primary', `hsl(${h}, ${s}, ${l})`);
-    // The above are not strictly needed if globals.css defines --accent: hsl(var(--accent-h), var(--accent-s), var(--accent-l))
-    // and Tailwind consumes those definitions. Assuming globals.css is set up that way.
-
-    const lightnessValue = parseFloat(l);
+    const lightnessValue = parseFloat(l); // Converts "25%" to 25
     const isDarkTheme = root.classList.contains('dark');
     
     let fgLightnessVarKey: string;
+    // Determine foreground color based on theme and accent lightness
     if (isDarkTheme) {
-      fgLightnessVarKey = lightnessValue > 55 ? '--accent-foreground-l-dark-theme' : '--accent-foreground-l-light-theme';
+        // Dark theme: if accent is light (lightnessValue > 50-55), use dark text. Otherwise light text.
+        fgLightnessVarKey = lightnessValue > 55 ? '--accent-foreground-l-dark-theme' : '--accent-foreground-l-light-theme';
     } else {
-      fgLightnessVarKey = lightnessValue < 50 ? '--accent-foreground-l-light-theme' : '--accent-foreground-l-dark-theme';
+        // Light theme: if accent is dark (lightnessValue < 45-50), use light text. Otherwise dark text.
+        fgLightnessVarKey = lightnessValue < 50 ? '--accent-foreground-l-light-theme' : '--accent-foreground-l-dark-theme';
     }
     
-    // The foreground color is always a shade of gray, its lightness determined by fgLightnessVarKey
-    // This CSS variable will contain a percentage like "95%" or "10%".
-    // The full HSL string for foreground is constructed here directly.
     const finalFgHslString = `hsl(0, 0%, var(${fgLightnessVarKey}))`;
     root.style.setProperty('--accent-foreground', finalFgHslString);
     root.style.setProperty('--primary-foreground', finalFgHslString);
 
     root.style.setProperty('--ring-h', h);
-    // --ring-s and --ring-l are defined in globals.css. --ring itself is also defined there as hsl(var(--ring-h), var(--ring-s), var(--ring-l)).
-    // So, setting --ring-h is sufficient for the --ring variable to update, which Tailwind then consumes.
 
   }, [accentColor, theme]);
 
@@ -188,3 +182,4 @@ export const useTheme = () => {
   }
   return context;
 };
+

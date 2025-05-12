@@ -17,7 +17,7 @@ import type { ChartConfig } from '@/components/ui/chart';
 import { BarChart as RechartsBarChartComponent, CartesianGrid, XAxis, YAxis, Bar } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
-import { projectConfig } from '@/config/project.config'; // Added import
+import { projectConfig } from '@/config/project.config';
 
 // Define a dummy user for viewing the dashboard when Firebase isn't configured
 const DUMMY_USER_FOR_VIEWING: UserProfile = {
@@ -49,7 +49,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
           </CardContent>
         </Card>
       )}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -58,7 +58,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold capitalize">{userToRenderOnDashboard.role}</div>
+            <div className="text-xl md:text-2xl font-bold capitalize">{userToRenderOnDashboard.role}</div>
             <p className="text-xs text-muted-foreground">
               {isAdmin ? 'Full access to all features.' : 'Standard user access.'}
             </p>
@@ -73,7 +73,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">Manage Users</div>
+                <div className="text-xl md:text-2xl font-bold">Manage Users</div>
                 <p className="text-xs text-muted-foreground mb-2">
                   View, add, edit, or remove users.
                 </p>
@@ -89,7 +89,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
                 <ShieldQuestion className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">AI Analyzer</div>
+                <div className="text-xl md:text-2xl font-bold">AI Analyzer</div>
                  <p className="text-xs text-muted-foreground mb-2">
                   Get insights on your app configurations.
                 </p>
@@ -108,7 +108,7 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
                <BarChart3 className="h-4 w-4 text-muted-foreground" />
              </CardHeader>
              <CardContent>
-               <div className="text-2xl font-bold">Coming Soon</div>
+               <div className="text-xl md:text-2xl font-bold">Coming Soon</div>
                <p className="text-xs text-muted-foreground">
                  Your recent activity and statistics will appear here.
                </p>
@@ -119,24 +119,28 @@ const DashboardV1Content = ({ userToRenderOnDashboard, isConfigured }: { userToR
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
+          <CardTitle className="text-xl md:text-2xl">Getting Started</CardTitle>
           <CardDescription>
             Explore the features and make this template your own.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col items-center justify-center p-6 border rounded-lg text-center">
-                <Image src="https://picsum.photos/seed/dashboard1/400/200" alt="Feature placeholder 1" width={400} height={200} className="rounded-md mb-4" data-ai-hint="office team" />
-                <h3 className="text-lg font-semibold mb-1">Customize Your Profile</h3>
-                <p className="text-sm text-muted-foreground mb-3">Personalize your account details and preferences.</p>
+            <div className="flex flex-col items-center justify-center p-4 md:p-6 border rounded-lg text-center">
+                <div className="w-full aspect-[2/1] relative mb-4">
+                  <Image src="https://picsum.photos/seed/dashboard1/400/200" alt="Feature placeholder 1" layout="fill" objectFit="cover" className="rounded-md" data-ai-hint="office team" />
+                </div>
+                <h3 className="text-md md:text-lg font-semibold mb-1">Customize Your Profile</h3>
+                <p className="text-xs md:text-sm text-muted-foreground mb-3">Personalize your account details and preferences.</p>
                 <Button asChild variant="secondary" size="sm">
                     <Link href="/profile">Go to Profile</Link>
                 </Button>
             </div>
-            <div className="flex flex-col items-center justify-center p-6 border rounded-lg text-center">
-                 <Image src="https://picsum.photos/seed/dashboard2/400/200" alt="Feature placeholder 2" width={400} height={200} className="rounded-md mb-4" data-ai-hint="modern workspace" />
-                <h3 className="text-lg font-semibold mb-1">Explore Theme Options</h3>
-                <p className="text-sm text-muted-foreground mb-3">Adjust themes, colors, and more via the palette icon in the header.</p>
+            <div className="flex flex-col items-center justify-center p-4 md:p-6 border rounded-lg text-center">
+                <div className="w-full aspect-[2/1] relative mb-4">
+                  <Image src="https://picsum.photos/seed/dashboard2/400/200" alt="Feature placeholder 2" layout="fill" objectFit="cover" className="rounded-md" data-ai-hint="modern workspace" />
+                </div>
+                <h3 className="text-md md:text-lg font-semibold mb-1">Explore Theme Options</h3>
+                <p className="text-xs md:text-sm text-muted-foreground mb-3">Adjust themes, colors, and more via the palette icon in the header.</p>
             </div>
         </CardContent>
       </Card>
@@ -163,21 +167,21 @@ const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashb
   const isAdmin = userToRenderOnDashboard.role === 'admin';
   return (
     <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="grid w-full grid-cols-3 mb-4">
+      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 mb-4">
         <TabsTrigger value="overview">Beta Overview</TabsTrigger>
         <TabsTrigger value="analytics">User Analytics</TabsTrigger>
-        <TabsTrigger value="feedback">Feedback Log</TabsTrigger>
+        <TabsTrigger value="feedback" className="hidden sm:inline-flex">Feedback Log</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:gap-6 md:grid-cols-2">
             <Card>
             <CardHeader>
-                <CardTitle>Welcome to Beta!</CardTitle>
+                <CardTitle className="text-xl md:text-2xl">Welcome to Beta!</CardTitle>
                 <CardDescription>Explore new features and improvements.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-                <p>This beta phase introduces a revamped analytics module and a direct feedback channel. Your input is valuable!</p>
+                <p className="text-sm">This beta phase introduces a revamped analytics module and a direct feedback channel. Your input is valuable!</p>
                 <div className="flex items-center gap-2 text-sm">
                     <Zap className="h-5 w-5 text-primary" />
                     <span>Enhanced performance metrics</span>
@@ -194,7 +198,7 @@ const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashb
                 <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold capitalize">{userToRenderOnDashboard.role}</div>
+                <div className="text-xl md:text-2xl font-bold capitalize">{userToRenderOnDashboard.role}</div>
                 <p className="text-xs text-muted-foreground">
                 {isAdmin ? 'Full access to beta features and admin tools.' : 'Standard user access for beta testing.'}
                 </p>
@@ -207,20 +211,21 @@ const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashb
       <TabsContent value="analytics">
         <Card>
           <CardHeader>
-            <CardTitle>User Growth Analytics (Beta)</CardTitle>
+            <CardTitle className="text-xl md:text-2xl">User Growth Analytics (Beta)</CardTitle>
             <CardDescription>Monthly new vs. churned users.</CardDescription>
           </CardHeader>
-          <CardContent className="pl-2">
-            <ChartContainer config={betaChartConfig} className="min-h-[300px] w-full">
-              <RechartsBarChartComponent data={betaChartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+          <CardContent className="pl-0 sm:pl-2">
+            <ChartContainer config={betaChartConfig} className="min-h-[250px] sm:min-h-[300px] w-full">
+              <RechartsBarChartComponent data={betaChartData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="month"
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
+                  fontSize={12}
                 />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dashed" />} />
                 <ChartLegend content={<ChartLegendContent />} />
                 <Bar dataKey="newUsers" fill="var(--color-newUsers)" radius={[4, 4, 0, 0]} />
@@ -234,7 +239,7 @@ const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashb
       <TabsContent value="feedback">
         <Card>
           <CardHeader>
-            <CardTitle>Beta Feedback Log</CardTitle>
+            <CardTitle className="text-xl md:text-2xl">Beta Feedback Log</CardTitle>
             <CardDescription>Recent feedback submitted by beta testers.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -245,7 +250,7 @@ const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashb
                 <li className="p-3 border rounded-md bg-muted/50"><strong>User C:</strong> "Performance seems much better."</li>
                 </ul>
             ) : (
-                <p className="text-muted-foreground">Submit your feedback through the "Help & Feedback" section (coming soon).</p>
+                <p className="text-muted-foreground text-sm">Submit your feedback through the "Help & Feedback" section (coming soon).</p>
             )}
           </CardContent>
         </Card>
@@ -257,22 +262,31 @@ const DashboardBetaContent = ({ userToRenderOnDashboard }: { userToRenderOnDashb
 // --- Content for dev ---
 const DashboardDevContent = ({ userToRenderOnDashboard }: { userToRenderOnDashboard: UserProfile }) => {
   const { theme, accentColor, borderRadius, appVersion } = useTheme();
+  const [currentProgress, setCurrentProgress] = useState(67);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentProgress(Math.floor(Math.random() * 101));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Developer Build Environment</AlertTitle>
-        <AlertDescription>
+        <AlertDescription className="text-xs sm:text-sm">
           You are viewing the <strong>{appVersion}</strong> build. All experimental features are active and may be unstable. Use for testing purposes only.
         </AlertDescription>
       </Alert>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Database className="h-5 w-5 text-primary" /> Current Context</CardTitle>
+            <CardTitle className="text-lg md:text-xl flex items-center gap-2"><Database className="h-5 w-5 text-primary" /> Current Context</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div><strong>User:</strong> <span className="font-mono">{userToRenderOnDashboard.displayName} ({userToRenderOnDashboard.email})</span></div>
+          <CardContent className="space-y-2 text-xs sm:text-sm">
+            <div><strong>User:</strong> <span className="font-mono break-all">{userToRenderOnDashboard.displayName} ({userToRenderOnDashboard.email})</span></div>
             <div><strong>Role:</strong> <Badge variant={userToRenderOnDashboard.role === 'admin' ? 'default' : 'secondary'}>{userToRenderOnDashboard.role}</Badge></div>
             <div><strong>Theme Mode:</strong> <span className="font-mono capitalize">{theme}</span></div>
             <div><strong>Accent Color:</strong> <span className="font-mono p-1 rounded" style={{backgroundColor: accentColor.startsWith('#') ? accentColor : `hsl(${accentColor})`, color: 'hsl(var(--accent-foreground))'}}>{accentColor}</span></div>
@@ -281,15 +295,15 @@ const DashboardDevContent = ({ userToRenderOnDashboard }: { userToRenderOnDashbo
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-primary" /> Developer Tools</CardTitle>
+            <CardTitle className="text-lg md:text-xl flex items-center gap-2"><Zap className="h-5 w-5 text-primary" /> Developer Tools</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button variant="outline" className="w-full">Trigger Test Notification</Button>
-            <Button variant="outline" className="w-full">Simulate API Error</Button>
+            <Button variant="outline" className="w-full text-xs sm:text-sm">Trigger Test Notification</Button>
+            <Button variant="outline" className="w-full text-xs sm:text-sm">Simulate API Error</Button>
             <div className="mt-2">
-              <label htmlFor="stability" className="text-sm font-medium text-muted-foreground">System Stability Monitor (Dummy):</label>
-              <Progress id="stability" value={67} className="w-full mt-1" />
-              <p className="text-xs text-muted-foreground text-right">67% Stable</p>
+              <label htmlFor="stability" className="text-xs sm:text-sm font-medium text-muted-foreground">System Stability Monitor (Dummy):</label>
+              <Progress id="stability" value={currentProgress} className="w-full mt-1" />
+              <p className="text-xs text-muted-foreground text-right">{currentProgress}% Stable</p>
             </div>
           </CardContent>
         </Card>
@@ -309,7 +323,7 @@ export default function DashboardPage() {
 
   if (!isClient || loading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex flex-1 items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -324,10 +338,10 @@ export default function DashboardPage() {
 
   if (!userToRenderOnDashboard) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <Card className="w-full max-w-md text-center">
+      <div className="flex flex-1 items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center p-4">
           <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
+            <CardTitle className="text-xl md:text-2xl">Access Denied</CardTitle>
             <CardDescription>You need to be logged in to view this page.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -357,20 +371,20 @@ export default function DashboardPage() {
   const versionDetails = projectConfig.availableAppVersions.find(v => v.id === appVersion);
 
   return (
-    <div className="flex-1 space-y-6">
+    <div className="flex-1 space-y-4 md:space-y-6">
       <div className="flex flex-col items-start justify-between space-y-2 sm:flex-row sm:items-center">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
           {versionDetails && (
             <Badge 
               variant={appVersion === 'dev' ? 'destructive' : 'outline'} 
-              className="align-middle text-sm"
+              className="align-middle text-xs sm:text-sm"
             >
               {versionDetails.name}
             </Badge>
           )}
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Welcome back, {userToRenderOnDashboard.displayName || 'User'}!
         </p>
       </div>

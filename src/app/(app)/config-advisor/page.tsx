@@ -7,14 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText } from 'lucide-radix'; // Assuming lucide-radix exists or use lucide-react
+import { Loader2, ShieldQuestion, Lightbulb, AlertTriangle, FileText } from 'lucide-react';
 import { analyzeConfig, type AnalyzeConfigInput, type AnalyzeConfigOutput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
-
-// Correcting Lucide import
-import { Loader2 as LoaderIcon, ShieldQuestion as ShieldQuestionIcon, Lightbulb as LightbulbIcon, AlertTriangle as AlertTriangleIcon, FileText as FileTextIcon } from 'lucide-react';
-
 
 export default function ConfigAdvisorPage() {
   const { user, loading: authLoading } = useAuth();
@@ -48,15 +44,15 @@ export default function ConfigAdvisorPage() {
   };
   
   if (authLoading) {
-    return <div className="flex flex-1 items-center justify-center"><LoaderIcon className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   if (user?.role !== 'admin') {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <ShieldQuestionIcon className="h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold">Access Denied</h1>
-        <p className="text-muted-foreground mt-2">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 text-center">
+        <ShieldQuestion className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
+        <h1 className="text-xl md:text-2xl font-bold">Access Denied</h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-2">
           You do not have permission to view this page. This feature is for administrators only.
         </p>
         <Button asChild className="mt-6">
@@ -68,14 +64,14 @@ export default function ConfigAdvisorPage() {
 
 
   return (
-    <div className="flex-1 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Configuration Advisor</h1>
-        <Button onClick={handleSubmit} disabled={isLoading}>
+    <div className="flex-1 space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
+        <Button onClick={handleSubmit} disabled={isLoading} size="sm">
           {isLoading ? (
-            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <LightbulbIcon className="mr-2 h-4 w-4" />
+            <Lightbulb className="mr-2 h-4 w-4" />
           )}
           Analyze Configurations
         </Button>
@@ -83,7 +79,7 @@ export default function ConfigAdvisorPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Input Configuration Files</CardTitle>
+          <CardTitle className="text-xl md:text-2xl">Input Configuration Files</CardTitle>
           <CardDescription>
             Paste the content of your configuration files below. The AI will analyze them for potential improvements in performance and security.
           </CardDescription>
@@ -98,7 +94,7 @@ export default function ConfigAdvisorPage() {
               placeholder="Paste content of project.config.ts here..."
               value={projectConfigContent}
               onChange={(e) => setProjectConfigContent(e.target.value)}
-              rows={8}
+              rows={6}
               className="font-mono text-xs"
               disabled={isLoading}
             />
@@ -112,7 +108,7 @@ export default function ConfigAdvisorPage() {
               placeholder="Paste content of sidebar.config.ts here..."
               value={sidebarConfigContent}
               onChange={(e) => setSidebarConfigContent(e.target.value)}
-              rows={8}
+              rows={6}
               className="font-mono text-xs"
               disabled={isLoading}
             />
@@ -126,7 +122,7 @@ export default function ConfigAdvisorPage() {
               placeholder="Paste content of roles.config.ts here..."
               value={rolesConfigContent}
               onChange={(e) => setRolesConfigContent(e.target.value)}
-              rows={8}
+              rows={6}
               className="font-mono text-xs"
               disabled={isLoading}
             />
@@ -136,7 +132,7 @@ export default function ConfigAdvisorPage() {
 
       {error && (
         <Alert variant="destructive">
-          <AlertTriangleIcon className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -144,15 +140,15 @@ export default function ConfigAdvisorPage() {
 
       {isLoading && (
         <div className="flex justify-center items-center py-8">
-          <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2">Analyzing configurations, please wait...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-2 text-sm">Analyzing configurations, please wait...</p>
         </div>
       )}
 
       {suggestions && suggestions.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>AI Suggestions</CardTitle>
+            <CardTitle className="text-xl md:text-2xl">AI Suggestions</CardTitle>
             <CardDescription>
               Here are the AI-powered suggestions to improve your configurations:
             </CardDescription>
@@ -161,14 +157,14 @@ export default function ConfigAdvisorPage() {
             <Accordion type="single" collapsible className="w-full">
               {suggestions.map((suggestion, index) => (
                 <AccordionItem value={`item-${index}`} key={index}>
-                  <AccordionTrigger>
-                    <div className="flex items-center gap-2">
-                        <FileTextIcon className="h-4 w-4 text-muted-foreground" />
+                  <AccordionTrigger className="text-sm">
+                    <div className="flex items-center gap-2 text-left">
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <span className="font-semibold">{suggestion.file}:</span>
-                        <span className="truncate flex-1 text-left">{suggestion.suggestion}</span>
+                        <span className="truncate flex-1">{suggestion.suggestion}</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="prose prose-sm max-w-none dark:prose-invert px-2">
+                  <AccordionContent className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert px-2">
                     <p><strong>Suggestion:</strong> {suggestion.suggestion}</p>
                     <p><strong>Reason:</strong> {suggestion.reason}</p>
                   </AccordionContent>
@@ -181,9 +177,9 @@ export default function ConfigAdvisorPage() {
 
       {suggestions && suggestions.length === 0 && !isLoading && (
          <Alert>
-            <LightbulbIcon className="h-4 w-4" />
+            <Lightbulb className="h-4 w-4" />
             <AlertTitle>No Specific Suggestions</AlertTitle>
-            <AlertDescription>The AI analyzer did not find any specific critical issues or suggestions for the provided configurations. They appear to be well-structured based on the analysis criteria. You can try providing more detailed or different configurations for further analysis.</AlertDescription>
+            <AlertDescription className="text-xs sm:text-sm">The AI analyzer did not find any specific critical issues or suggestions for the provided configurations. They appear to be well-structured based on the analysis criteria. You can try providing more detailed or different configurations for further analysis.</AlertDescription>
         </Alert>
       )}
     </div>
