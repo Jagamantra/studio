@@ -114,7 +114,7 @@ export function UserFormDialog({ isOpen, onOpenChange, editingUser, onSubmit, is
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
-                      <FormControl asChild>
+                      <FormControl>
                         <Input placeholder="John Doe" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
@@ -127,7 +127,7 @@ export function UserFormDialog({ isOpen, onOpenChange, editingUser, onSubmit, is
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>
-                      <FormControl asChild>
+                      <FormControl>
                         <Input type="email" placeholder="name@example.com" {...field} disabled={!!editingUser || isLoading} />
                       </FormControl>
                       {editingUser && <FormDescription className="text-xs">Email cannot be changed.</FormDescription>}
@@ -142,7 +142,7 @@ export function UserFormDialog({ isOpen, onOpenChange, editingUser, onSubmit, is
                     <FormItem>
                       <FormLabel>Role</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
-                        <FormControl asChild>
+                        <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a role" />
                           </SelectTrigger>
@@ -165,7 +165,7 @@ export function UserFormDialog({ isOpen, onOpenChange, editingUser, onSubmit, is
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone Number (Optional)</FormLabel>
-                      <FormControl asChild>
+                      <FormControl>
                         <Input type="tel" placeholder="+1 123 456 7890" {...field} value={field.value || ''} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
@@ -180,7 +180,7 @@ export function UserFormDialog({ isOpen, onOpenChange, editingUser, onSubmit, is
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Password</FormLabel>
-                          <FormControl asChild>
+                          <FormControl>
                             <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                           </FormControl>
                           <FormDescription className="text-xs">Required for new users. Min 8 characters.</FormDescription>

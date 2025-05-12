@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { UseFormReturn } from 'react-hook-form';
@@ -50,7 +51,7 @@ export function ProjectConfigFormCard({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>App Name</FormLabel>
-                  <FormControl asChild>
+                  <FormControl>
                     <Input {...field} disabled={anyLoading} />
                   </FormControl>
                   <FormMessage />
@@ -64,7 +65,7 @@ export function ProjectConfigFormCard({
                 <FormItem>
                   <FormLabel>Default Accent Color</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                    <FormControl asChild>
+                    <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select accent color" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -84,7 +85,7 @@ export function ProjectConfigFormCard({
                 <FormItem>
                   <FormLabel>Default Border Radius</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                    <FormControl asChild>
+                    <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select border radius" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -104,7 +105,7 @@ export function ProjectConfigFormCard({
                 <FormItem>
                   <FormLabel>Default App Version</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
-                    <FormControl asChild>
+                    <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select app version" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>

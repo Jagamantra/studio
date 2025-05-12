@@ -107,7 +107,7 @@ export function AdvancedSettingsForm({ user, setUser, anyLoading, setAnyLoading 
                 <FormItem>
                   <FormLabel>Interface Density</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || anyLoading}>
-                    <FormControl asChild> 
+                    <FormControl> 
                       <SelectTrigger>
                         <SelectValue placeholder="Select interface density" />
                       </SelectTrigger>
