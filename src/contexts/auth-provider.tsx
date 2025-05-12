@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
@@ -91,28 +92,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading) {
-      const isAuthRelatedPage = pathname.startsWith('/auth/');
-      const isLoginPage = pathname === '/auth/login';
-      const isRegisterPage = pathname === '/auth/register';
-      // const isMfaPage = pathname === '/auth/mfa'; // Not strictly needed here for general logic
+      const isAuthPage = pathname.startsWith('/auth/');
+      const isPublicRoot = pathname === '/';
 
       if (contextDisplayUser && contextDisplayUser.uid !== previewAdminUserProfile.uid) {
-        // A "real" dummy user is logged in (primary auth done, MFA might be pending or done)
-        if (isLoginPage || isRegisterPage) { 
-          // If they are on login/register page, but already "logged in" (e.g. token exists),
-          // they should be on dashboard or MFA if that's the next step.
-          // Since login/register now push to MFA, if they somehow land here while user is set,
-          // push to dashboard (assuming MFA was completed if user is fully set).
-          router.replace('/dashboard'); 
+        // A "real" user is logged in (e.g., session restored or post-MFA)
+        if (pathname === '/auth/login' || pathname === '/auth/register') {
+          router.replace('/dashboard');
         }
-      } else if (contextDisplayUser && contextDisplayUser.uid === previewAdminUserProfile.uid) {
-        // Preview admin is active
-        if (isAuthRelatedPage && !isLoginPage && !isRegisterPage) { // e.g. trying to access /auth/mfa directly
-            router.replace('/auth/login');
-        }
-      } else if (!contextDisplayUser) { 
-        if (!isAuthRelatedPage && pathname !== '/') {
-           router.replace('/auth/login');
+        // If on /auth/mfa, this effect should not redirect them away.
+        // Other /auth/* pages could be redirected to dashboard if user is fully authenticated.
+      } else {
+        // No "real" user is logged in (current user is previewAdmin or null before previewAdmin is set)
+        if (!isAuthPage && !isPublicRoot) {
+          // If not on an auth page and not on the root page (which handles its own redirect),
+          // redirect to login.
+          router.replace('/auth/login');
         }
       }
     }
@@ -143,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(user));
       }
-      router.push('/auth/mfa'); 
+      router.push('/auth/mfa'); // Redirect to MFA page
       return user;
     } catch (err: any) {
       setError(err);
@@ -168,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUsers.push(newUser);
       saveDummyUsersToStorage(currentUsers);
 
-      router.push('/auth/mfa'); 
+      router.push('/auth/mfa'); // Redirect to MFA page
       return newUser;
     } catch (err: any) {
       setError(err);
@@ -236,3 +231,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

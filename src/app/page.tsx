@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -13,8 +14,11 @@ export default function HomePage() {
   useEffect(() => {
     if (!loading) {
       if (user && user.uid !== previewAdminUserProfile.uid) {
+        // A "real" user is logged in
         router.replace('/dashboard');
       } else {
+        // No "real" user logged in (user is previewAdminUserProfile or null before previewAdmin is set)
+        // Redirect to login page.
         router.replace('/auth/login');
       }
     }
@@ -30,3 +34,4 @@ export default function HomePage() {
     </div>
   );
 }
+
