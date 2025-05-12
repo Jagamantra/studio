@@ -29,6 +29,8 @@ export const projectConfig: ProjectConfig = {
     { name: 'Dev Build', id: 'dev' },
   ],
   defaultAppVersionId: 'v1.0.0',
+  enableConfigAdvisor: true, // Default to enabled
 };
+
 
 

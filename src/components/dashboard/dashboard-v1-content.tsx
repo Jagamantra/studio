@@ -8,15 +8,15 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Users, ShieldQuestion, BarChart3, Info } from 'lucide-react'; 
 import Image from 'next/image';
+import { projectConfig } from '@/config/project.config'; // Import projectConfig
 
 interface DashboardV1ContentProps {
   userToRenderOnDashboard: UserProfile;
-  // isConfigured: boolean; // No longer needed as app is always in mock mode
 }
 
 export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1ContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
-  const isConfigured = false; // Application always runs in mock mode
+  const isConfigured = false; 
 
   return (
     <>
@@ -70,21 +70,23 @@ export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1Conte
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                <CardTitle className="text-sm font-medium">Config Advisor</CardTitle>
-                <ShieldQuestion className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="text-lg md:text-xl font-bold">AI Analyzer</div>
-                 <p className="text-xs text-muted-foreground mb-2">
-                  Get insights on your app configurations.
-                </p>
-                <Button asChild size="sm">
-                  <Link href="/config-advisor">Analyze Configs</Link>
-                </Button>
-              </CardContent>
-            </Card>
+            {projectConfig.enableConfigAdvisor && ( // Conditionally render Config Advisor card
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                  <CardTitle className="text-sm font-medium">Config Advisor</CardTitle>
+                  <ShieldQuestion className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="text-lg md:text-xl font-bold">AI Analyzer</div>
+                   <p className="text-xs text-muted-foreground mb-2">
+                    Get insights on your app configurations.
+                  </p>
+                  <Button asChild size="sm">
+                    <Link href="/config-advisor">Analyze Configs</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
 

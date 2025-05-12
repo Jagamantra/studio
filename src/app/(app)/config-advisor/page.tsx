@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, ShieldQuestion, Lightbulb, Info } from 'lucide-react';
+import { Loader2, ShieldQuestion, Lightbulb, Info, Ban } from 'lucide-react';
 import type { AnalyzeConfigInput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
@@ -17,7 +17,8 @@ import { placeholderSidebarConfigData, placeholderRolesConfigData } from '@/data
 import { ProjectConfigFormCard } from '@/components/config-advisor/project-config-form-card';
 import { RawConfigInputCard } from '@/components/config-advisor/raw-config-input-card';
 import { AISuggestionsDisplay } from '@/components/config-advisor/ai-suggestions-display';
-import { useAiConfigAnalysis } from '@/hooks/use-ai-config-analysis'; // Import the new hook
+import { useAiConfigAnalysis } from '@/hooks/use-ai-config-analysis';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 const projectConfigFormSchema = z.object({
   appName: z.string().min(1, 'App name is required.').max(100, 'App name cannot exceed 100 characters.'),
@@ -37,6 +38,7 @@ interface StoredConfigAdvisorInputs {
 export default function ConfigAdvisorPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const router = useRouter(); // Initialize router
   const { 
     appName: currentAppName,
     accentColor: currentAccentColor, 
@@ -50,7 +52,6 @@ export default function ConfigAdvisorPage() {
     availableBorderRadii 
   } = useTheme();
 
-  // Use the custom hook for AI analysis state and logic
   const { suggestions, isLoadingAi, error: aiError, performAnalysis, resetAnalysis } = useAiConfigAnalysis();
   
   const projectConfigForm = useForm<ProjectConfigFormValues>({
@@ -72,6 +73,12 @@ export default function ConfigAdvisorPage() {
   const [showPlaceholders, setShowPlaceholders] = useState(true); 
 
   useEffect(() => {
+    if (!appProjectConfig.enableConfigAdvisor) {
+      // Feature is disabled, redirect or show a message
+      // For now, let's show a message. Redirection can also be done.
+      // router.replace('/dashboard'); // Example of redirection
+      return; // Skip other effects if feature is disabled
+    }
     if (typeof window !== 'undefined') {
         const storedInputsJSON = localStorage.getItem('configAdvisorInputs');
         if (storedInputsJSON) {
@@ -104,9 +111,10 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, [appProjectConfig.enableConfigAdvisor]); // Add enableConfigAdvisor to dependency array
 
   useEffect(() => {
+    if (!appProjectConfig.enableConfigAdvisor) return;
     projectConfigForm.reset({
       appName: currentAppName,
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
@@ -114,10 +122,11 @@ export default function ConfigAdvisorPage() {
       defaultAppVersionId: currentAppVersion,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
+  }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor]);
 
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
+    if (!appProjectConfig.enableConfigAdvisor) return;
     if (typeof window !== 'undefined') {
         const currentInputs: StoredConfigAdvisorInputs = {
             projectConfigFormData: watchedProjectConfig,
@@ -137,7 +146,7 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor]);
   
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
@@ -151,7 +160,7 @@ export default function ConfigAdvisorPage() {
     setSidebarConfigContent(placeholderSidebarConfigData);
     setRolesConfigContent(placeholderRolesConfigData);
     setShowPlaceholders(false); 
-    resetAnalysis(); // Clear previous AI suggestions
+    resetAnalysis(); 
     setIsLoadingExamples(false);
     toast({
       title: 'Example Configurations Loaded',
@@ -172,8 +181,6 @@ export default function ConfigAdvisorPage() {
       const selectedRadius = availableBorderRadii.find(r => r.name === projectConfigValues.defaultBorderRadiusName);
       if (selectedRadius) setBorderRadius(selectedRadius.value);
       setAppVersion(projectConfigValues.defaultAppVersionId);
-      // Note: appIconPaths are not editable in this form yet.
-      // If they were, we'd call setAppIconPaths here.
       
       projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false }); 
 
@@ -203,13 +210,11 @@ export default function ConfigAdvisorPage() {
     const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value || 
                                       (appProjectConfig.availableBorderRadii.find(br => br.name === appProjectConfig.defaultBorderRadiusName)?.value || appProjectConfig.availableBorderRadii[0]?.value);
     const originalAppVersionId = appProjectConfig.defaultAppVersionId;
-    // const originalAppIconPaths = appProjectConfig.appIconPaths; // Reset icon paths if they become editable
 
     setAppName(originalAppName);
     if(originalAccentHsl) setAccentColor(originalAccentHsl);
     if(originalBorderRadiusValue) setBorderRadius(originalBorderRadiusValue);
     setAppVersion(originalAppVersionId);
-    // if(originalAppIconPaths) setAppIconPaths(originalAppIconPaths); // If icon paths were editable
 
     projectConfigForm.reset({
       appName: originalAppName,
@@ -237,6 +242,7 @@ export const projectConfig = {
   defaultBorderRadiusName: '${projectConfigData.defaultBorderRadiusName}',
   availableAppVersions: ${JSON.stringify(appProjectConfig.availableAppVersions, null, 2)},
   defaultAppVersionId: '${projectConfigData.defaultAppVersionId}',
+  enableConfigAdvisor: ${appProjectConfig.enableConfigAdvisor ?? true}
 };`.trim();
 
     const input: AnalyzeConfigInput = {
@@ -245,11 +251,26 @@ export const projectConfig = {
       rolesConfig: rolesConfigContent,
     };
 
-    await performAnalysis(input); // Call the analysis function from the hook
+    await performAnalysis(input); 
   };
   
   if (authLoading) {
     return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!appProjectConfig.enableConfigAdvisor) {
+    return (
+      <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
+        <Ban className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4" />
+        <h1 className="text-xl md:text-2xl font-bold">Feature Disabled</h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-2">
+          The Config Advisor feature is currently disabled by the administrator.
+        </p>
+        <Button asChild className="mt-6">
+          <Link href="/dashboard">Go to Dashboard</Link>
+        </Button>
+      </div>
+    );
   }
   
   const effectiveUserRole = user?.role;

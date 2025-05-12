@@ -26,6 +26,7 @@ export type ProjectConfig = {
   defaultBorderRadiusName: string;
   availableAppVersions: AppVersion[];
   defaultAppVersionId: string;
+  enableConfigAdvisor?: boolean; // Added to control Config Advisor feature
 };
 
 export type SidebarNavItem = {
@@ -78,6 +79,7 @@ export type ThemeSettings = {
 // If it were to be used more broadly, it could stay here.
 // For now, child components import it from the page.
 // export type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;
+
 
 
 

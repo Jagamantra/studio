@@ -60,7 +60,7 @@ To get started with the Genesis Template:
 -   **Profile Editor**: User profile management (personal details, password change) using mock services.
 -   **Access Control**: Role-based access control for routes (mocked), configured in `src/config/roles.config.ts`.
 -   **Sidebar Manager**: Dynamic sidebar navigation, configured in `src/config/sidebar.config.ts`, with a minimize option.
--   **Config Advisor**: AI-powered tool to analyze configuration files (`project.config.ts`, `sidebar.config.ts`, `roles.config.ts`) for improvements. Accessible to (mock) admins.
+-   **Config Advisor**: AI-powered tool to analyze configuration files (`project.config.ts`, `sidebar.config.ts`, `roles.config.ts`) for improvements. Accessible to (mock) admins. This feature can be enabled or disabled (see "Toggling Config Advisor" section below).
 
 ## Genkit for AI Features
 
@@ -137,3 +137,37 @@ To connect the Genesis Template to your actual backend API, follow these steps:
     *   Ensure the TypeScript types defined in `src/types/index.ts` (e.g., `UserProfile`) match the data structures your backend API expects and returns. Update these types as necessary.
 
 By following these steps, you can transition the Genesis Template from using its mock API to interacting with your live backend services.
+
+## Toggling Config Advisor Feature
+
+The AI-powered Config Advisor feature can be enabled or disabled globally via a configuration setting.
+
+-   **Location**: `src/config/project.config.ts`
+-   **Property**: `enableConfigAdvisor` (boolean)
+
+To **disable** the Config Advisor:
+1.  Open `src/config/project.config.ts`.
+2.  Find the `enableConfigAdvisor` property within the `projectConfig` object.
+3.  Set its value to `false`:
+    ```typescript
+    export const projectConfig: ProjectConfig = {
+      // ... other properties
+      enableConfigAdvisor: false, // Set to false to disable
+    };
+    ```
+
+To **enable** the Config Advisor:
+1.  Open `src/config/project.config.ts`.
+2.  Set `enableConfigAdvisor` to `true`:
+    ```typescript
+    export const projectConfig: ProjectConfig = {
+      // ... other properties
+      enableConfigAdvisor: true, // Set to true to enable
+    };
+    ```
+When disabled:
+-   The "Config Advisor" link will be removed from the sidebar.
+-   The "Config Advisor" card will be hidden from the admin dashboard.
+-   Direct navigation to the `/config-advisor` page will show a "Feature Disabled" message.
+
+Restart your development server if it was running for the changes in `project.config.ts` to be fully reflected, especially for server-side logic or build-time configurations (though in this case, it's primarily client-side rendering that will be affected).
