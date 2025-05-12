@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
   return (
     // Outermost div for full-screen background
-    <div className="relative flex min-h-screen w-full flex-col bg-muted/40">
+    <div className="relative flex min-h-screen w-full flex-col">
       <div className="absolute top-2 right-2 z-50 sm:top-4 sm:right-4 md:top-6 md:right-6">
         <ThemeSwitcher />
       </div>
@@ -57,7 +57,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             </Link>
             .
           </p>
-        </div      </div>
+        </div>
+      </div>
     </div>
   );
 }

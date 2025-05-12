@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import Link from 'next/link';
+// Link import removed as we will use logout
 import {
   Card,
   CardContent,
@@ -45,7 +45,7 @@ type MfaFormValues = z.infer<typeof mfaFormSchema>;
 export default function MfaPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setIsMfaVerified } = useAuth();
+  const { setIsMfaVerified, logout } = useAuth(); // Added logout
   const [mockOtp, setMockOtp] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -84,6 +84,10 @@ export default function MfaPage() {
       form.setError('otp', { type: 'manual', message: 'Invalid OTP.' });
     }
     setIsLoading(false);
+  };
+
+  const handleBackToLogin = async () => {
+    await logout(); // Call logout, which handles redirecting to login page
   };
 
   if (!isClient) {
@@ -156,8 +160,8 @@ export default function MfaPage() {
             <p className="text-muted-foreground text-[10px] sm:text-xs mb-1">
               This is a mock MFA screen. No real authentication is performed.
             </p>
-            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm" asChild>
-              <Link href="/auth/login">Back to Login</Link>
+            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm" onClick={handleBackToLogin} disabled={isLoading}>
+              Back to Login
             </Button>
           </div>
         </CardContent>
@@ -165,4 +169,3 @@ export default function MfaPage() {
     </>
   );
 }
-
