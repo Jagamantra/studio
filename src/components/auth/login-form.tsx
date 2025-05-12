@@ -45,7 +45,7 @@ export function LoginForm() {
 
   async function onSubmit(data: LoginFormValues) {
     if (!configured) {
-      setError("Firebase is not configured. Login is disabled.");
+      setError("Firebase is not configured. Login is disabled. Please check your .env.local file and ensure Firebase variables are set correctly as per README.md.");
       return;
     }
     setIsLoading(true);
@@ -74,8 +74,9 @@ export function LoginForm() {
             errorMessage = 'This account has been disabled.';
             break;
           case 'auth/invalid-api-key':
-          case 'auth/api-key-not-valid': // Firebase might use this or a similar code
-            errorMessage = 'Firebase API Key is invalid. Please check your application configuration (.env.local) and ensure it matches the one from your Firebase project. Refer to README.md for setup instructions.';
+          case 'auth/api-key-not-valid':
+          case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.': // Added specific error code
+            errorMessage = 'Firebase API Key is invalid or missing. Please check your application configuration (.env.local file) and ensure NEXT_PUBLIC_FIREBASE_API_KEY matches the one from your Firebase project settings. Refer to README.md for detailed setup instructions. You may need to restart your development server after updating the .env.local file.';
             break;
           default:
             // Use Firebase's message if available, otherwise a generic one
@@ -101,7 +102,7 @@ export function LoginForm() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Configuration Error</AlertTitle>
         <AlertDescription>
-          Firebase authentication is not configured. Please set up your Firebase environment variables in `.env.local` as described in the README. Login functionality is disabled.
+          Firebase authentication is not configured. Please set up your Firebase environment variables in `.env.local` as described in the README.md and `.env.example`. Login functionality is disabled. You must restart your development server after updating the `.env.local` file.
         </AlertDescription>
       </Alert>
     );

@@ -17,7 +17,8 @@ To get started with the Genesis Template:
     pnpm install
     ```
 3.  **Set up Firebase Environment Variables**:
-    *   Rename the `.env.example` file (if it exists) or create a new file named `.env.local` in the root of your project.
+    *   Locate the `.env.example` file in the root of your project. This file serves as a template.
+    *   Create a new file named `.env.local` in the root of your project by copying `.env.example` or creating it from scratch.
         *   Using `.env.local` is crucial as it's ignored by Git by default (`.gitignore` should include it) and ensures your credentials are not committed.
     *   Open your `.env.local` file.
     *   You need to populate it with your Firebase project's configuration.
@@ -30,7 +31,7 @@ To get started with the Genesis Template:
         6.  After registering (or if you select an existing web app), you'll find the Firebase SDK setup snippet. It will look something like this:
             ```javascript
             const firebaseConfig = {
-              apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+              apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXX", // This is the crucial one
               authDomain: "your-project-id.firebaseapp.com",
               projectId: "your-project-id",
               storageBucket: "your-project-id.appspot.com",
@@ -39,7 +40,7 @@ To get started with the Genesis Template:
               measurementId: "G-XXXXXXXXXX" // Optional
             };
             ```
-    *   Copy these values into your `.env.local` file, prefixing each variable name with `NEXT_PUBLIC_`. **It is critical that the variable names in `.env.local` exactly match those used in `src/lib/firebase.ts`.**
+    *   Copy these values into your `.env.local` file, prefixing each variable name with `NEXT_PUBLIC_`. **It is critical that the variable names in `.env.local` exactly match those used in `src/lib/firebase.ts` and shown in `.env.example`.**
     *   **Example `.env.local` content**:
         ```env
         NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXX"
@@ -52,7 +53,7 @@ To get started with the Genesis Template:
         ```
     *   **Crucial**:
         *   Ensure there are no extra spaces or quotes around the values unless they are part of the value itself (which is rare for these config keys).
-        *   Double-check `NEXT_PUBLIC_FIREBASE_API_KEY`. This is the most common source of "invalid API key" errors. Copy it exactly.
+        *   **Double-check `NEXT_PUBLIC_FIREBASE_API_KEY`**. This is the most common source of "invalid API key" errors. Copy it exactly.
         *   Save the `.env.local` file.
 
 4.  **Restart your development server**:
@@ -94,17 +95,21 @@ This application uses Genkit for AI-related functionalities like the Config Advi
 
 -   **"Configuration Error: Firebase authentication is not configured..." (UI Alert)**:
     This alert means that essential Firebase configuration variables (like `NEXT_PUBLIC_FIREBASE_API_KEY` or `NEXT_PUBLIC_FIREBASE_PROJECT_ID`) are missing or empty in your environment.
-    *   Ensure your `.env.local` file exists in the project root.
-    *   Verify that the variable names in `.env.local` start with `NEXT_PUBLIC_` and match those in `src/lib/firebase.ts`.
+    *   Ensure your `.env.local` file exists in the project root. If not, copy `.env.example` to `.env.local`.
+    *   Verify that the variable names in `.env.local` start with `NEXT_PUBLIC_` and match those in `src/lib/firebase.ts` and `.env.example`.
+    *   Make sure you've populated the values from your Firebase project console.
     *   Make sure you've **restarted your Next.js development server** after creating or modifying `.env.local`.
 
 -   **`Firebase: Error (auth/invalid-api-key)` or `Firebase: Error (auth/api-key-not-valid)` or `Firebase: Error (auth/api-key-not-valid.-please-pass-a-valid-api-key.)` (Console or UI Error)**:
     This is a very common error. It means the `NEXT_PUBLIC_FIREBASE_API_KEY` value in your `.env.local` file is incorrect, not recognized by your Firebase project, or possibly malformed.
+    *   **Action:** You need to obtain the correct API key from your Firebase project and put it in your `.env.local` file.
     *   **Double, triple-check** that you've copied the `apiKey` value **exactly** from your Firebase project settings (see step 3 in "Getting Started").
     *   Ensure there are no leading/trailing spaces or typos.
     *   Verify the API key is for the correct Firebase project.
-    *   If you recently enabled or restricted API keys in the Google Cloud Console for your Firebase project, ensure the key used is permitted for web client access from your domain (usually `localhost` for development).
+    *   Verify that the variable name in `.env.local` is exactly `NEXT_PUBLIC_FIREBASE_API_KEY`.
+    *   If you recently enabled or restricted API keys in the Google Cloud Console for your Firebase project, ensure the key used is permitted for web client access from your domain (usually `localhost` for development). You might need to check the "API restrictions" for your key in Google Cloud Console under "APIs & Services" > "Credentials". Make sure "Cloud Identity Platform API" and "Identity Toolkit API" (which Firebase Auth uses) are enabled for your project and the key has access.
     *   **Restart your Next.js development server** after any changes to `.env.local`.
+    *   If the problem persists after verifying the key, try regenerating the Firebase config snippet in the Firebase console for your web app and re-copying all values.
 
-Refer to `src/lib/firebase.ts` to see how environment variables are consumed. If problems persist, ensure your Firebase project and web app registration are correctly set up in the Firebase Console.
+Refer to `src/lib/firebase.ts` to see how environment variables are consumed and `.env.example` for the required variable names. If problems persist, ensure your Firebase project and web app registration are correctly set up in the Firebase Console.
 ```
