@@ -66,7 +66,7 @@ export default function ConfigAdvisorPage() {
   const { toast } = useToast();
   const { 
     appName: currentAppName,
-    accentColor: currentAccentColor, // This is HSL or HEX string
+    accentColor: currentAccentColor, 
     borderRadius: currentBorderRadius,
     appVersion: currentAppVersion,
     setAppName, 
@@ -79,7 +79,7 @@ export default function ConfigAdvisorPage() {
   
   const projectConfigForm = useForm<ProjectConfigFormValues>({
     resolver: zodResolver(projectConfigFormSchema),
-    defaultValues: { // Initial default values based on theme
+    defaultValues: { 
       appName: currentAppName,
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
       defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
@@ -131,8 +131,6 @@ export default function ConfigAdvisorPage() {
   }, []); 
 
   useEffect(() => {
-    // This effect ensures the form's defaultValues (and current values if not dirty)
-    // reflect the live theme settings from useTheme. This runs when theme context changes.
     projectConfigForm.reset({
       appName: currentAppName,
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
@@ -140,7 +138,7 @@ export default function ConfigAdvisorPage() {
       defaultAppVersionId: currentAppVersion,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, availableAccentColors, availableBorderRadii]);
+  }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
 
 
   const watchedProjectConfig = projectConfigForm.watch();
@@ -164,7 +162,7 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, availableAccentColors, availableBorderRadii]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]);
 
 
   const handleTextareaChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
@@ -217,8 +215,6 @@ export default function ConfigAdvisorPage() {
         title: 'Project Configuration Applied',
         description: 'Your project settings have been applied and saved locally.',
       });
-      // After saving, the useEffect listening to theme changes will reset the form,
-      // making it "clean" with the new values.
     } else {
       toast({
         title: 'Validation Error',
@@ -229,16 +225,40 @@ export default function ConfigAdvisorPage() {
   };
 
   const handleResetProjectConfig = () => {
-    // Resets the form to the current live theme settings provided by useTheme
+    // Get original defaults from appProjectConfig
+    const originalAppName = appProjectConfig.appName;
+    const originalAccentColorName = appProjectConfig.defaultAccentColorName;
+    const originalAccentColorData = appProjectConfig.availableAccentColors.find(c => c.name === originalAccentColorName);
+    const originalAccentColorHsl = originalAccentColorData?.hslValue;
+
+    const originalBorderRadiusName = appProjectConfig.defaultBorderRadiusName;
+    const originalBorderRadiusData = appProjectConfig.availableBorderRadii.find(r => r.name === originalBorderRadiusName);
+    const originalBorderRadiusValue = originalBorderRadiusData?.value;
+    
+    const originalAppVersionId = appProjectConfig.defaultAppVersionId;
+
+    // Apply these original defaults to the theme context (application-wide)
+    setAppName(originalAppName);
+    if (originalAccentColorHsl) {
+      setAccentColor(originalAccentColorHsl);
+    }
+    if (originalBorderRadiusValue) {
+      setBorderRadius(originalBorderRadiusValue);
+    }
+    setAppVersion(originalAppVersionId);
+
+    // Explicitly reset form fields to ensure immediate visual update to original defaults.
+    // The useEffect that watches theme context changes will also run and reinforce this.
     projectConfigForm.reset({
-      appName: currentAppName,
-      defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
-      defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
-      defaultAppVersionId: currentAppVersion,
+      appName: originalAppName,
+      defaultAccentColorName: originalAccentColorName,
+      defaultBorderRadiusName: originalBorderRadiusName,
+      defaultAppVersionId: originalAppVersionId,
     });
+
     toast({
       title: 'Project Configuration Reset',
-      description: 'Form fields have been reset to the current theme settings.',
+      description: 'Project settings have been reset to their original defaults and applied application-wide.',
     });
   };
 
@@ -406,7 +426,7 @@ export const projectConfig = {
         <CardFooter className="border-t px-6 py-4 flex justify-end space-x-2">
             <Button 
                 onClick={handleResetProjectConfig} 
-                disabled={isLoading} // Changed: Only disable if loading
+                disabled={isLoading}
                 variant="outline"
                 size="sm"
             >
@@ -523,3 +543,4 @@ export const projectConfig = {
     </div>
   );
 }
+
