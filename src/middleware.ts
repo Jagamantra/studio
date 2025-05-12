@@ -20,7 +20,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // A simple matcher for testing. Adjust as needed.
-  // This will run the middleware for the homepage, dashboard, and login page.
-  matcher: ['/', '/dashboard/:path*', '/login', '/register', '/profile/:path*'],
+  // This will run the middleware for the homepage, dashboard, auth pages, and profile.
+  matcher: ['/', '/dashboard/:path*', '/auth/:path*', '/profile/:path*'],
 };

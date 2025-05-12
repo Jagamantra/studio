@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading) { 
-      const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/mfa');
+      const isAuthPage = pathname.startsWith('/auth/'); // Check for /auth/ prefix
       
       if (contextDisplayUser && contextDisplayUser.uid !== previewAdminUserProfile.uid && isAuthPage) {
         // If a "real" dummy user is logged in and on an auth page, redirect to dashboard
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // This logic might need refinement based on desired preview behavior
       } else if (!contextDisplayUser && !isAuthPage && pathname !== '/') { 
         // If no user at all (should not happen due to previewAdmin fallback) and not on auth page
-        router.replace('/login');
+        router.replace('/auth/login'); // Redirect to /auth/login
       }
     }
   }, [contextDisplayUser, loading, pathname, router, configured]);
@@ -189,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUserProfile(previewAdminUserProfile); 
     setMockFirebaseUser(previewAdminUserProfile as MockFirebaseUser);
-    router.push('/login'); 
+    router.push('/auth/login'); // Redirect to /auth/login
     setLoading(false);
   }, [router]);
 

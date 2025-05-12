@@ -22,7 +22,7 @@ export default function HomePage() {
         router.replace('/dashboard');
       } else {
         // This case should ideally not be hit if AuthProvider correctly sets a previewAdmin/default user
-        router.replace('/login');
+        router.replace('/auth/login');
       }
     }
   }, [user, loading, router, isConfigured]);

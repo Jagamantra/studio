@@ -132,7 +132,7 @@ export default function MfaPage() {
               This is a mock MFA screen. No real authentication is performed.
             </p>
             <Button variant="link" className="mt-2 p-0 h-auto" asChild>
-              <Link href="/login">Back to Login</Link>
+              <Link href="/auth/login">Back to Login</Link>
             </Button>
           </div>
         </CardContent>

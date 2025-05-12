@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -58,7 +59,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link href="/login">Go to Login</Link>
+              <Link href="/auth/login">Go to Login</Link>
             </Button>
           </CardContent>
         </Card>
