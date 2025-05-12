@@ -2,8 +2,16 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+// Add asChild to the props interface, making it optional
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  asChild?: boolean;
+}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  // Destructure asChild out so it's not passed to the native input
+  ({ className, type, asChild, ...props }, ref) => {
+    // The asChild prop is consumed here. If Input were to use Slot itself, it would use it.
+    // Since Input directly renders an <input>, asChild's primary role here is to be extracted from ...props.
     return (
       <input
         type={type}
@@ -20,3 +28,4 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
 Input.displayName = "Input"
 
 export { Input }
+
