@@ -1,4 +1,3 @@
-
 import type { RolesConfig } from '@/types';
 
 export const rolesConfig: RolesConfig = {

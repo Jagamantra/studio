@@ -1,31 +1,24 @@
-
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-provider';
 import { Loader2 } from 'lucide-react';
+import { previewAdminUserProfile } from '@/data/dummy-data'; 
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, loading, isConfigured } = useAuth(); // isConfigured will be false
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading) {
-      if (!isConfigured) { // This will always be true as Firebase is removed
-        // For now, this will fall through to login if user is null or previewAdmin.
-        console.warn("Application is in mock API mode. All data is dummy data. Redirecting based on auth state.");
-      }
-
-      // If user exists and is not the previewAdmin, or if it is the previewAdmin but we want to show dashboard
-      if (user) { 
+      if (user && user.uid !== previewAdminUserProfile.uid) {
         router.replace('/dashboard');
       } else {
-        // This case should ideally not be hit if AuthProvider correctly sets a previewAdmin/default user
         router.replace('/auth/login');
       }
     }
-  }, [user, loading, router, isConfigured]);
+  }, [user, loading, router]);
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-background text-foreground">
@@ -37,4 +30,3 @@ export default function HomePage() {
     </div>
   );
 }
-
