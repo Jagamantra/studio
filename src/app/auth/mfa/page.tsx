@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -78,27 +79,27 @@ export default function MfaPage() {
   return (
     <>
       {mockOtp && (
-        <Alert variant="default" className="mb-6">
+        <Alert variant="default" className="mb-4"> {/* Reduced margin from mb-6 to mb-4 */}
           <Info className="h-4 w-4" />
-          <AlertTitle className="text-sm sm:text-base">Mock MFA Code</AlertTitle>
-          <AlertDescription className="text-xs sm:text-sm">
-            For testing purposes, your One-Time Password is: <strong className="text-lg font-semibold tracking-wider">{mockOtp}</strong>
+          <AlertTitle className="text-xs sm:text-sm">Mock MFA Code</AlertTitle> {/* Reduced font size */}
+          <AlertDescription className="text-[11px] sm:text-xs leading-tight sm:leading-normal"> {/* Reduced font size */}
+            For testing purposes, your One-Time Password is: <strong className="text-base sm:text-lg font-semibold tracking-wider">{mockOtp}</strong> {/* Reduced font size */}
           </AlertDescription>
         </Alert>
       )}
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <KeyRound className="h-8 w-8" />
+          <div className="mx-auto mb-2 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-primary/10 text-primary"> {/* Reduced mb from 4 to 2 */}
+            <KeyRound className="h-6 w-6 sm:h-8 sm:w-8" />
           </div>
-          <CardTitle className="text-xl sm:text-2xl">Two-Factor Authentication</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
+          <CardTitle className="text-lg sm:text-xl">Two-Factor Authentication</CardTitle> {/* Reduced font size */}
+          <CardDescription className="text-[11px] sm:text-xs"> {/* Reduced font size */}
             Enter the 6-digit code shown in the alert above.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4"> {/* Reduced space-y from 6 to 4 */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"> {/* Reduced space-y from 6 to 4 */}
               <FormField
                 control={form.control}
                 name="otp"
@@ -110,7 +111,7 @@ export default function MfaPage() {
                         placeholder="Enter 6-digit OTP"
                         maxLength={6}
                         {...field}
-                        className="h-12 text-center text-lg sm:text-xl tracking-[0.3em] sm:tracking-[0.5em]"
+                        className="h-10 sm:h-12 text-center text-base sm:text-lg tracking-[0.2em] sm:tracking-[0.3em]" /* Reduced font size and tracking */
                         disabled={isLoading}
                         autoComplete="one-time-code"
                         inputMode="numeric"
@@ -127,10 +128,10 @@ export default function MfaPage() {
             </form>
           </Form>
           <div className="text-center text-sm">
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-xs"> {/* Reduced font size */}
               This is a mock MFA screen. No real authentication is performed.
             </p>
-            <Button variant="link" className="mt-2 p-0 h-auto" asChild>
+            <Button variant="link" className="mt-1 p-0 h-auto" asChild> {/* Reduced mt from 2 to 1 */}
               <Link href="/auth/login">Back to Login</Link>
             </Button>
           </div>

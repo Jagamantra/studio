@@ -85,12 +85,12 @@ export function LoginForm() {
   const systemModeMessage = "Application is running with mock API and dummy data. Default credentials: admin@dummy.com / user@dummy.com, pass: password123. New dummy users can be registered.";
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4"> {/* Reduced gap from gap-6 to gap-4 */}
       {isClient && ( 
         <Alert variant="default"> 
           <Info className="h-4 w-4" /> 
-          <AlertTitle className="text-sm sm:text-base">System Mode</AlertTitle>
-          <AlertDescription className="text-xs sm:text-sm">
+          <AlertTitle className="text-xs sm:text-sm">System Mode</AlertTitle>
+          <AlertDescription className="text-[11px] sm:text-xs leading-tight sm:leading-normal">
             {systemModeMessage}
           </AlertDescription>
         </Alert>
@@ -98,12 +98,12 @@ export function LoginForm() {
       {formError && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="text-sm sm:text-base">Error</AlertTitle>
-          <AlertDescription className="text-xs sm:text-sm">{formError}</AlertDescription>
+          <AlertTitle className="text-xs sm:text-sm">Error</AlertTitle> {/* Reduced font size */}
+          <AlertDescription className="text-[11px] sm:text-xs leading-tight sm:leading-normal">{formError}</AlertDescription> {/* Reduced font size */}
         </Alert>
       )}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4"> {/* Reduced space-y from 6 to 4 */}
           <FormField
             control={form.control}
             name="email"
