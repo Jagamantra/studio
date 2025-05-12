@@ -9,11 +9,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
-      <SidebarInset> 
+      {/* SidebarInset is the main content wrapper that adapts to the sidebar */}
+      <SidebarInset className="flex flex-col"> {/* Ensures SidebarInset itself is a flex column */}
         <Header />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden bg-background">
+        {/* This div contains the page content and is responsible for scrolling */}
+        <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden bg-background">
           {children}
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

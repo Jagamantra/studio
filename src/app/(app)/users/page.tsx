@@ -101,7 +101,7 @@ export default function UsersPage() {
 
   const columns = React.useMemo(
     () => createUserTableColumns({ openEditUserModal, openDeleteDialog, tableLoading, currentUserUid: user?.uid, isConfigured }),
-    [tableLoading, user?.uid, isConfigured]
+    [tableLoading, user?.uid, isConfigured] 
   );
   
   const anyLoading = authLoading || tableLoading;
@@ -114,7 +114,7 @@ export default function UsersPage() {
 
   if (effectiveUserRole !== 'admin') {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 text-center">
+      <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
         <ShieldAlert className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
         <h1 className="text-xl md:text-2xl font-bold">Access Denied</h1>
         <p className="text-sm md:text-base text-muted-foreground mt-2">
@@ -128,7 +128,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6"> {/* Removed flex-1 */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
         <Button onClick={openAddUserModal} disabled={anyLoading} size="sm">

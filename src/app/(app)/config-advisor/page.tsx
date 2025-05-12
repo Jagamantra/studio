@@ -194,10 +194,10 @@ export default function ConfigAdvisorPage() {
     const originalAppName = appProjectConfig.appName;
     const originalAccentColorName = appProjectConfig.defaultAccentColorName;
     const originalAccentHsl = availableAccentColors.find(c => c.name === originalAccentColorName)?.hslValue || 
-                              (projectConfig.availableAccentColors.find(ac => ac.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0]?.hslValue);
+                              (appProjectConfig.availableAccentColors.find(ac => ac.name === appProjectConfig.defaultAccentColorName)?.hslValue || appProjectConfig.availableAccentColors[0]?.hslValue);
     const originalBorderRadiusName = appProjectConfig.defaultBorderRadiusName;
     const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value || 
-                                      (projectConfig.availableBorderRadii.find(br => br.name === projectConfig.defaultBorderRadiusName)?.value || projectConfig.availableBorderRadii[0]?.value);
+                                      (appProjectConfig.availableBorderRadii.find(br => br.name === appProjectConfig.defaultBorderRadiusName)?.value || appProjectConfig.availableBorderRadii[0]?.value);
     const originalAppVersionId = appProjectConfig.defaultAppVersionId;
 
     setAppName(originalAppName);
@@ -266,7 +266,7 @@ export const projectConfig = {
   const effectiveUserRole = user?.role;
   if (effectiveUserRole !== 'admin') {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 text-center">
+      <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
         <ShieldQuestion className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
         <h1 className="text-xl md:text-2xl font-bold">Access Denied</h1>
         <p className="text-sm md:text-base text-muted-foreground mt-2">
@@ -282,7 +282,7 @@ export const projectConfig = {
   const anyLoading = isLoadingAi || isSavingProjectConfig || isResettingProjectConfig || isLoadingExamples;
 
   return (
-    <div className="flex-1 space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6"> {/* Removed flex-1 */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
         <div className="flex gap-2">
@@ -330,3 +330,4 @@ export const projectConfig = {
     </div>
   );
 }
+

@@ -85,7 +85,7 @@ export default function DashboardPage() {
 
   return (
     <TooltipProvider>
-      <div className="flex-1 space-y-4 md:space-y-6 p-1 sm:p-0">
+      <div className="space-y-4 md:space-y-6 p-1 sm:p-0"> {/* Removed flex-1 */}
         <div className="flex flex-col items-start justify-between space-y-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -118,3 +118,4 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
+

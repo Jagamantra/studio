@@ -16,7 +16,7 @@ export default function ProfilePage() {
   if (!user) return <div className="flex flex-1 items-center justify-center p-4"><p>Please log in to view your profile.</p></div>;
 
   return (
-    <div className="flex-1 space-y-6 md:space-y-8">
+    <div className="space-y-6 md:space-y-8"> {/* Removed flex-1 */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Profile</h1>
       </div>
@@ -44,3 +44,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
