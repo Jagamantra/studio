@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -18,7 +17,8 @@ import { ProjectConfigFormCard } from '@/components/config-advisor/project-confi
 import { RawConfigInputCard } from '@/components/config-advisor/raw-config-input-card';
 import { AISuggestionsDisplay } from '@/components/config-advisor/ai-suggestions-display';
 import { useAiConfigAnalysis } from '@/hooks/use-ai-config-analysis';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
+import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
 
 const projectConfigFormSchema = z.object({
   appName: z.string().min(1, 'App name is required.').max(100, 'App name cannot exceed 100 characters.'),
@@ -38,7 +38,7 @@ interface StoredConfigAdvisorInputs {
 export default function ConfigAdvisorPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
   const { 
     appName: currentAppName,
     accentColor: currentAccentColor, 
@@ -74,10 +74,7 @@ export default function ConfigAdvisorPage() {
 
   useEffect(() => {
     if (!appProjectConfig.enableConfigAdvisor) {
-      // Feature is disabled, redirect or show a message
-      // For now, let's show a message. Redirection can also be done.
-      // router.replace('/dashboard'); // Example of redirection
-      return; // Skip other effects if feature is disabled
+      return;
     }
     if (typeof window !== 'undefined') {
         const storedInputsJSON = localStorage.getItem('configAdvisorInputs');
@@ -111,7 +108,7 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appProjectConfig.enableConfigAdvisor]); // Add enableConfigAdvisor to dependency array
+  }, [appProjectConfig.enableConfigAdvisor]);
 
   useEffect(() => {
     if (!appProjectConfig.enableConfigAdvisor) return;
@@ -260,83 +257,89 @@ export const projectConfig = {
 
   if (!appProjectConfig.enableConfigAdvisor) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
-        <Ban className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4" />
-        <h1 className="text-xl md:text-2xl font-bold">Feature Disabled</h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-2">
-          The Config Advisor feature is currently disabled by the administrator.
-        </p>
-        <Button asChild className="mt-6">
-          <Link href="/dashboard">Go to Dashboard</Link>
-        </Button>
-      </div>
+      <AuthenticatedPageLayout>
+        <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
+          <Ban className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4" />
+          <h1 className="text-xl md:text-2xl font-bold">Feature Disabled</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-2">
+            The Config Advisor feature is currently disabled by the administrator.
+          </p>
+          <Button asChild className="mt-6">
+            <Link href="/dashboard">Go to Dashboard</Link>
+          </Button>
+        </div>
+      </AuthenticatedPageLayout>
     );
   }
   
   const effectiveUserRole = user?.role;
   if (effectiveUserRole !== 'admin') {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
-        <ShieldQuestion className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
-        <h1 className="text-xl md:text-2xl font-bold">Access Denied</h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-2">
-          You do not have permission to view this page. This feature is for administrators only.
-        </p>
-        <Button asChild className="mt-6">
-          <Link href="/dashboard">Go to Dashboard</Link>
-        </Button>
-      </div>
+      <AuthenticatedPageLayout>
+        <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
+          <ShieldQuestion className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
+          <h1 className="text-xl md:text-2xl font-bold">Access Denied</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-2">
+            You do not have permission to view this page. This feature is for administrators only.
+          </p>
+          <Button asChild className="mt-6">
+            <Link href="/dashboard">Go to Dashboard</Link>
+          </Button>
+        </div>
+      </AuthenticatedPageLayout>
     );
   }
 
   const anyLoading = isLoadingAi || isSavingProjectConfig || isResettingProjectConfig || isLoadingExamples;
 
   return (
-    <div className="space-y-4 md:space-y-6 min-w-0">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
-        <div className="flex gap-2">
-          <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
-            {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />} 
-            <span className="hidden sm:inline">Load Examples</span>
-            <span className="sm:hidden">Examples</span>
-          </Button>
-          <Button onClick={handleAnalyzeSubmit} disabled={anyLoading} size="sm">
-            {isLoadingAi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
-            <span className="hidden sm:inline">Analyze Configurations</span>
-            <span className="sm:hidden">Analyze</span>
-          </Button>
+    <AuthenticatedPageLayout>
+      <div className="space-y-4 md:space-y-6 min-w-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
+          <div className="flex gap-2">
+            <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
+              {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />} 
+              <span className="hidden sm:inline">Load Examples</span>
+              <span className="sm:hidden">Examples</span>
+            </Button>
+            <Button onClick={handleAnalyzeSubmit} disabled={anyLoading} size="sm">
+              {isLoadingAi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
+              <span className="hidden sm:inline">Analyze Configurations</span>
+              <span className="sm:hidden">Analyze</span>
+            </Button>
+          </div>
         </div>
+
+        <ProjectConfigFormCard
+          projectConfigForm={projectConfigForm}
+          anyLoading={anyLoading}
+          isSavingProjectConfig={isSavingProjectConfig}
+          isResettingProjectConfig={isResettingProjectConfig}
+          handleSaveProjectConfig={handleSaveProjectConfig}
+          handleResetProjectConfig={handleResetProjectConfig}
+          availableAccentColors={availableAccentColors}
+          availableBorderRadii={availableBorderRadii}
+          appProjectConfigAvailableAppVersions={appProjectConfig.availableAppVersions}
+        />
+
+        <RawConfigInputCard
+          sidebarConfigContent={sidebarConfigContent}
+          handleSidebarChange={(value) => { setSidebarConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false); resetAnalysis(); }}
+          rolesConfigContent={rolesConfigContent}
+          handleRolesChange={(value) => { setRolesConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false); resetAnalysis(); }}
+          showPlaceholders={showPlaceholders}
+          placeholderSidebarConfigData={placeholderSidebarConfigData}
+          placeholderRolesConfigData={placeholderRolesConfigData}
+          anyLoading={anyLoading}
+        />
+        
+        <AISuggestionsDisplay
+          suggestions={suggestions}
+          isLoadingAi={isLoadingAi}
+          error={aiError}
+        />
       </div>
-
-      <ProjectConfigFormCard
-        projectConfigForm={projectConfigForm}
-        anyLoading={anyLoading}
-        isSavingProjectConfig={isSavingProjectConfig}
-        isResettingProjectConfig={isResettingProjectConfig}
-        handleSaveProjectConfig={handleSaveProjectConfig}
-        handleResetProjectConfig={handleResetProjectConfig}
-        availableAccentColors={availableAccentColors}
-        availableBorderRadii={availableBorderRadii}
-        appProjectConfigAvailableAppVersions={appProjectConfig.availableAppVersions}
-      />
-
-      <RawConfigInputCard
-        sidebarConfigContent={sidebarConfigContent}
-        handleSidebarChange={(value) => { setSidebarConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false); resetAnalysis(); }}
-        rolesConfigContent={rolesConfigContent}
-        handleRolesChange={(value) => { setRolesConfigContent(value); if(value.trim()!=='') setShowPlaceholders(false); resetAnalysis(); }}
-        showPlaceholders={showPlaceholders}
-        placeholderSidebarConfigData={placeholderSidebarConfigData}
-        placeholderRolesConfigData={placeholderRolesConfigData}
-        anyLoading={anyLoading}
-      />
-      
-      <AISuggestionsDisplay
-        suggestions={suggestions}
-        isLoadingAi={isLoadingAi}
-        error={aiError}
-      />
-    </div>
+    </AuthenticatedPageLayout>
   );
 }

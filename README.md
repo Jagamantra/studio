@@ -1,4 +1,3 @@
-
 # Genesis Template
 
 This is a Next.js starter template, "Genesis Template", designed for rapid development, now using a mock API service layer for backend interactions.
@@ -90,7 +89,7 @@ Data is persisted in the browser's **Local Storage**:
     *   `genesis-theme-version`: Stores the selected application version ID.
     *   `genesis-theme-app-name`: Stores the application name.
     *   `genesis-theme-app-icon-paths`: Stores the SVG path data for the dynamic app icon.
--   **Config Advisor Inputs (`src/app/(app)/config-advisor/page.tsx`)**:
+-   **Config Advisor Inputs (`src/app/config-advisor/page.tsx`)**:
     *   `configAdvisorInputs`: Stores the user's input for the project, sidebar, and roles configuration content for analysis.
 
 **Note**: This Local Storage persistence is for the mock/dummy setup. When you integrate a real backend API, this data would typically be stored in your backend database, and Local Storage would primarily be used for session tokens or minimal client-side preferences.
@@ -219,14 +218,15 @@ The folder structure utilizes Next.js App Router conventions. Components are pri
 
 ## Adding a New Page
 
-This section guides you on adding new pages to the application and configuring them within the existing structure.
+This section guides you on adding new pages to the application and configuring them within the existing structure. Authenticated pages are now placed directly under `src/app/` and should use the `AuthenticatedPageLayout` component.
 
 ### 1. Create the Page File
 
 Create a new `.tsx` file inside the `src/app` directory. Follow Next.js's [App Router conventions](https://nextjs.org/docs/app/building-your-application/routing) for file naming and placement.
 
-*   For a simple page, place it directly in `src/app`. For example, `src/app/newpage/page.tsx`.
-*   For grouped routes or routes with layouts, you can use directories without affecting the URL path (e.g., `src/app/(main)/newpage/page.tsx`) or standard directories that become part of the URL path (e.g., `src/app/main/newpage/page.tsx`).
+*   For a simple authenticated page, place it directly in `src/app`. For example, `src/app/my-new-page/page.tsx`.
+*   For unauthenticated pages (like additional auth-related pages), place them in `src/app/auth/`.
+*   For pages that might have a different overall layout (not using `AppShell`), you can create them in `src/app/` and not use `AuthenticatedPageLayout`.
 
 **Example:**  `src/app/my-new-page/page.tsx` (This will be accessible at `/my-new-page`)
 
@@ -235,13 +235,16 @@ Create a new `.tsx` file inside the `src/app` directory. Follow Next.js's [App R
 'use client';
 
 import React from 'react';
+import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout'; // Import the layout
 
 const MyNewPage = () => {
   return (
-    <div>
-      <h1>My New Page</h1>
-      <p>This is a dynamically added page.</p>
-    </div>
+    <AuthenticatedPageLayout> {/* Wrap page content with the layout */}
+      <div>
+        <h1>My New Page</h1>
+        <p>This is a dynamically added page within the app shell.</p>
+      </div>
+    </AuthenticatedPageLayout>
   );
 };
 
@@ -325,30 +328,27 @@ The `AuthProvider` uses these permissions to protect routes. Ensure your middlew
 
 ### 4. Integrate Theme Settings
 
-To use theme settings (accent color, border radius, etc.) on the new page, import the `useTheme` hook from `src/contexts/theme-provider.tsx`.
+To use theme settings (accent color, border radius, etc.) on the new page, import the `useTheme` hook from `src/contexts/theme-provider.tsx`. This can be done within the content part of your new page (inside `AuthenticatedPageLayout`).
 
 ```tsx
-// src/app/my-new-page/page.tsx
-'use client';
-
-import React from 'react';
+// src/app/my-new-page/page.tsx (content part)
+// ...
 import { useTheme } from '@/contexts/theme-provider';
 import { Button } from '@/components/ui/button'; // Example component
 
-const MyNewPage = () => {
-  const { appName, accentColor, borderRadius } = useTheme();
+// ... inside your page component, within AuthenticatedPageLayout
+const { appName, accentColor, borderRadius } = useTheme();
 
-  return (
+return (
+    // ...
     <div className="p-4">
       <h1>{appName} - My New Page</h1>
       <p style={{ color: `hsl(${accentColor})` }}>This text uses the current accent color.</p>
       <Button style={{ borderRadius: borderRadius }}>Styled Button</Button>
       {/* Page content */}
     </div>
-  );
-};
-
-export default MyNewPage;
+    // ...
+);
 ```
 
 ### 5. Handle Version-Specific Content
@@ -356,26 +356,23 @@ export default MyNewPage;
 To display different content or components based on the selected application version, use the `appVersion` property from the `useTheme` hook.
 
 ```tsx
-// src/app/my-new-page/page.tsx
-'use client';
-
-import React from 'react';
+// src/app/my-new-page/page.tsx (content part)
+// ...
 import { useTheme } from '@/contexts/theme-provider';
 
-const MyNewPage = () => {
-  const { appVersion } = useTheme();
+// ... inside your page component, within AuthenticatedPageLayout
+const { appVersion } = useTheme();
 
-  return (
+return (
+    // ...
     <div>
       <h1>My New Page (Version: {appVersion})</h1>
       {appVersion === 'v1.0.0' && <p>Content specific to Version 1.0.</p>}
       {appVersion === 'v0.9.0-beta' && <p>This is content for the Beta Preview.</p>}
       {appVersion === 'dev' && <p>Developer-specific features or information can be shown here.</p>}
     </div>
-  );
-};
-
-export default MyNewPage;
+    // ...
+);
 ```
 
 ### 6. Add "Appearance" Dropdown Options (Theme Switcher Integration)
@@ -387,18 +384,17 @@ The Theme Switcher (`src/components/layout/theme-switcher.tsx`) provides options
 
 **Example of a simple custom accent color picker within your page:**
 ```tsx
-// src/app/my-new-page/page.tsx
-'use client';
-
-import React from 'react';
+// src/app/my-new-page/page.tsx (content part)
+// ...
 import { useTheme } from '@/contexts/theme-provider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Shadcn UI
 import { Label } from '@/components/ui/label';
 
-const MyNewPage = () => {
-  const { accentColor, setAccentColor, availableAccentColors } = useTheme();
+// ... inside your page component, within AuthenticatedPageLayout
+const { accentColor, setAccentColor, availableAccentColors } = useTheme();
 
-  return (
+return (
+    // ...
     <div>
       <h1>My New Page</h1>
       <div className="my-4">
@@ -424,10 +420,8 @@ const MyNewPage = () => {
         </Select>
       </div>
     </div>
-  );
-};
-
-export default MyNewPage;
+    // ...
+);
 ```
 
 ### 7. Creating a New Application Version
