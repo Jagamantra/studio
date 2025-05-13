@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, Database, Zap } from 'lucide-react';
+import { AlertTriangle, Database, Zap, MessageSquare } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardDevContentProps {
   userToRenderOnDashboard: UserProfile;
@@ -17,6 +18,7 @@ interface DashboardDevContentProps {
 
 export function DashboardDevContent({ userToRenderOnDashboard }: DashboardDevContentProps) {
   const { theme, accentColor, borderRadius } = useTheme();
+  const { toast } = useToast();
   const [currentProgress, setCurrentProgress] = useState(67);
 
   useEffect(() => {
@@ -25,6 +27,14 @@ export function DashboardDevContent({ userToRenderOnDashboard }: DashboardDevCon
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleTestNotification = () => {
+    toast({
+      title: "Test Notification!",
+      description: "This is a sample toast message triggered from the dev dashboard.",
+      variant: "default",
+    });
+  };
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -53,7 +63,14 @@ export function DashboardDevContent({ userToRenderOnDashboard }: DashboardDevCon
             <CardTitle className="text-base sm:text-lg flex items-center gap-2"><Zap className="h-4 w-4 sm:h-5 sm:w-5 text-primary" /> Developer Tools</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 sm:space-y-3 p-4 pt-0">
-            <Button variant="outline" className="w-full text-xs sm:text-sm h-8 sm:h-9">Trigger Test Notification</Button>
+            <Button
+              variant="outline"
+              className="w-full text-xs sm:text-sm h-8 sm:h-9"
+              onClick={handleTestNotification}
+            >
+              <MessageSquare className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              Trigger Test Notification
+            </Button>
             <Button variant="outline" className="w-full text-xs sm:text-sm h-8 sm:h-9">Simulate API Error</Button>
             <div className="mt-1 sm:mt-2">
               <label htmlFor="stability" className="text-xs sm:text-sm font-medium text-muted-foreground">System Stability Monitor (Dummy):</label>
