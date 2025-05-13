@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -16,16 +15,42 @@ import { DashboardV1Content } from '@/components/dashboard/dashboard-v1-content'
 import { DashboardBetaContent } from '@/components/dashboard/dashboard-beta-content';
 import { DashboardDevContent } from '@/components/dashboard/dashboard-dev-content';
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function DashboardPage() {
   const { user: authUser, loading, isConfigured } = useAuth();
   const { appVersion } = useTheme(); 
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    const toastMessageKey = 'toast_message';
+    const messageType = searchParams.get(toastMessageKey);
+    
+    if (messageType === 'access_denied_role') {
+      toast({
+        title: 'Access Denied',
+        message: 'You were redirected. You do not have permission for the requested page.',
+        variant: 'destructive',
+      });
+      // Clean up the URL by removing the query parameter.
+      const currentPath = window.location.pathname;
+      const params = new URLSearchParams(searchParams.toString());
+      if (params.has(toastMessageKey)) {
+          params.delete(toastMessageKey);
+          const newUrl = params.toString() ? `${currentPath}?${params.toString()}` : currentPath;
+          router.replace(newUrl, { shallow: true });
+      }
+    }
+  }, [searchParams, toast, router]);
 
   if (!isClient || loading) {
     return (

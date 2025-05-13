@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
@@ -24,10 +23,10 @@ interface MockFirebaseUser {
 
 interface AuthContextType {
   user: UserProfile | null;
-  firebaseUser: MockFirebaseUser | null; // This will be null as Firebase is removed
+  firebaseUser: MockFirebaseUser | null; 
   loading: boolean;
   error: Error | null;
-  isConfigured: boolean; // Will always be false
+  isConfigured: boolean; 
   isMfaVerified: boolean;
   logout: () => Promise<void>;
   setUser: Dispatch<SetStateAction<UserProfile | null>>;
@@ -41,15 +40,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [mockFirebaseUser, setMockFirebaseUser] = useState<MockFirebaseUser | null>(null); // Will remain null
+  const [mockFirebaseUser, setMockFirebaseUser] = useState<MockFirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isMfaVerified, setIsMfaVerifiedState] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  // Firebase is removed, so the application is always in "mock" mode.
-  const configured = false;
+  const configured = false; // Application always uses mock API
 
   const getDummyUsersFromStorage = useCallback((): UserProfile[] => {
     if (typeof window === 'undefined') return [];
@@ -60,7 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const saveDummyUsersToStorage = useCallback((users: UserProfile[]) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(users));
-      // Ensure mock API service layer reflects this change if it caches users
       api.resetMockUsers();
       api.loadMockUsersFromStorage(DUMMY_USERS_STORAGE_KEY);
     }
@@ -71,10 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!localStorage.getItem(DUMMY_USERS_STORAGE_KEY)) {
         localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(initialDummyUsersForAuth));
       }
-      // Initialize the mock API service with users from local storage
       api.loadMockUsersFromStorage(DUMMY_USERS_STORAGE_KEY);
     }
-  }, []);
+  }, [saveDummyUsersToStorage]);
 
   const setIsMfaVerified = useCallback((verified: boolean) => {
     setIsMfaVerifiedState(verified);
@@ -90,9 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setLoading(true);
     let mfaFlag = false;
-    if (typeof window !== 'undefined') { // Ensure localStorage access is client-side
+    if (typeof window !== 'undefined') { 
         const storedUserJson = localStorage.getItem(CURRENT_DUMMY_USER_STORAGE_KEY);
-
         if (storedUserJson) {
             try {
                 const loggedInDummyUser: UserProfile = JSON.parse(storedUserJson);
@@ -104,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     photoURL: loggedInDummyUser.photoURL,
                     phoneNumber: loggedInDummyUser.phoneNumber,
                 });
-
                 const storedMfaVerified = localStorage.getItem(MFA_VERIFIED_STORAGE_KEY);
                 if (storedMfaVerified === 'true') {
                     mfaFlag = true;
@@ -142,15 +136,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!isMfaPage) {
           router.replace('/auth/mfa');
         }
-      } else {
-        if (isLoginPage || isRegisterPage || isMfaPage) {
+      } else { // MFA is verified
+        if (isAuthRoute) { // User is authenticated with MFA and on an auth page
           router.replace('/dashboard');
+        } else if (!isPublicRoot) { // User is on a non-auth, non-root page
+          const baseRoute = `/${pathname.split('/')[1]}`; // e.g. /users from /users/edit/1
+          // Check permissions for the current route
+          // Order of preference for checking: exact path, then base path
+          const requiredRolesForCurrentPage = rolesConfig.routePermissions[pathname as keyof typeof rolesConfig.routePermissions] ||
+                                              rolesConfig.routePermissions[baseRoute as keyof typeof rolesConfig.routePermissions];
+          
+          if (requiredRolesForCurrentPage && !requiredRolesForCurrentPage.includes(contextDisplayUser.role)) {
+            // User does not have permission for the current page
+            router.replace('/dashboard?toast_message=access_denied_role');
+            return; 
+          }
         }
       }
-    } else {
-      if (!isAuthRoute && !isPublicRoot) {
+    } else { // No user logged in
+      if (!isAuthRoute && !isPublicRoot) { // Not an auth route and not the root page
         router.replace('/auth/login');
-      } else if (isPublicRoot) {
+      } else if (isPublicRoot) { // On the root page
         router.replace('/auth/login');
       }
     }
@@ -161,13 +167,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const user = await api.loginUser(email, password); // Uses mock API
+      const user = await api.loginUser(email, password);
       setUserProfile(user);
-      setMockFirebaseUser(user as MockFirebaseUser); // Kept for type consistency
+      setMockFirebaseUser(user as MockFirebaseUser); 
       if (typeof window !== 'undefined') {
         localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(user));
       }
-      setIsMfaVerified(false);
+      setIsMfaVerified(false); 
       router.push('/auth/mfa');
       return user;
     } catch (err: any) {
@@ -182,9 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const newUser = await api.registerUser({ ...details, role: details.role || rolesConfig.defaultRole }); // Uses mock API
+      const newUser = await api.registerUser({ ...details, role: details.role || rolesConfig.defaultRole });
       setUserProfile(newUser);
-      setMockFirebaseUser(newUser as MockFirebaseUser); // Kept for type consistency
+      setMockFirebaseUser(newUser as MockFirebaseUser);
       if (typeof window !== 'undefined') {
         localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(newUser));
       }
@@ -193,7 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUsers.push(newUser);
       saveDummyUsersToStorage(currentUsers);
 
-      setIsMfaVerified(false);
+      setIsMfaVerified(false); 
       router.push('/auth/mfa');
       return newUser;
     } catch (err: any) {
@@ -212,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY);
     }
     setUserProfile(null);
-    setMockFirebaseUser(null); // Clear mock Firebase user
+    setMockFirebaseUser(null); 
     setIsMfaVerified(false);
     router.push('/auth/login');
     setLoading(false);
@@ -242,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     firebaseUser: mockFirebaseUser,
     loading,
     error,
-    isConfigured: configured, // Always false
+    isConfigured: configured,
     isMfaVerified,
     logout,
     setUser: setUserProfile,

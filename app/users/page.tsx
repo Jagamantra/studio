@@ -5,9 +5,9 @@ import { useAuth } from '@/contexts/auth-provider';
 import { DataTable } from '@/components/ui/data-table';
 import type { UserProfile } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, UserPlus, ShieldAlert } from 'lucide-react';
+import { Loader2, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import * as api from '@/services/api';
 import { UserFormDialog } from '@/components/users/user-form-dialog';
 import { UserDeleteDialog } from '@/components/users/user-delete-dialog';
@@ -17,14 +17,35 @@ import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
+
   const [users, setUsers] = React.useState<UserProfile[]>([]);
   const [tableLoading, setTableLoading] = React.useState(false);
-
   const [isUserModalOpen, setIsUserModalOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<UserProfile | null>(null);
-  
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingUser, setDeletingUser] = React.useState<UserProfile | null>(null);
+
+  React.useEffect(() => {
+    if (!authLoading) {
+      if (user && user.role === 'admin') {
+        setIsAuthorized(true);
+        fetchAndSetUsers();
+      } else if (user) { 
+        toast({
+          title: 'Access Denied',
+          message: 'You do not have permission to view the User Management page.',
+          variant: 'destructive',
+        });
+        router.replace('/dashboard');
+      } else { 
+        router.replace('/auth/login');
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, router, toast]);
+
 
   const fetchAndSetUsers = React.useCallback(async () => {
     setTableLoading(true);
@@ -38,10 +59,6 @@ export default function UsersPage() {
       setTableLoading(false);
     }
   }, [toast]);
-
-  React.useEffect(() => {
-    fetchAndSetUsers();
-  }, [fetchAndSetUsers]);
 
   const openAddUserModal = React.useCallback(() => {
     setEditingUser(null);
@@ -103,32 +120,14 @@ export default function UsersPage() {
     [openEditUserModal, openDeleteDialog, tableLoading, user?.uid] 
   );
   
-  const anyLoading = authLoading || tableLoading;
+  const anyPageLoading = authLoading || tableLoading || !isAuthorized;
 
-  if (authLoading && !users.length) {
+  if (authLoading || !isAuthorized) {
      return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       </AuthenticatedPageLayout>
      );
-  }
-  
-  const effectiveUserRole = user?.role; 
-  if (effectiveUserRole !== 'admin') {
-    return (
-      <AuthenticatedPageLayout>
-        <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
-          <ShieldAlert className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
-          <h1 className="text-xl md:text-2xl font-bold">Access Denied</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-2">
-            You do not have permission to view this page. This feature is for administrators only.
-          </p>
-          <Button asChild className="mt-6">
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
-        </div>
-      </AuthenticatedPageLayout>
-    );
   }
 
   return (
@@ -136,13 +135,13 @@ export default function UsersPage() {
       <div className="space-y-4 md:space-y-6 min-w-0"> 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
-          <Button onClick={openAddUserModal} disabled={anyLoading} size="sm">
+          <Button onClick={openAddUserModal} disabled={anyPageLoading} size="sm">
             {tableLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />} 
             <span className="hidden sm:inline">Add User</span>
             <span className="sm:hidden">Add</span>
           </Button>
         </div>
-        <DataTable columns={columns} data={users} searchColumnId="email" onAdd={openAddUserModal} isLoading={anyLoading}/>
+        <DataTable columns={columns} data={users} searchColumnId="email" onAdd={openAddUserModal} isLoading={anyPageLoading}/>
 
         <UserFormDialog
           isOpen={isUserModalOpen}
@@ -163,4 +162,3 @@ export default function UsersPage() {
     </AuthenticatedPageLayout>
   );
 }
-

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -54,6 +53,7 @@ export default function ConfigAdvisorPage() {
   } = useTheme();
 
   const { suggestions, isLoadingAi, error: aiError, performAnalysis, resetAnalysis } = useAiConfigAnalysis();
+  const [isAuthorized, setIsAuthorized] = useState(false);
   
   const projectConfigForm = useForm<ProjectConfigFormValues>({
     resolver: zodResolver(projectConfigFormSchema),
@@ -75,8 +75,31 @@ export default function ConfigAdvisorPage() {
 
   useEffect(() => {
     if (!appProjectConfig.enableConfigAdvisor) {
+      // Feature disabled, authorization check is skipped.
+      // The component will render the "Feature Disabled" message.
       return;
     }
+    if (!authLoading) {
+      if (user && user.role === 'admin') {
+        setIsAuthorized(true);
+      } else if (user) { // User exists but not admin
+        toast({
+          title: 'Access Denied',
+          message: 'You do not have permission to view the Config Advisor page.',
+          variant: 'destructive',
+        });
+        router.replace('/dashboard');
+      } else { // No user
+        router.replace('/auth/login');
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, router, toast, appProjectConfig.enableConfigAdvisor]);
+
+
+  useEffect(() => {
+    if (!appProjectConfig.enableConfigAdvisor || !isAuthorized) return;
+
     if (typeof window !== 'undefined') {
         const storedInputsJSON = localStorage.getItem('configAdvisorInputs');
         if (storedInputsJSON) {
@@ -109,10 +132,10 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appProjectConfig.enableConfigAdvisor]);
+  }, [appProjectConfig.enableConfigAdvisor, isAuthorized]);
 
   useEffect(() => {
-    if (!appProjectConfig.enableConfigAdvisor) return;
+    if (!appProjectConfig.enableConfigAdvisor || !isAuthorized) return;
     projectConfigForm.reset({
       appName: currentAppName,
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
@@ -120,11 +143,11 @@ export default function ConfigAdvisorPage() {
       defaultAppVersionId: currentAppVersion,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor]);
+  }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
 
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
-    if (!appProjectConfig.enableConfigAdvisor) return;
+    if (!appProjectConfig.enableConfigAdvisor || !isAuthorized) return;
     if (typeof window !== 'undefined') {
         const currentInputs: StoredConfigAdvisorInputs = {
             projectConfigFormData: watchedProjectConfig,
@@ -144,7 +167,7 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
   
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
@@ -256,7 +279,7 @@ export const projectConfig = {
   };
   
   if (authLoading) {
-    return <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <AuthenticatedPageLayout><div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></AuthenticatedPageLayout>;
   }
 
   if (!appProjectConfig.enableConfigAdvisor) {
@@ -276,23 +299,18 @@ export const projectConfig = {
     );
   }
   
-  const effectiveUserRole = user?.role;
-  if (effectiveUserRole !== 'admin') {
+  // This check happens after the enableConfigAdvisor check.
+  // If the feature is enabled but user is not authorized, they see a loader while redirecting.
+  if (!isAuthorized) {
     return (
       <AuthenticatedPageLayout>
-        <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
-          <ShieldQuestion className="h-12 w-12 md:h-16 md:w-16 text-destructive mb-4" />
-          <h1 className="text-xl md:text-2xl font-bold">Access Denied</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-2">
-            You do not have permission to view this page. This feature is for administrators only.
-          </p>
-          <Button asChild className="mt-6">
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
+        <div className="flex flex-1 items-center justify-center p-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </AuthenticatedPageLayout>
     );
   }
+
 
   const anyLoading = isLoadingAi || isSavingProjectConfig || isResettingProjectConfig || isLoadingExamples;
 

@@ -1,9 +1,8 @@
-
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-provider';
 import type { SidebarNavItem, Role } from '@/types';
 import { cn } from '@/lib/utils';
@@ -14,11 +13,12 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  useSidebar, // from shadcn/ui Sidebar
-} from '@/components/ui/sidebar'; // Using shadcn's sidebar
+  useSidebar,
+} from '@/components/ui/sidebar';
 import { ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 interface MainNavProps {
   items: SidebarNavItem[];
@@ -26,8 +26,10 @@ interface MainNavProps {
 
 export function MainNav({ items }: MainNavProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const { state: sidebarState } = useSidebar(); // Get sidebar state (expanded/collapsed)
+  const { user: authUser } = useAuth();
+  const { state: sidebarState } = useSidebar(); 
+  const { toast } = useToast();
+  const router = useRouter();
 
   const [openSubmenus, setOpenSubmenus] = React.useState<Record<string, boolean>>({});
 
@@ -36,12 +38,30 @@ export function MainNav({ items }: MainNavProps) {
   };
 
   const userHasRole = (allowedRoles?: Role[]): boolean => {
-    if (!allowedRoles || allowedRoles.length === 0) return true; // No roles specified, accessible to all
-    if (!user || !user.role) return false; // No user or user role, not accessible
-    return allowedRoles.includes(user.role);
+    if (!allowedRoles || allowedRoles.length === 0) return true; 
+    if (!authUser || !authUser.role) return false; 
+    return allowedRoles.includes(authUser.role);
   };
 
+  const handleLinkClick = (event: React.MouseEvent, navItem: SidebarNavItem) => {
+    if (navItem.disabled) {
+      event.preventDefault();
+      return;
+    }
+    if (navItem.roles && authUser && !navItem.roles.includes(authUser.role)) {
+      event.preventDefault();
+      toast({
+        title: 'Access Denied',
+        message: `You do not have permission to access ${navItem.label}.`,
+        variant: 'destructive',
+      });
+      router.push('/dashboard');
+    }
+  };
+
+
   const renderNavItem = (item: SidebarNavItem, isSubItem = false): React.ReactNode => {
+    // Initial role check for visibility, actual click prevention is handled by handleLinkClick
     if (!userHasRole(item.roles)) {
       return null;
     }
@@ -88,7 +108,12 @@ export function MainNav({ items }: MainNavProps) {
 
     return (
       <SidebarMenuItem key={item.id}>
-        <Link href={href} passHref legacyBehavior>
+        <Link 
+          href={href} 
+          passHref 
+          legacyBehavior
+          onClick={(e) => handleLinkClick(e, item)}
+        >
           <ButtonComponent
             asChild={!isSubItem} 
             className={cn(isSubItem && "pl-4")} 
@@ -98,17 +123,12 @@ export function MainNav({ items }: MainNavProps) {
             tooltip={sidebarState === 'collapsed' ? item.label : undefined}
           >
             {isSubItem ? (
-              // SidebarMenuSubButton defaults to an 'a' tag, asChild is false.
-              // It can have multiple children via a fragment.
               <>
                 <Icon />
                 <span>{item.label}</span>
                 {item.disabled && <Badge variant="outline" className="ml-auto">Soon</Badge>}
               </>
             ) : (
-              // SidebarMenuButton has asChild=true, so it renders a Slot.
-              // The child of Slot must be a single React Element. This span serves that purpose.
-              // The Slot will merge its props (className, data-attributes, href from Link) onto this span.
               <span>
                 <Icon />
                 <span>{item.label}</span>
