@@ -2,7 +2,7 @@
 'use client';
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
-import React, { createContext, useContext, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useCallback, useState } from 'react';
 import type { UserProfile } from '@/types';
 import { rolesConfig } from '@/config/roles.config';
 import { useRouter, usePathname } from 'next/navigation';
