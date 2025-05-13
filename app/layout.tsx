@@ -24,7 +24,6 @@ function ThemedSonnerToaster() {
   const { theme, accentColor } = useTheme(); 
 
   // Memoize toastOptions to ensure it's stable unless theme or accentColor changes.
-  // This might help if Sonner is sensitive to prop identity for re-styling.
   const toastOptions = React.useMemo(() => ({
     classNames: {
       // Style the action button (e.g., "Undo") to use primary/accent color
@@ -32,7 +31,7 @@ function ThemedSonnerToaster() {
       // Optional: Style cancel button if ever used
       // cancelButton: 'bg-muted text-muted-foreground hover:bg-muted/80',
     },
-  }), [accentColor]); // Add accentColor to dependency array
+  }), [accentColor]); // FIX: Added accentColor to the dependency array
 
   // Create a key that changes when theme or accentColor changes
   // This forces SonnerToaster to re-mount and pick up new styles
