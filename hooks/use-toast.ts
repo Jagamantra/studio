@@ -23,9 +23,12 @@ export function useToast() {
     const now = new Date();
     const dateTimeString = format(now, "EEE, MMM d 'at' h:mm a");
 
+    // Isolate the potentially problematic part
+    const messageContainer = <div>{message}</div>;
+
     const descriptionContent = (
       <div>
-        <div>{message}</div>
+        {messageContainer}
         <p className="mt-1 text-xs text-muted-foreground">{dateTimeString}</p>
       </div>
     );
@@ -75,3 +78,4 @@ export function useToast() {
 
   return { toast };
 }
+
