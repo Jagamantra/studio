@@ -1,4 +1,3 @@
-
 # Genesis Template
 
 This is a Next.js starter template, "Genesis Template", designed for rapid development, now using a mock API service layer for backend interactions.
@@ -57,14 +56,14 @@ To get started with the Genesis Template:
 
 -   **Theme Switcher**: Dynamic theme customization (dark/light modes, accent color, border radius). Access via the palette icon in the header.
 -   **Profile Editor**: User profile management (personal details, password change) using mock services.
--   **Access Control**: Role-based access control for routes (mocked), configured in `src/config/roles.config.ts`.
--   **Sidebar Manager**: Dynamic sidebar navigation, configured in `src/config/sidebar.config.ts`, with a minimize option.
+-   **Access Control**: Role-based access control for routes (mocked), configured in `config/roles.config.ts`.
+-   **Sidebar Manager**: Dynamic sidebar navigation, configured in `config/sidebar.config.ts`, with a minimize option.
 -   **Config Advisor**: AI-powered tool to analyze configuration files (`project.config.ts`, `sidebar.config.ts`, `roles.config.ts`) for improvements. Accessible to (mock) admins. This feature can be enabled or disabled (see "Application Configuration" section below).
 
 ## Genkit for AI Features
 
 This application uses Genkit for AI-related functionalities like the Config Advisor.
--   Genkit flows are typically located in `src/ai/flows/`.
+-   Genkit flows are typically located in `ai/flows/`.
 -   To run Genkit services locally for development (e.g., if you extend AI features):
     ```bash
     npm run genkit:dev
@@ -103,11 +102,13 @@ Most application-level configurations are centralized in the `config/` directory
 This file (`projectConfig`) controls fundamental aspects of the application:
 
 -   **`appName: string`**:
-    *   Sets the application's name, displayed in the header, browser title, and other UI elements.
-    *   Dynamically updated via the ThemeProvider and `ThemeSwitcher` component if changed at runtime (e.g., through Config Advisor page).
+    *   Sets the application's name. This name is displayed in the main application header, browser tab titles (dynamically), and potentially other UI elements.
+    *   It's loaded by the `ThemeProvider` and can be updated at runtime (e.g., via the Config Advisor page), with changes reflected application-wide and persisted in Local Storage.
 -   **`appIconPaths: string[]`**:
-    *   An array of SVG path `d` attributes that define the application's main icon. This icon is rendered dynamically in the header (e.g., `components/layout/header.tsx`) and potentially other places like the auth layout.
-    *   Can be updated via `ThemeProvider` if needed.
+    *   An array of SVG path `d` attributes that define the application's main icon. This icon is rendered dynamically in the header (`components/layout/header.tsx`) and next to page titles (`components/layout/page-title-with-icon.tsx`).
+    *   If `appIconPaths` is empty or undefined, `PageTitleWithIcon` will display a generic document icon (`FileText` from Lucide React) as a fallback.
+    *   Can be updated via `ThemeProvider` if changed at runtime.
+    *   **Browser Tab Icon (Favicon)**: To change the icon displayed in the browser tab, you need to replace or update the static `public/favicon.svg` file. Changes to `appIconPaths` in `project.config.ts` update the in-app icon but do **not** automatically update the static favicon file.
 -   **`availableAccentColors: AccentColor[]`** and **`defaultAccentColorName: string`**:
     *   `AccentColor = { name: string; hslValue: string; hexValue: string; }`
     *   Defines the list of predefined accent colors available in the `ThemeSwitcher`.
@@ -330,11 +331,25 @@ The `AuthProvider` uses these permissions to protect routes. Ensure your middlew
 
 ### 4. Page Title and Icon
 
--   **Page Title**: To set the title displayed on your page (e.g., "My New Page Title"), pass the `title` prop to the `PageTitleWithIcon` component, as shown in the example in Step 1.
--   **Page Icon (Next to Title)**: The `PageTitleWithIcon` component handles the icon next to the page title automatically:
-    *   If you have **not** configured a global application icon in `config/project.config.ts` (i.e., `projectConfig.appIconPaths` is empty or undefined), `PageTitleWithIcon` will display a generic document icon (`FileText` from Lucide React).
-    *   If you **have** configured a global application icon via `projectConfig.appIconPaths`, `PageTitleWithIcon` will **not** display any icon. This is to avoid redundancy, as the global application icon will already be present in the main application header.
--   **Global Application Icon (Header)**: To set or change the main application icon that appears in the header, modify the `appIconPaths` array in `config/project.config.ts` with your desired SVG path data.
+-   **Page Title (Browser Tab)**: The browser tab title is dynamically set by the `ThemeProvider` based on the `appName` from `project.config.ts`. For specific pages, you can export a `metadata` object from the page file to override this.
+    ```tsx
+    // app/my-new-page/page.tsx
+    import type { Metadata } from 'next';
+    import { projectConfig } from '@/config/project.config'; // For consistency
+
+    export const metadata: Metadata = {
+      title: `My New Page Title | ${projectConfig.appName}`,
+      // description: 'Optional description for this page',
+    };
+    // ... rest of your page component
+    ```
+-   **Page Title (Displayed on Page)**: To set the title displayed on your page (e.g., "My New Page Title"), pass the `title` prop to the `PageTitleWithIcon` component, as shown in the example in Step 1.
+-   **Page Icon (Next to Displayed Title)**: The `PageTitleWithIcon` component handles the icon next to the page title automatically:
+    *   If you **have** configured a global application icon in `config/project.config.ts` (i.e., `projectConfig.appIconPaths` is not empty), `PageTitleWithIcon` will display this application icon.
+    *   If you have **not** configured a global application icon (i.e., `projectConfig.appIconPaths` is empty or undefined), `PageTitleWithIcon` will display a generic document icon (`FileText` from Lucide React) as a fallback.
+-   **Global Application Icon (Header & Favicon)**:
+    *   **In-App Icon**: To set or change the main application icon that appears in the header and next to page titles, modify the `appIconPaths` array in `config/project.config.ts` with your desired SVG path `d` attributes.
+    *   **Browser Tab Icon (Favicon)**: To change the icon displayed in the browser tab, you need to replace or update the static `public/favicon.svg` file. Changes to `appIconPaths` in `project.config.ts` update the in-app icon but do **not** automatically update the static favicon file.
 
 ### 5. Integrate Theme Settings
 

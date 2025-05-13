@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -14,7 +13,7 @@ interface ThemeProviderState extends ThemeSettings {
   setBorderRadius: (radiusValue: string) => void;
   setAppVersion: (versionId: string) => void;
   setAppName: (appName: string) => void; 
-  setAppIconPaths: (paths: string[]) => void; // Setter for icon paths
+  setAppIconPaths: (paths: string[]) => void; 
   availableAccentColors: AccentColor[];
   availableBorderRadii: BorderRadiusOption[];
 }
@@ -37,13 +36,13 @@ const initialState: ThemeProviderState = {
   borderRadius: getInitialBorderRadius(),
   appVersion: projectConfig.defaultAppVersionId,
   appName: projectConfig.appName, 
-  appIconPaths: getInitialAppIconPaths(), // Initialize icon paths
+  appIconPaths: getInitialAppIconPaths(), 
   setTheme: () => null,
   setAccentColor: () => null,
   setBorderRadius: () => null,
   setAppVersion: () => null,
   setAppName: () => null, 
-  setAppIconPaths: () => null, // Placeholder setter
+  setAppIconPaths: () => null, 
   availableAccentColors: projectConfig.availableAccentColors,
   availableBorderRadii: projectConfig.availableBorderRadii,
 };
@@ -77,15 +76,14 @@ export function ThemeProvider({
   );
   const [appName, setAppNameInternal] = useLocalStorage<string>(
     `${storageKey}-app-name`,
-    initialState.appName
+    initialState.appName // Initialize with projectConfig's appName
   );
   const [appIconPaths, setAppIconPathsInternal] = useLocalStorage<string[]>(
     `${storageKey}-app-icon-paths`,
-    initialState.appIconPaths || []
+    initialState.appIconPaths // Initialize with projectConfig's appIconPaths
   );
 
 
-  // Create stable setters
   const setTheme = useCallback((newTheme: 'light' | 'dark' | 'system') => setThemeState(newTheme), [setThemeState]);
   const setAccentColor = useCallback((newAccentColor: string) => setAccentColorInternal(newAccentColor), [setAccentColorInternal]);
   const setBorderRadius = useCallback((newBorderRadius: string) => setBorderRadiusInternal(newBorderRadius), [setBorderRadiusInternal]);
@@ -140,7 +138,6 @@ export function ThemeProvider({
       if (parts && parts.length === 4) {
         [ , h, s, l] = parts;
       } else {
-        // Check if it's a valid HSL without % for S and L, try to parse if so
         const plainHslParts = accentColor.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?)/);
         if (plainHslParts && plainHslParts.length === 4) {
             h = plainHslParts[1];
@@ -187,9 +184,8 @@ export function ThemeProvider({
     }
   }, [borderRadius]);
 
-  // Update document title dynamically
   useEffect(() => {
-    if (appName) {
+    if (appName && typeof document !== 'undefined') {
       document.title = appName;
     }
   }, [appName]);
@@ -200,13 +196,13 @@ export function ThemeProvider({
     borderRadius,
     appVersion,
     appName, 
-    appIconPaths, // Provide icon paths
+    appIconPaths, 
     setTheme,
     setAccentColor,
     setBorderRadius,
     setAppVersion,
     setAppName, 
-    setAppIconPaths, // Provide setter
+    setAppIconPaths, 
     availableAccentColors: projectConfig.availableAccentColors,
     availableBorderRadii: projectConfig.availableBorderRadii,
   }), [theme, accentColor, borderRadius, appVersion, appName, appIconPaths, 

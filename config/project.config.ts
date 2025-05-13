@@ -1,9 +1,8 @@
-
 import type { ProjectConfig } from '@/types';
 
 export const projectConfig: ProjectConfig = {
   appName: 'Genesis Template',
-  appIconPaths: [ // Default SVG paths for the application icon
+  appIconPaths: [ // Default SVG paths for the application icon - layered hexagon
     "M12 2L2 7l10 5 10-5-10-5z",
     "M2 17l10 5 10-5",
     "M2 12l10 5 10-5"
