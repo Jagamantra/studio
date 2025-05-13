@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -44,22 +43,22 @@ export default function UsersPage() {
     fetchAndSetUsers();
   }, [fetchAndSetUsers]);
 
-  const openAddUserModal = () => {
+  const openAddUserModal = React.useCallback(() => {
     setEditingUser(null);
     setIsUserModalOpen(true);
-  };
+  }, []);
 
-  const openEditUserModal = (userData: UserProfile) => {
+  const openEditUserModal = React.useCallback((userData: UserProfile) => {
     setEditingUser(userData);
     setIsUserModalOpen(true);
-  };
+  }, []);
 
-  const openDeleteDialog = (userData: UserProfile) => {
+  const openDeleteDialog = React.useCallback((userData: UserProfile) => {
     setDeletingUser(userData);
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
   
-  const confirmDeleteUser = async () => {
+  const confirmDeleteUser = React.useCallback(async () => {
     if (!deletingUser) return;
     setTableLoading(true);
     try {
@@ -77,9 +76,9 @@ export default function UsersPage() {
       setIsDeleteDialogOpen(false);
       setDeletingUser(null);
     }
-  };
+  }, [deletingUser, fetchAndSetUsers, toast]);
 
-  const handleUserFormSubmit = async (values: Omit<UserProfile, 'uid' | 'photoURL' | 'password'> & { password?: string }) => {
+  const handleUserFormSubmit = React.useCallback(async (values: Omit<UserProfile, 'uid' | 'photoURL' | 'password'> & { password?: string }) => {
     setTableLoading(true);
     try {
       if (editingUser) { 
@@ -97,11 +96,11 @@ export default function UsersPage() {
       setIsUserModalOpen(false);
       setEditingUser(null);
     }
-  };
+  }, [editingUser, fetchAndSetUsers, toast]);
 
   const columns = React.useMemo(
     () => createUserTableColumns({ openEditUserModal, openDeleteDialog, tableLoading, currentUserUid: user?.uid }),
-    [tableLoading, user?.uid] 
+    [openEditUserModal, openDeleteDialog, tableLoading, user?.uid] 
   );
   
   const anyLoading = authLoading || tableLoading;
@@ -164,3 +163,4 @@ export default function UsersPage() {
     </AuthenticatedPageLayout>
   );
 }
+
