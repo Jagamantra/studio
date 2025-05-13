@@ -2,7 +2,7 @@
 # Genesis Template
 
 Welcome to the Genesis Template! This Next.js starter is built for speed and flexibility, featuring a mock API service for backend interactions.
-
+ 
 ## Getting Started
 
 Follow these steps to run the Genesis Template locally:
