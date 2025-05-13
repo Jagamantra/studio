@@ -5,7 +5,7 @@ import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 import { ThemeProvider } from '@/contexts/theme-provider';
 import { AuthProvider } from '@/contexts/auth-provider';
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from 'sonner'; // Updated import
 import { projectConfig } from '@/config/project.config';
 
 // Static metadata using appName from projectConfig
@@ -28,7 +28,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             {children}
-            <Toaster />
+            <SonnerToaster richColors closeButton /> {/* Added SonnerToaster */}
           </AuthProvider>
         </ThemeProvider>
       </body>

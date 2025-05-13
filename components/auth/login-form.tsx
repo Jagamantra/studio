@@ -66,19 +66,19 @@ export function LoginForm() {
         } else {
           const errMsg = authContext.error?.message || "Invalid mock credentials.";
           setFormError(errMsg);
-          toast({ title: 'Login Failed', description: errMsg, variant: 'destructive' });
+          toast({ title: 'Login Failed', message: errMsg, variant: 'destructive' });
         }
       } catch (err: any) {
         const errMsg = err.message || "Mock login process failed.";
         setFormError(errMsg);
-        toast({ title: 'Login Error', description: errMsg, variant: 'destructive' });
+        toast({ title: 'Login Error', message: errMsg, variant: 'destructive' });
       } finally {
         setIsLoading(false);
       }
     } else {
        setFormError("Login function not available in context.");
        setIsLoading(false);
-       toast({ title: 'Login Error', description: "Login function not available.", variant: 'destructive' });
+       toast({ title: 'Login Error', message: "Login function not available.", variant: 'destructive' });
     }
   }
   

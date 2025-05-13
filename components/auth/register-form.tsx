@@ -85,19 +85,19 @@ export function RegisterForm() {
         } else {
            const errMsg = authContext.error?.message || "Failed to register mock user.";
            setFormError(errMsg);
-           toast({ title: 'Registration Failed', description: errMsg, variant: 'destructive' });
+           toast({ title: 'Registration Failed', message: errMsg, variant: 'destructive' });
         }
       } catch (err: any) {
         const errMsg = err.message || "Mock registration process failed.";
         setFormError(errMsg);
-        toast({ title: 'Registration Error', description: errMsg, variant: 'destructive' });
+        toast({ title: 'Registration Error', message: errMsg, variant: 'destructive' });
       } finally {
         setIsLoading(false);
       }
     } else {
       setFormError("Registration function not available in context.");
       setIsLoading(false);
-      toast({ title: 'Registration Error', description: "Registration function not available.", variant: 'destructive' });
+      toast({ title: 'Registration Error', message: "Registration function not available.", variant: 'destructive' });
     }
   }
   

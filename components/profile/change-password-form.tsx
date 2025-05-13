@@ -42,18 +42,18 @@ export function ChangePasswordForm({ anyLoading, setAnyLoading }: ChangePassword
 
   async function onSubmit(data: PasswordFormValues) {
     if (!user || !user.uid) { 
-        toast({ title: 'Error', description: 'User not found. Please log in again.', variant: 'destructive' });
+        toast({ title: 'Error', message: 'User not found. Please log in again.', variant: 'destructive' });
         return;
     }
     setIsLoading(true);
     setAnyLoading(true);
     try {
       await api.changeUserPassword(user.uid, data.currentPassword, data.newPassword);
-      toast({ title: 'Password Updated', description: 'Your password has been changed successfully. (Mocked)' });
+      toast({ title: 'Password Updated', message: 'Your password has been changed successfully. (Mocked)', variant: 'success' });
       form.reset();
     } catch (error: any) {
       let desc = error.message || 'An error occurred during password update.';
-      toast({ title: 'Password Update Failed', description: desc, variant: 'destructive' });
+      toast({ title: 'Password Update Failed', message: desc, variant: 'destructive' });
     } finally {
       setIsLoading(false);
       setAnyLoading(false);

@@ -52,7 +52,8 @@ export function ForgotPasswordForm() {
       await api.forgotPassword(data.email);
       toast({
         title: 'Request Sent',
-        description: `If an account exists for ${data.email}, a password reset link has been sent (mocked).`,
+        message: `If an account exists for ${data.email}, a password reset link has been sent (mocked).`,
+        variant: 'success',
       });
       setSubmittedEmail(data.email);
       setIsSubmitted(true);
@@ -61,7 +62,7 @@ export function ForgotPasswordForm() {
       console.error('Forgot password error:', error);
       toast({
         title: 'Request Failed',
-        description: error.message || 'An unexpected error occurred. Please try again.',
+        message: error.message || 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
     } finally {

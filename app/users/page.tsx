@@ -33,7 +33,7 @@ export default function UsersPage() {
       const fetchedUsers = await api.fetchUsers();
       setUsers(fetchedUsers);
     } catch (error: any) {
-      toast({ title: "Error fetching users", description: error.message || "Could not load user data.", variant: "destructive" });
+      toast({ title: "Error fetching users", message: error.message || "Could not load user data.", variant: "destructive" });
       setUsers([]);
     } finally {
       setTableLoading(false);
@@ -64,10 +64,14 @@ export default function UsersPage() {
     setTableLoading(true);
     try {
       await api.deleteUser(deletingUser.uid);
-      toast({ title: "User Deleted", description: `${deletingUser.displayName} has been removed.` });
+      toast({ 
+        title: "User Deleted", 
+        message: `${deletingUser.displayName} has been removed.`,
+        action: { label: "Undo", onClick: () => console.log("Undo delete (mock)")} 
+      });
       await fetchAndSetUsers();
     } catch (error: any) {
-      toast({ title: "Error Deleting User", description: error.message || "Could not delete user.", variant: "destructive" });
+      toast({ title: "Error Deleting User", message: error.message || "Could not delete user.", variant: "destructive" });
     } finally {
       setTableLoading(false);
       setIsDeleteDialogOpen(false);
@@ -80,14 +84,14 @@ export default function UsersPage() {
     try {
       if (editingUser) { 
         await api.updateUser(editingUser.uid, values);
-        toast({ title: "User Updated", description: `${values.displayName} has been updated.` });
+        toast({ title: "User Updated", message: `${values.displayName} has been updated.`, variant: "success" });
       } else { 
         await api.addUser(values);
-        toast({ title: "User Added", description: `${values.displayName} has been created.` });
+        toast({ title: "User Added", message: `${values.displayName} has been created.`, variant: "success" });
       }
       await fetchAndSetUsers();
     } catch (error: any) {
-      toast({ title: editingUser ? "Error Updating User" : "Error Adding User", description: error.message || "Operation failed.", variant: "destructive" });
+      toast({ title: editingUser ? "Error Updating User" : "Error Adding User", message: error.message || "Operation failed.", variant: "destructive" });
     } finally {
       setTableLoading(false);
       setIsUserModalOpen(false);

@@ -72,13 +72,14 @@ export default function MfaPage() {
       setIsMfaVerified(true);
       toast({
         title: 'Verification Successful',
-        description: 'You have been successfully verified. Redirecting...',
+        message: 'You have been successfully verified. Redirecting...',
+        variant: 'success',
       });
       router.push('/dashboard');
     } else {
       toast({
         title: 'Verification Failed',
-        description: 'The OTP entered is incorrect. Please try again.',
+        message: 'The OTP entered is incorrect. Please try again.',
         variant: 'destructive',
       });
       form.setError('otp', { type: 'manual', message: 'Invalid OTP.' });

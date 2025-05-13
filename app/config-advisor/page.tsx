@@ -162,7 +162,8 @@ export default function ConfigAdvisorPage() {
     setIsLoadingExamples(false);
     toast({
       title: 'Example Configurations Loaded',
-      description: 'You can now analyze these example settings.',
+      message: 'You can now analyze these example settings.',
+      variant: 'info',
     });
   };
 
@@ -184,12 +185,13 @@ export default function ConfigAdvisorPage() {
 
       toast({
         title: 'Project Configuration Applied',
-        description: 'Your project settings have been applied and saved locally.',
+        message: 'Your project settings have been applied and saved locally.',
+        variant: 'success',
       });
     } else {
       toast({
         title: 'Validation Error',
-        description: 'Please correct the errors in the project configuration form.',
+        message: 'Please correct the errors in the project configuration form.',
         variant: 'destructive',
       });
     }
@@ -223,7 +225,8 @@ export default function ConfigAdvisorPage() {
     setIsResettingProjectConfig(false);
     toast({
       title: 'Project Configuration Reset',
-      description: 'Project settings have been reset to their original defaults and applied application-wide.',
+      message: 'Project settings have been reset to their original defaults and applied application-wide.',
+      variant: 'info',
     });
   };
 

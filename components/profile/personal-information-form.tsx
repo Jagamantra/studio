@@ -81,28 +81,49 @@ export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoadi
   };
 
   async function onSubmit(data: ProfileFormValues) {
-    if (!user) return; // Should not happen if user is on this page
+    if (!user) return; 
     setIsLoading(true);
     setAnyLoading(true);
+
+    const originalProfile = {
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      phoneNumber: user.phoneNumber,
+    };
+
     try {
       const photoURLToUpdate = selectedFile ? previewUrl : data.photoURL;
 
-      // Use API service to update profile
       const updatedProfile = await api.updateUserProfile(user.uid, {
         displayName: data.displayName,
         photoURL: photoURLToUpdate,
         phoneNumber: data.phoneNumber,
       });
       
-      // Update user state in AuthContext and locally
-      updateCurrentLocalUser(updatedProfile); // This updates AuthContext's user state
-      setUser(updatedProfile); // This updates the local page's user state (might be redundant if AuthContext propagates fast enough)
+      updateCurrentLocalUser(updatedProfile); 
+      setUser(updatedProfile); 
 
       form.reset({ ...updatedProfile, email: user.email }, { keepValues: true, keepDirty: false });
 
-      toast({ title: 'Profile Updated', description: 'Your personal information has been saved.' });
+      toast({ 
+        title: 'Profile Updated', 
+        message: 'Your personal information has been saved.',
+        variant: 'success',
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            // Simulate reverting the change
+            const revertedProfile = await api.updateUserProfile(user.uid, originalProfile);
+            updateCurrentLocalUser(revertedProfile);
+            setUser(revertedProfile);
+            form.reset({ ...revertedProfile, email: user.email }, { keepValues: true, keepDirty: false });
+            setPreviewUrl(revertedProfile.photoURL || null);
+            toast({ message: "Profile changes undone.", variant: "info" });
+          }
+        }
+      });
     } catch (error: any) {
-      toast({ title: 'Update Failed', description: error.message || "Could not update profile.", variant: 'destructive' });
+      toast({ title: 'Update Failed', message: error.message || "Could not update profile.", variant: 'destructive' });
     } finally {
       setIsLoading(false);
       setAnyLoading(false);

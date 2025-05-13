@@ -50,15 +50,31 @@ export function AdvancedSettingsForm({ user, setUser, anyLoading, setAnyLoading 
   async function onSubmit(data: AdvancedSettingsFormValues) {
     setIsLoading(true);
     setAnyLoading(true);
+    const originalSettings = { 
+      receiveNotifications: user.receiveNotifications, 
+      interfaceDensity: user.interfaceDensity 
+    };
+
     try {
-      // Simulate async operation
       await new Promise(resolve => setTimeout(resolve, 500));
-      console.log("Advanced settings saved:", data); // In a real app, this would be an API call.
+      console.log("Advanced settings saved:", data); 
       setUser(prevUser => prevUser ? { ...prevUser, ...data } : null);
       form.reset(data, { keepValues: true, keepDirty: false });
-      toast({ title: 'Settings Saved', description: 'Your advanced settings have been updated.' });
+      toast({ 
+        title: 'Settings Saved', 
+        message: 'Your advanced settings have been updated.',
+        variant: 'success',
+        action: {
+          label: "Undo",
+          onClick: () => {
+            setUser(prevUser => prevUser ? { ...prevUser, ...originalSettings } : null);
+            form.reset(originalSettings);
+            toast({ message: "Advanced settings changes undone.", variant: "info" });
+          }
+        }
+      });
     } catch (error: any) {
-      toast({ title: 'Save Failed', description: error.message, variant: 'destructive' });
+      toast({ title: 'Save Failed', message: error.message, variant: 'destructive' });
     } finally {
       setIsLoading(false);
       setAnyLoading(false);

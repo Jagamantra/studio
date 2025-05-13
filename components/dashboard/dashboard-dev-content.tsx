@@ -31,8 +31,12 @@ export function DashboardDevContent({ userToRenderOnDashboard }: DashboardDevCon
   const handleTestNotification = () => {
     toast({
       title: "Test Notification!",
-      description: "This is a sample toast message triggered from the dev dashboard.",
+      message: "This is a sample toast message triggered from the dev dashboard.",
       variant: "default",
+      action: {
+        label: "Undo",
+        onClick: () => console.log("Undo from Dev Dashboard Toast"),
+      }
     });
   };
 
