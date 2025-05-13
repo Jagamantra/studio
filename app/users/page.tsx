@@ -13,19 +13,30 @@ import { UserFormDialog } from '@/components/users/user-form-dialog';
 import { UserDeleteDialog } from '@/components/users/user-delete-dialog';
 import { createUserTableColumns } from '@/components/users/user-table-columns';
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
+import type { Metadata } from 'next';
+import { projectConfig } from '@/config/project.config';
+import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
+import { useTheme } from '@/contexts/theme-provider';
+
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = React.useState(false);
+  const { appName } = useTheme();
 
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
   const [users, setUsers] = React.useState<UserProfile[]>([]);
   const [tableLoading, setTableLoading] = React.useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<UserProfile | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingUser, setDeletingUser] = React.useState<UserProfile | null>(null);
+  const [hasFetchedInitialData, setHasFetchedInitialData] = React.useState(false);
+
+  React.useEffect(() => {
+    document.title = `User Management | ${appName}`;
+  }, [appName]);
 
   const fetchAndSetUsers = React.useCallback(async () => {
     setTableLoading(true);
@@ -34,26 +45,28 @@ export default function UsersPage() {
       setUsers(fetchedUsers);
     } catch (error: any) {
       toast({ title: "Error fetching users", message: error.message || "Could not load user data.", variant: "destructive" });
-      setUsers([]);
+      setUsers([]); // Clear users on error
     } finally {
       setTableLoading(false);
     }
   }, [toast]);
 
   React.useEffect(() => {
-    if (!authLoading) {
-      if (user && user.role === 'admin') {
-        setIsAuthorized(true);
-        fetchAndSetUsers(); // Fetch users only if authorized
-      } else if (user) {
-        // Access denied, AuthProvider will redirect and handle toast via query param
-        router.replace('/dashboard');
-      } else {
-        router.replace('/auth/login');
+    if (authLoading) return; // Wait for auth to resolve
+
+    if (user && user.role === 'admin') {
+      setIsAuthorized(true);
+      if (!hasFetchedInitialData && !tableLoading) {
+        fetchAndSetUsers().then(() => setHasFetchedInitialData(true));
       }
+    } else if (user) { // User exists but not admin
+      setIsAuthorized(false);
+      // AuthProvider handles redirection and toast message
+    } else { // No user
+      setIsAuthorized(false);
+      // AuthProvider handles redirection
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, router]); // Removed fetchAndSetUsers from deps as it's called conditionally
+  }, [user, authLoading, fetchAndSetUsers, hasFetchedInitialData, tableLoading, router]);
 
 
   const openAddUserModal = React.useCallback(() => {
@@ -81,7 +94,7 @@ export default function UsersPage() {
         message: `${deletingUser.displayName} has been removed.`,
         action: { label: "Undo", onClick: () => console.log("Undo delete (mock)")}
       });
-      await fetchAndSetUsers();
+      await fetchAndSetUsers(); // Refresh data
     } catch (error: any) {
       toast({ title: "Error Deleting User", message: error.message || "Could not delete user.", variant: "destructive" });
     } finally {
@@ -101,7 +114,7 @@ export default function UsersPage() {
         await api.addUser(values);
         toast({ title: "User Added", message: `${values.displayName} has been created.`, variant: "success" });
       }
-      await fetchAndSetUsers();
+      await fetchAndSetUsers(); // Refresh data
     } catch (error: any) {
       toast({ title: editingUser ? "Error Updating User" : "Error Adding User", message: error.message || "Operation failed.", variant: "destructive" });
     } finally {
@@ -111,35 +124,46 @@ export default function UsersPage() {
     }
   }, [editingUser, fetchAndSetUsers, toast]);
 
-  const currentUserId = user?.uid; // Use stable primitive for memo deps
+  const currentUserId = user?.uid;
 
   const columns = React.useMemo(
     () => createUserTableColumns({ openEditUserModal, openDeleteDialog, currentUserUid: currentUserId }),
-    [openEditUserModal, openDeleteDialog, currentUserId] // Use stable currentUserId
+    [openEditUserModal, openDeleteDialog, currentUserId]
   );
 
-  const anyPageLoading = authLoading || tableLoading || !isAuthorized;
-
-  if (authLoading || !isAuthorized) { // If not authorized, show loader while redirecting
+  // Show loader if auth is loading or if user is not admin (while AuthProvider handles redirect)
+  if (authLoading || (user && user.role !== 'admin' && !isAuthorized) || (!user && !authLoading)) {
      return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       </AuthenticatedPageLayout>
      );
   }
+  
+  // If auth is resolved, user exists, but role is not admin, and isAuthorized is false (redundant check, but safe)
+  if (!authLoading && user && user.role !== 'admin') {
+    // This case should ideally be handled by AuthProvider redirection before this component renders significantly.
+    // If it does render, show a loader while redirecting.
+    return (
+      <AuthenticatedPageLayout>
+        <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      </AuthenticatedPageLayout>
+    );
+  }
+
 
   return (
     <AuthenticatedPageLayout>
       <div className="space-y-4 md:space-y-6 min-w-0">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
-          <Button onClick={openAddUserModal} disabled={anyPageLoading} size="sm">
+        <PageTitleWithIcon title="User Management">
+          <Button onClick={openAddUserModal} disabled={tableLoading || !isAuthorized} size="sm">
             {tableLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
             <span className="hidden sm:inline">Add User</span>
             <span className="sm:hidden">Add</span>
           </Button>
-        </div>
-        <DataTable columns={columns} data={users} searchColumnId="email" onAdd={openAddUserModal} isLoading={anyPageLoading}/>
+        </PageTitleWithIcon>
+        
+        <DataTable columns={columns} data={users} searchColumnId="email" onAdd={openAddUserModal} isLoading={tableLoading}/>
 
         <UserFormDialog
           isOpen={isUserModalOpen}

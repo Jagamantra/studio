@@ -1,12 +1,9 @@
-
 'use client';
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-// import type { User as FirebaseUser } from 'firebase/auth'; // Firebase types no longer needed
-// import { updateProfile as firebaseUpdateProfile } from 'firebase/auth'; // Firebase removed
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -15,8 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Edit2, UserCircle } from 'lucide-react';
 import type { UserProfile } from '@/types';
-import { useAuth } from '@/contexts/auth-provider'; // For updating local user state
-import * as api from '@/services/api'; // Import API service
+import { useAuth } from '@/contexts/auth-provider'; 
+import * as api from '@/services/api'; 
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters.').max(50, 'Name cannot exceed 50 characters.').optional(),
@@ -29,15 +26,14 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface PersonalInformationFormProps {
   user: UserProfile;
-  // firebaseUser: FirebaseUser | null; // No longer needed
-  setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>; // Kept for local state update via AuthContext
+  setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>; 
+  updateAuthContextUser: (updatedProfile: Partial<UserProfile>) => void; // New prop
   anyLoading: boolean;
   setAnyLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoading }: PersonalInformationFormProps) {
+export function PersonalInformationForm({ user, setUser, updateAuthContextUser, anyLoading, setAnyLoading }: PersonalInformationFormProps) {
   const { toast } = useToast();
-  const { updateCurrentLocalUser } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(user?.photoURL || null);
@@ -47,7 +43,7 @@ export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoadi
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       displayName: user?.displayName || '',
-      email: user?.email || '', // Email is typically not editable this way
+      email: user?.email || '',
       phoneNumber: user?.phoneNumber || '',
       photoURL: user?.photoURL || '',
     },
@@ -94,16 +90,16 @@ export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoadi
     try {
       const photoURLToUpdate = selectedFile ? previewUrl : data.photoURL;
 
-      const updatedProfile = await api.updateUserProfile(user.uid, {
+      const updatedProfileFromApi = await api.updateUserProfile(user.uid, {
         displayName: data.displayName,
         photoURL: photoURLToUpdate,
         phoneNumber: data.phoneNumber,
       });
       
-      updateCurrentLocalUser(updatedProfile); 
-      setUser(updatedProfile); 
+      updateAuthContextUser(updatedProfileFromApi); // Update user in AuthContext
+      setUser(updatedProfileFromApi); // Update local pageUser state
 
-      form.reset({ ...updatedProfile, email: user.email }, { keepValues: true, keepDirty: false });
+      form.reset({ ...updatedProfileFromApi, email: user.email }, { keepValues: true, keepDirty: false });
 
       toast({ 
         title: 'Profile Updated', 
@@ -112,9 +108,8 @@ export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoadi
         action: {
           label: "Undo",
           onClick: async () => {
-            // Simulate reverting the change
             const revertedProfile = await api.updateUserProfile(user.uid, originalProfile);
-            updateCurrentLocalUser(revertedProfile);
+            updateAuthContextUser(revertedProfile);
             setUser(revertedProfile);
             form.reset({ ...revertedProfile, email: user.email }, { keepValues: true, keepDirty: false });
             setPreviewUrl(revertedProfile.photoURL || null);
@@ -209,7 +204,7 @@ export function PersonalInformationForm({ user, setUser, anyLoading, setAnyLoadi
                   <FormControl>
                     <Input type="email" placeholder="your@email.com" {...field} value={field.value || ''} disabled />
                   </FormControl>
-                  <FormDescription>Email address cannot be changed.</FormDescription>
+                  <FormDescription className="text-xs sm:text-sm">Email address cannot be changed.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

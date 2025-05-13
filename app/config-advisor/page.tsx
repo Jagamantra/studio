@@ -19,6 +19,8 @@ import { AISuggestionsDisplay } from '@/components/config-advisor/ai-suggestions
 import { useAiConfigAnalysis } from '@/hooks/use-ai-config-analysis';
 import { useRouter } from 'next/navigation';
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
+import type { Metadata } from 'next';
+import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 
 const projectConfigFormSchema = z.object({
   appName: z.string().min(1, 'App name is required.').max(100, 'App name cannot exceed 100 characters.'),
@@ -40,7 +42,7 @@ export default function ConfigAdvisorPage() {
   const { toast } = useToast();
   const router = useRouter();
   const {
-    appName: currentAppName,
+    appName: currentAppNameFromTheme, // Renamed to avoid conflict with form's appName
     accentColor: currentAccentColor,
     borderRadius: currentBorderRadius,
     appVersion: currentAppVersion,
@@ -49,16 +51,20 @@ export default function ConfigAdvisorPage() {
     setBorderRadius,
     setAppVersion,
     availableAccentColors,
-    availableBorderRadii
+    availableBorderRadii,
   } = useTheme();
 
   const { suggestions, isLoadingAi, error: aiError, performAnalysis, resetAnalysis } = useAiConfigAnalysis();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
+  React.useEffect(() => {
+    document.title = `Configuration Advisor | ${currentAppNameFromTheme}`;
+  }, [currentAppNameFromTheme]);
+
   const projectConfigForm = useForm<ProjectConfigFormValues>({
     resolver: zodResolver(projectConfigFormSchema),
     defaultValues: {
-      appName: currentAppName,
+      appName: currentAppNameFromTheme,
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
       defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
       defaultAppVersionId: currentAppVersion,
@@ -80,15 +86,14 @@ export default function ConfigAdvisorPage() {
     if (!authLoading) {
       if (user && user.role === 'admin') {
         setIsAuthorized(true);
-      } else if (user) { // User exists but not admin
+      } else if (user) { 
         // AuthProvider will redirect and set query param for toast
-        router.replace('/dashboard');
-      } else { // No user
-        router.replace('/auth/login');
+        // router.replace('/dashboard'); // Let AuthProvider handle this
+      } else { 
+        // router.replace('/auth/login'); // Let AuthProvider handle this
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, router, appProjectConfig.enableConfigAdvisor]);
+  }, [user, authLoading, appProjectConfig.enableConfigAdvisor, router]);
 
 
   useEffect(() => {
@@ -105,7 +110,7 @@ export default function ConfigAdvisorPage() {
             setRolesConfigContent(storedInputs.rolesConfigContent || '');
 
             const projectFormIsDefault = JSON.stringify(projectConfigForm.getValues()) === JSON.stringify({
-              appName: currentAppName,
+              appName: currentAppNameFromTheme,
               defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
               defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
               defaultAppVersionId: currentAppVersion,
@@ -117,7 +122,7 @@ export default function ConfigAdvisorPage() {
             );
         } else {
           projectConfigForm.reset({
-            appName: currentAppName,
+            appName: currentAppNameFromTheme,
             defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
             defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
             defaultAppVersionId: currentAppVersion,
@@ -126,18 +131,18 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appProjectConfig.enableConfigAdvisor, isAuthorized, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]); // Added theme values to deps
+  }, [appProjectConfig.enableConfigAdvisor, isAuthorized, currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion]);
 
   useEffect(() => {
     if (!appProjectConfig.enableConfigAdvisor || !isAuthorized) return;
     projectConfigForm.reset({
-      appName: currentAppName,
+      appName: currentAppNameFromTheme,
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
       defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
       defaultAppVersionId: currentAppVersion,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
+  }, [currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
 
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
@@ -151,7 +156,7 @@ export default function ConfigAdvisorPage() {
         localStorage.setItem('configAdvisorInputs', JSON.stringify(currentInputs));
 
         const isProjectFormUnchangedFromTheme =
-             watchedProjectConfig.appName === currentAppName &&
+             watchedProjectConfig.appName === currentAppNameFromTheme &&
              watchedProjectConfig.defaultAccentColorName === (availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName) &&
              watchedProjectConfig.defaultBorderRadiusName === (availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName) &&
              watchedProjectConfig.defaultAppVersionId === currentAppVersion;
@@ -161,7 +166,7 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
 
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
@@ -272,7 +277,7 @@ export const projectConfig = {
     await performAnalysis(input);
   };
 
-  if (authLoading) {
+  if (authLoading || (!isAuthorized && appProjectConfig.enableConfigAdvisor && user && user.role !== 'admin')) {
     return <AuthenticatedPageLayout><div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></AuthenticatedPageLayout>;
   }
 
@@ -293,11 +298,13 @@ export const projectConfig = {
     );
   }
 
-  if (!isAuthorized) { // If feature enabled, but user not authorized
+  // This case should be rare as AuthProvider handles redirects.
+  if (!isAuthorized && appProjectConfig.enableConfigAdvisor) { 
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-2">Verifying authorization...</p>
         </div>
       </AuthenticatedPageLayout>
     );
@@ -309,8 +316,7 @@ export const projectConfig = {
   return (
     <AuthenticatedPageLayout>
       <div className="space-y-4 md:space-y-6 min-w-0">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
+        <PageTitleWithIcon title="Configuration Advisor">
           <div className="flex gap-2">
             <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
               {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />}
@@ -323,7 +329,7 @@ export const projectConfig = {
               <span className="sm:hidden">Analyze</span>
             </Button>
           </div>
-        </div>
+        </PageTitleWithIcon>
 
         <ProjectConfigFormCard
           projectConfigForm={projectConfigForm}

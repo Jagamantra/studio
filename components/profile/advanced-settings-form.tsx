@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -13,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Settings2 } from 'lucide-react';
 import type { UserProfile } from '@/types';
+import * as api from '@/services/api'; // Import API service
 
 const advancedSettingsSchema = z.object({
   receiveNotifications: z.boolean().optional(),
@@ -24,11 +24,12 @@ type AdvancedSettingsFormValues = z.infer<typeof advancedSettingsSchema>;
 interface AdvancedSettingsFormProps {
   user: UserProfile;
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  updateAuthContextUser: (updatedProfile: Partial<UserProfile>) => void; // New prop
   anyLoading: boolean;
   setAnyLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function AdvancedSettingsForm({ user, setUser, anyLoading, setAnyLoading }: AdvancedSettingsFormProps) {
+export function AdvancedSettingsForm({ user, setUser, updateAuthContextUser, anyLoading, setAnyLoading }: AdvancedSettingsFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -48,6 +49,7 @@ export function AdvancedSettingsForm({ user, setUser, anyLoading, setAnyLoading 
   }, [user, form]);
 
   async function onSubmit(data: AdvancedSettingsFormValues) {
+    if(!user) return;
     setIsLoading(true);
     setAnyLoading(true);
     const originalSettings = { 
@@ -56,9 +58,18 @@ export function AdvancedSettingsForm({ user, setUser, anyLoading, setAnyLoading 
     };
 
     try {
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
-      console.log("Advanced settings saved:", data); 
-      setUser(prevUser => prevUser ? { ...prevUser, ...data } : null);
+      // In a real app, you would call:
+      // const updatedUserFromApi = await api.updateUserSettings(user.uid, data);
+      // For mock, just merge data
+      const updatedUser = { ...user, ...data };
+
+      console.log("Advanced settings saved (mocked):", data); 
+      
+      setUser(updatedUser); // Update local page state
+      updateAuthContextUser(updatedUser); // Update AuthContext state
+
       form.reset(data, { keepValues: true, keepDirty: false });
       toast({ 
         title: 'Settings Saved', 
@@ -66,15 +77,18 @@ export function AdvancedSettingsForm({ user, setUser, anyLoading, setAnyLoading 
         variant: 'success',
         action: {
           label: "Undo",
-          onClick: () => {
-            setUser(prevUser => prevUser ? { ...prevUser, ...originalSettings } : null);
+          onClick: async () => {
+            // Simulate reverting
+            const revertedUser = { ...user, ...originalSettings };
+            setUser(revertedUser);
+            updateAuthContextUser(revertedUser);
             form.reset(originalSettings);
             toast({ message: "Advanced settings changes undone.", variant: "info" });
           }
         }
       });
     } catch (error: any) {
-      toast({ title: 'Save Failed', message: error.message, variant: 'destructive' });
+      toast({ title: 'Save Failed', message: error.message || "Could not save advanced settings.", variant: 'destructive' });
     } finally {
       setIsLoading(false);
       setAnyLoading(false);

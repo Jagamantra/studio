@@ -17,11 +17,20 @@ import { DashboardDevContent } from '@/components/dashboard/dashboard-dev-conten
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import type { Metadata } from 'next';
+import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 
+// Cannot use generateMetadata in a 'use client' component directly.
+// Metadata for client components is typically set by the nearest server component parent or via RootLayout.
+// For dynamic titles in client components based on client-side state, document.title can be used in useEffect.
+// However, for Next.js App Router, it's best to export generateMetadata from server components if possible.
+// If this page must be client, dynamic title via document.title is the way.
+// For now, we'll rely on the title being potentially set by a server layout or RootLayout default.
+// To achieve dynamic title based on appName from useTheme, we must update it in useEffect.
 
 export default function DashboardPage() {
   const { user: authUser, loading, isConfigured } = useAuth();
-  const { appVersion } = useTheme(); 
+  const { appName, appVersion } = useTheme(); 
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,7 +38,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    document.title = appName; // Set dynamic title based on appName from theme
+  }, [appName]);
 
   useEffect(() => {
     const toastMessageKey = 'toast_message';
@@ -38,10 +48,9 @@ export default function DashboardPage() {
     if (messageType === 'access_denied_role') {
       toast({
         title: 'Access Denied',
-        message: 'You were redirected. You do not have permission for the requested page.',
+        message: 'You do not have permission for the requested page.',
         variant: 'destructive',
       });
-      // Clean up the URL by removing the query parameter.
       const currentPath = window.location.pathname;
       const params = new URLSearchParams(searchParams.toString());
       if (params.has(toastMessageKey)) {
@@ -109,10 +118,9 @@ export default function DashboardPage() {
     <AuthenticatedPageLayout>
       <TooltipProvider>
         <div className="space-y-4 md:space-y-6">
-          <div className="flex flex-col items-start justify-between space-y-2 sm:flex-row sm:items-center">
+          <PageTitleWithIcon title="Dashboard">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-              {versionDetails && (
+                {versionDetails && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
@@ -131,11 +139,11 @@ export default function DashboardPage() {
                   </TooltipContent>
                 </Tooltip>
               )}
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Welcome back, {userToRenderOnDashboard.displayName || 'User'}!
+              </p>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Welcome back, {userToRenderOnDashboard.displayName || 'User'}!
-            </p>
-          </div>
+          </PageTitleWithIcon>
           {renderDashboardContent()}
         </div>
       </TooltipProvider>
