@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/auth-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,7 @@ import { DashboardV1Content } from '@/components/dashboard/dashboard-v1-content'
 import { DashboardBetaContent } from '@/components/dashboard/dashboard-beta-content';
 import { DashboardDevContent } from '@/components/dashboard/dashboard-dev-content';
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
+import { DashboardToastHandler } from '@/components/dashboard/dashboard-toast-handler';
 import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 
 
@@ -25,48 +24,17 @@ export default function DashboardPage() {
   const { user: authUser, loading, isConfigured } = useAuth();
   const { appName, appVersion } = useTheme(); 
   const [isClient, setIsClient] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    // Set document title dynamically
     if (appName && isClient) {
       document.title = `Dashboard | ${appName}`;
     }
   }, [appName, isClient]);
 
-  useEffect(() => {
-    if (!isClient) return;
-
-    const toastMessageKey = 'toast_message';
-    const messageType = searchParams.get(toastMessageKey);
-    
-    if (messageType === 'access_denied_role') {
-      toast({
-        title: 'Access Denied',
-        message: 'You do not have permission for the requested page.',
-        variant: 'destructive',
-      });
-      // Clean up the URL by removing the toast_message query parameter
-      // This ensures the toast doesn't reappear on refresh if the user stays on the dashboard.
-      const currentPath = window.location.pathname;
-      const params = new URLSearchParams(searchParams.toString());
-      if (params.has(toastMessageKey)) {
-          params.delete(toastMessageKey);
-          const newUrl = params.toString() ? `${currentPath}?${params.toString()}` : currentPath;
-          // Using replace to avoid adding to browser history.
-          // Using { shallow: true } is important if you don't want to re-run data fetching,
-          // but in this case, we are just cleaning the URL.
-          router.replace(newUrl, { shallow: true }); 
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, isClient]); // Removed toast and router from deps as they are stable
 
   if (!isClient || loading) {
     return (
@@ -79,7 +47,7 @@ export default function DashboardPage() {
   }
 
   const userToRenderOnDashboard: UserProfile | null = (() => {
-    if (!isConfigured) { // This `isConfigured` comes from `useAuth()`
+    if (!isConfigured) { 
       return dummyUserForDashboardView;
     }
     return authUser;
@@ -123,6 +91,9 @@ export default function DashboardPage() {
 
   return (
     <AuthenticatedPageLayout>
+      <Suspense fallback={null}>
+        <DashboardToastHandler />
+      </Suspense>
       <TooltipProvider>
         <div className="space-y-4 md:space-y-6">
            <PageTitleWithIcon title="Dashboard">
