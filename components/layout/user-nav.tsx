@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut, User, Settings, LogIn } from 'lucide-react'; // Added LogIn, User
+import { LogOut, User, Settings, LogIn } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,14 +12,14 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  // DropdownMenuShortcut, // Not used
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/auth-provider';
 import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image'; // Import next/image
 
 export function UserNav() {
-  const { user, logout, loading } = useAuth(); // isConfigured not strictly needed for display logic here
+  const { user, logout, loading } = useAuth();
 
   if (loading) {
     return <Skeleton className="h-8 w-8 rounded-full" />;
@@ -33,14 +33,24 @@ export function UserNav() {
   };
 
   if (user) {
-    // User is logged in (real or dummy)
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} data-ai-hint="user avatar" />
-              <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+              {user.photoURL ? (
+                <Image 
+                  src={user.photoURL} 
+                  alt={user.displayName || 'User avatar'} 
+                  width={32} 
+                  height={32} 
+                  className="rounded-full object-cover" 
+                  data-ai-hint="user avatar"
+                  unoptimized={true} // if photoURL can be external
+                />
+              ) : (
+                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+              )}
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
@@ -71,6 +81,14 @@ export function UserNav() {
                 </DropdownMenuItem>
               </Link>
             )}
+             {user.role === 'admin' && projectConfig.enableConfigAdvisor && (
+                <Link href="/config-advisor" passHref>
+                    <DropdownMenuItem>
+                        <ShieldQuestion className="mr-2 h-4 w-4" />
+                        <span>Config Advisor</span>
+                    </DropdownMenuItem>
+                </Link>
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={logout}>
@@ -81,7 +99,7 @@ export function UserNav() {
       </DropdownMenu>
     );
   } else {
-    // No user logged in (neither real nor dummy active session)
+    // No user logged in
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -105,15 +123,6 @@ export function UserNav() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <Link href="/profile" passHref>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Profile Settings</span>
-              </DropdownMenuItem>
-            </Link>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
           <Link href="/auth/login" passHref>
             <DropdownMenuItem>
               <LogIn className="mr-2 h-4 w-4" />
@@ -125,3 +134,8 @@ export function UserNav() {
     );
   }
 }
+
+// Need to import projectConfig if it's used here
+import { projectConfig } from '@/config/project.config';
+import { ShieldQuestion } from 'lucide-react'; // Ensure ShieldQuestion is imported
+

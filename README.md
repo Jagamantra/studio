@@ -44,9 +44,10 @@ Follow these steps to run the Genesis Template locally:
 
 -   **Theme Switcher**: Change themes (dark/light), accent colors, and border radius. Find it via the palette icon in the header.
 -   **Profile Editor**: Manage user profiles (details, password) using mock services.
--   **Access Control**: (Mocked) Role-based route access. Configure in `config/roles.config.ts`.
--   **Dynamic Sidebar**: Navigation configured in `config/sidebar.config.ts`.
+-   **Access Control**: (Mocked) Role-based route access. Configure in `config/roles.config.ts`. Unauthorized access attempts redirect to the dashboard with a toast notification.
+-   **Dynamic Sidebar**: Navigation configured in `config/sidebar.config.ts`. Varies with user role.
 -   **Config Advisor**: (Admin-only) AI tool to analyze app configuration files. Enable/disable in `config/project.config.ts`.
+-   **Mock MFA**: A mock Multi-Factor Authentication step is included in the login/registration flow for demonstration.
 
 ## Genkit for AI
 
@@ -85,8 +86,7 @@ Key configurations are in the `config/` directory.
 This file (`projectConfig`) controls:
 
 -   **`appName: string`**: Your application's name. Used in headers, tab titles, etc. Can be updated at runtime (e.g., via Config Advisor) and is persisted in Local Storage.
--   **`appIconPaths: string[]`**: SVG path `d` attributes for the main app icon (shown in header and next to page titles). If empty, a generic document icon is used.
-    *   **Browser Tab Icon (Favicon)**: To change the browser tab icon, replace `public/favicon.svg`. `appIconPaths` updates the in-app icon only.
+-   **`appIconPaths: string[]`**: SVG path `d` attributes for the main app icon (shown in header and next to page titles). If empty or not provided, a generic document icon (`FileText` from Lucide) is used. This setting also dynamically updates the browser tab icon (favicon).
 -   **`availableAccentColors` & `defaultAccentColorName`**: Predefined accent colors for the Theme Switcher.
 -   **`availableBorderRadii` & `defaultBorderRadiusName`**: Border radius options.
 -   **`availableAppVersions` & `defaultAppVersionId`**: Define different app "versions" (e.g., 'v1.0.0', 'beta'). Affects UI/features (see Dashboard).
@@ -111,6 +111,7 @@ Defines sidebar items:
 -   **`roles: Role[]`**: Available roles (e.g., `admin`, `user`).
 -   **`routePermissions: Record<string, Role[]>`**: Maps routes to allowed roles (e.g., `'/users': ['admin']`).
 -   **`defaultRole: Role`**: Role for new (dummy) users.
+-   Access control is enforced by `contexts/auth-provider.tsx`. Unauthorized navigation attempts redirect to `/dashboard` with a toast message.
 
 ## Connecting to Your Backend API
 
@@ -225,24 +226,35 @@ export const rolesConfig: RolesConfig = {
 
 ### 4. Page Title and Icon
 
--   **Browser Tab Title**: Export a `metadata` object from your page file.
+-   **Browser Tab Title**: Set the `document.title` dynamically in a `useEffect` hook in your page component if you want it to depend on theme settings (like `appName`).
     ```tsx
     // app/my-new-page/page.tsx
-    import type { Metadata } from 'next';
-    import { projectConfig } from '@/config/project.config';
+    'use client';
 
-    export const metadata: Metadata = {
-      title: `My New Page | ${projectConfig.appName}`,
+    import React, { useEffect } from 'react';
+    import { useTheme } from '@/contexts/theme-provider';
+    // ... other imports
+
+    const MyNewPage = () => {
+      const { appName } = useTheme();
+      useEffect(() => {
+        document.title = `My New Page Title | ${appName}`;
+      }, [appName]);
+      // ... rest of component
+      return (
+        <AuthenticatedPageLayout>
+          <PageTitleWithIcon title="My New Page Title" />
+          {/* ... */}
+        </AuthenticatedPageLayout>
+      );
     };
-    // ... rest of page component
+    export default MyNewPage;
     ```
--   **Displayed Page Title**: Use the `PageTitleWithIcon` component (see Step 1 example).
--   **Page Icon (Next to Title)**:
-    *   `PageTitleWithIcon` uses the global app icon from `projectConfig.appIconPaths`.
-    *   If no global icon is set, it uses a generic `FileText` icon.
+-   **Displayed Page Title**: Use the `PageTitleWithIcon` component (see Step 1 example). This component displays the `title` prop along with the global application icon.
+-   **Page Icon (Next to Title)**: `PageTitleWithIcon` automatically uses the global app icon defined by `appIconPaths` in `config/project.config.ts`. If no icon is set there, it defaults to a `FileText` icon.
 -   **Global App Icon (Header & Favicon)**:
-    *   **In-App Icon**: Modify `appIconPaths` in `config/project.config.ts`.
-    *   **Browser Tab Icon (Favicon)**: Replace or update `public/favicon.svg`.
+    *   **In-App Icon**: Modify `appIconPaths` in `config/project.config.ts`. These are SVG path `d` attributes.
+    *   **Browser Tab Icon (Favicon)**: The favicon is also dynamically set based on `appIconPaths`. If `appIconPaths` is empty, it defaults to `public/favicon.svg`. To customize the default, replace or update `public/favicon.svg`.
 
 ### 5. Use Theme Settings
 
@@ -260,38 +272,86 @@ const { accentColor, borderRadius } = useTheme();
 
 ### 6. Version-Specific Content
 
--   Use `appVersion` from `useTheme` to show different content.
+-   Use `appVersion` from `useTheme` to show different content based on the selected application version.
 ```tsx
 // app/my-new-page/page.tsx
 import { useTheme } from '@/contexts/theme-provider';
 const { appVersion } = useTheme();
 // ...
 {appVersion === 'v1.0.0' && <p>Content for Version 1.0.</p>}
-{appVersion === 'beta' && <p>Content for Beta.</p>}
+{appVersion === 'v0.9.0-beta' && <p>Content for Beta.</p>}
 ```
 
 ### 7. Add "Appearance" Dropdowns (Theme Switcher Style)
 
 -   To replicate Theme Switcher dropdowns (mode, accent, radius, version):
     *   Use the `useTheme` hook for current values and setters.
-    *   Adapt JSX from `components/layout/theme-switcher.tsx` or create a new component.
-    *   Use `projectConfig.availableAccentColors`, etc., for dropdown options.
+    *   Adapt JSX from `components/layout/theme-switcher.tsx` or create a new reusable component.
+    *   Use `projectConfig.availableAccentColors`, `projectConfig.availableBorderRadii`, and `projectConfig.availableAppVersions` for dropdown options.
 
 ### 8. Create a New Application Version
 
 1.  **Define in `config/project.config.ts`**:
-    *   Add a new object to `availableAppVersions` (e.g., `{ name: 'Version 2.0', id: 'v2.0.0' }`).
+    *   Add a new object to `availableAppVersions` (e.g., `{ name: 'Version 2.0 Alpha', id: 'v2.0.0-alpha' }`).
     ```typescript
     // config/project.config.ts
     export const projectConfig: ProjectConfig = {
       // ...
       availableAppVersions: [
         { name: 'Version 1.0', id: 'v1.0.0' },
+        { name: 'Beta Preview', id: 'v0.9.0-beta' },
+        { name: 'Dev Build', id: 'dev' },
         { name: 'New Version Alpha', id: 'v2.0.0-alpha' }, // New version
       ],
       // ...
     };
     ```
-2.  **Implement Logic**: Use `appVersion` from `useTheme` to control UI/features for the new version ID.
+2.  **Implement Logic**: Use `appVersion` from `useTheme` (as shown in Step 6) to control UI/features for the new version ID.
 
-The new version will then appear in version switchers.
+The new version will then appear in the version switchers (sidebar and theme switcher dropdown).
+
+## Performance Tips
+
+Optimizing your Next.js application is key to a great user experience. Here are some tips, especially relevant to the dynamic features of this template:
+
+1.  **Leverage Next.js Features**:
+    *   **App Router**: Already in use, promoting server components and efficient routing.
+    *   **Code Splitting**: Next.js automatically splits code by page. Ensure your components are well-modularized.
+    *   **`next/image`**: Use for all static images to get automatic optimization. For dynamic external images (like `picsum.photos`), `unoptimized={true}` is appropriate if they are already optimized or to avoid build errors.
+    *   **`next/dynamic`**: Use for components that are not critical for the initial page load (e.g., complex charts, modals not shown by default). This is already used for Recharts in `DashboardBetaContent`.
+
+2.  **React Best Practices**:
+    *   **`React.memo`**: Wrap components that re-render unnecessarily with `React.memo`. This is useful for components that receive the same props often. Several components in this template already use it.
+    *   **`useCallback` and `useMemo`**: Memoize functions and values to prevent unnecessary re-renders of child components or expensive calculations. These are used in providers and data-heavy components.
+    *   **Minimize Re-renders**:
+        *   Be mindful of context updates. The `ThemeProvider` and `AuthProvider` provide dynamic data. Components consuming these contexts will re-render when the context value changes.
+        *   Structure components to only subscribe to the parts of the context they need, if possible (though often context provides a single object).
+        *   Use selectors with state management libraries if you introduce them (e.g., Zustand, Redux).
+
+3.  **Optimize Dynamic Features**:
+    *   **Theming (Accent, Radius, App Name, Icon)**:
+        *   The `ThemeProvider` updates can trigger re-renders across components using `useTheme`. Ensure components are memoized if they don't visually change with every theme update.
+        *   The dynamic app icon uses SVG paths. Keep these paths reasonably simple.
+    *   **App Version Switching**:
+        *   Conditional rendering (`{appVersion === 'v1.0.0' && <ComponentForV1 />}`) is efficient.
+        *   Avoid overly complex logic directly within the render method based on `appVersion`. Abstract into separate, memoized components if necessary.
+    *   **Config Advisor**:
+        *   AI analysis calls (`analyzeConfig`) are asynchronous and can take time. The `useAiConfigAnalysis` hook handles loading states. Ensure UI remains responsive.
+        *   Consider debouncing user input for the "Raw Configuration Files" if performance becomes an issue with rapid typing triggering analyses (though currently, analysis is manual via button click).
+
+4.  **Bundle Size & Assets**:
+    *   **Analyze Your Bundle**: Use `@next/bundle-analyzer` to inspect what's contributing to your JavaScript bundle sizes.
+    *   **Tree Shaking**: Ensure your imports are structured to allow for effective tree shaking (e.g., `import { SpecificIcon } from 'lucide-react';` rather than `import * as LucideIcons from 'lucide-react';`).
+    *   **SVGs**: For icons, prefer importing specific icons from `lucide-react` as done. For custom complex SVGs, consider optimizing them using tools like SVGO.
+
+5.  **Data Fetching (for Real API)**:
+    *   When connecting to a real backend, use efficient data fetching libraries like SWR or React Query for caching, revalidation, and optimistic updates.
+    *   Fetch only the data needed for the current view.
+
+6.  **General Tips for New Pages/Components**:
+    *   **Keep Components Small and Focused**: Follow the Single Responsibility Principle.
+    *   **Profile Performance**: Use browser developer tools (Profiler tab) to identify performance bottlenecks in your components.
+    *   **Test on Various Devices/Networks**: Performance can vary. Test on less powerful devices or slower network conditions to find areas for improvement.
+
+By keeping these tips in mind as you develop new features and pages, you can maintain a performant and responsive application.
+```

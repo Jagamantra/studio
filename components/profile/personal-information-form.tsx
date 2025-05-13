@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Edit2, UserCircle } from 'lucide-react';
 import type { UserProfile } from '@/types';
 import * as api from '@/services/api'; 
+import Image from 'next/image';
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters.').max(50, 'Name cannot exceed 50 characters.').optional(),
@@ -150,8 +151,19 @@ export const PersonalInformationForm = React.memo(function PersonalInformationFo
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:space-x-6">
               <div className="relative">
                 <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-                  <AvatarImage src={previewUrl || undefined} alt={user.displayName || 'User'} data-ai-hint="person face" />
-                  <AvatarFallback className="text-3xl">{getInitials(user.displayName)}</AvatarFallback>
+                  {previewUrl ? (
+                     <Image 
+                        src={previewUrl} 
+                        alt={user.displayName || 'User avatar'} 
+                        width={96} 
+                        height={96} 
+                        className="rounded-full object-cover" 
+                        data-ai-hint="person face"
+                        unoptimized={true} // If previewUrl can be data URI or external
+                      />
+                  ) : (
+                     <AvatarFallback className="text-3xl">{getInitials(user.displayName)}</AvatarFallback>
+                  )}
                 </Avatar>
                 <Button 
                   type="button" 

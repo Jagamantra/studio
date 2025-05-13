@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
@@ -6,11 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash2, UserCog } from 'lucide-react';
+import Image from 'next/image';
 
 interface CreateUserTableColumnsProps {
   openEditUserModal: (userData: UserProfile) => void;
   openDeleteDialog: (userData: UserProfile) => void;
-  // tableLoading: boolean; // No longer needed as a direct prop for column definition
   currentUserUid?: string | null;
 }
 
@@ -27,29 +28,35 @@ export function createUserTableColumns({
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           {row.original.photoURL ? (
-            <img src={row.original.photoURL} alt={row.original.displayName || 'avatar'} className="h-8 w-8 rounded-full object-cover" data-ai-hint="user avatar"/>
+             <Image 
+                src={row.original.photoURL} 
+                alt={row.original.displayName || 'avatar'} 
+                width={32} 
+                height={32} 
+                className="h-8 w-8 rounded-full object-cover" 
+                data-ai-hint="user avatar"
+                unoptimized={true} // if photoURL can be external
+              />
           ) : (
             <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xs">
               {row.original.displayName?.charAt(0).toUpperCase() || <UserCog className="h-4 w-4"/>}
             </div>
           )}
-          <span className="truncate max-w-[150px] sm:max-w-xs">{row.original.displayName || "N/A"}</span>
+          <span className="truncate max-w-[100px] xs:max-w-[120px] sm:max-w-xs">{row.original.displayName || "N/A"}</span>
         </div>
       )
     },
-    { accessorKey: "email", header: "Email", cell: ({row}) => <span className="truncate block max-w-[150px] sm:max-w-xs">{row.original.email}</span> },
+    { accessorKey: "email", header: "Email", cell: ({row}) => <span className="truncate block max-w-[120px] xs:max-w-[150px] sm:max-w-xs">{row.original.email}</span> },
     {
       accessorKey: "role",
       header: "Role",
       cell: ({ row }) => <Badge variant={row.original.role === 'admin' ? 'default' : 'secondary'} className="capitalize">{row.original.role}</Badge>
     },
-    { accessorKey: "phoneNumber", header: "Phone", cell: ({row}) => row.original.phoneNumber || "N/A" },
+    { accessorKey: "phoneNumber", header: "Phone", cell: ({row}) => <span className="truncate block max-w-[100px] sm:max-w-xs">{row.original.phoneNumber || "N/A"}</span> },
     {
       id: "actions",
       header: () => <div className="text-right">Actions</div>,
       cell: ({ row, table }) => {
-        // Access isLoading from table meta or parent component if DataTable is modified to pass it down
-        // For now, assuming DropdownMenuTrigger's disabled prop in DataTable handles overall loading state for actions
         const isLoading = (table.options.meta as any)?.isLoading || false;
 
         return (
