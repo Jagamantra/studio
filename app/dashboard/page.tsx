@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -17,16 +18,8 @@ import { DashboardDevContent } from '@/components/dashboard/dashboard-dev-conten
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Metadata } from 'next';
 import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 
-// Cannot use generateMetadata in a 'use client' component directly.
-// Metadata for client components is typically set by the nearest server component parent or via RootLayout.
-// For dynamic titles in client components based on client-side state, document.title can be used in useEffect.
-// However, for Next.js App Router, it's best to export generateMetadata from server components if possible.
-// If this page must be client, dynamic title via document.title is the way.
-// For now, we'll rely on the title being potentially set by a server layout or RootLayout default.
-// To achieve dynamic title based on appName from useTheme, we must update it in useEffect.
 
 export default function DashboardPage() {
   const { user: authUser, loading, isConfigured } = useAuth();
@@ -38,7 +31,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setIsClient(true);
-    document.title = appName; // Set dynamic title based on appName from theme
+  }, []);
+
+  useEffect(() => {
+    // Set document title dynamically
+    document.title = `Dashboard | ${appName}`;
   }, [appName]);
 
   useEffect(() => {
@@ -150,3 +147,4 @@ export default function DashboardPage() {
     </AuthenticatedPageLayout>
   );
 }
+

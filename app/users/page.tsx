@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -13,8 +14,6 @@ import { UserFormDialog } from '@/components/users/user-form-dialog';
 import { UserDeleteDialog } from '@/components/users/user-delete-dialog';
 import { createUserTableColumns } from '@/components/users/user-table-columns';
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
-import type { Metadata } from 'next';
-import { projectConfig } from '@/config/project.config';
 import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 import { useTheme } from '@/contexts/theme-provider';
 
@@ -35,6 +34,7 @@ export default function UsersPage() {
   const [hasFetchedInitialData, setHasFetchedInitialData] = React.useState(false);
 
   React.useEffect(() => {
+    // Set document title dynamically
     document.title = `User Management | ${appName}`;
   }, [appName]);
 
@@ -45,26 +45,24 @@ export default function UsersPage() {
       setUsers(fetchedUsers);
     } catch (error: any) {
       toast({ title: "Error fetching users", message: error.message || "Could not load user data.", variant: "destructive" });
-      setUsers([]); // Clear users on error
+      setUsers([]); 
     } finally {
       setTableLoading(false);
     }
   }, [toast]);
 
   React.useEffect(() => {
-    if (authLoading) return; // Wait for auth to resolve
+    if (authLoading) return; 
 
     if (user && user.role === 'admin') {
       setIsAuthorized(true);
       if (!hasFetchedInitialData && !tableLoading) {
         fetchAndSetUsers().then(() => setHasFetchedInitialData(true));
       }
-    } else if (user) { // User exists but not admin
+    } else if (user) { 
       setIsAuthorized(false);
-      // AuthProvider handles redirection and toast message
-    } else { // No user
+    } else { 
       setIsAuthorized(false);
-      // AuthProvider handles redirection
     }
   }, [user, authLoading, fetchAndSetUsers, hasFetchedInitialData, tableLoading, router]);
 
@@ -94,7 +92,7 @@ export default function UsersPage() {
         message: `${deletingUser.displayName} has been removed.`,
         action: { label: "Undo", onClick: () => console.log("Undo delete (mock)")}
       });
-      await fetchAndSetUsers(); // Refresh data
+      await fetchAndSetUsers(); 
     } catch (error: any) {
       toast({ title: "Error Deleting User", message: error.message || "Could not delete user.", variant: "destructive" });
     } finally {
@@ -114,7 +112,7 @@ export default function UsersPage() {
         await api.addUser(values);
         toast({ title: "User Added", message: `${values.displayName} has been created.`, variant: "success" });
       }
-      await fetchAndSetUsers(); // Refresh data
+      await fetchAndSetUsers(); 
     } catch (error: any) {
       toast({ title: editingUser ? "Error Updating User" : "Error Adding User", message: error.message || "Operation failed.", variant: "destructive" });
     } finally {
@@ -131,7 +129,6 @@ export default function UsersPage() {
     [openEditUserModal, openDeleteDialog, currentUserId]
   );
 
-  // Show loader if auth is loading or if user is not admin (while AuthProvider handles redirect)
   if (authLoading || (user && user.role !== 'admin' && !isAuthorized) || (!user && !authLoading)) {
      return (
       <AuthenticatedPageLayout>
@@ -140,10 +137,7 @@ export default function UsersPage() {
      );
   }
   
-  // If auth is resolved, user exists, but role is not admin, and isAuthorized is false (redundant check, but safe)
   if (!authLoading && user && user.role !== 'admin') {
-    // This case should ideally be handled by AuthProvider redirection before this component renders significantly.
-    // If it does render, show a loader while redirecting.
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -184,3 +178,4 @@ export default function UsersPage() {
     </AuthenticatedPageLayout>
   );
 }
+

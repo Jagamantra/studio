@@ -1,11 +1,12 @@
 
 import { RegisterForm } from '@/components/auth/register-form';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { projectConfig } from '@/config/project.config';
 
 export const metadata: Metadata = {
-  title: 'Create Account | Genesis Template',
-  description: 'Sign up for a new Genesis Template account.',
+  title: `Create Account | ${projectConfig.appName}`,
+  description: `Sign up for a new ${projectConfig.appName} account.`,
 };
 
 export default function RegisterPage() {
@@ -24,3 +25,4 @@ export default function RegisterPage() {
     </>
   );
 }
+

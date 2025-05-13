@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react'; 
@@ -7,27 +8,21 @@ import { PersonalInformationForm } from '@/components/profile/personal-informati
 import { ChangePasswordForm } from '@/components/profile/change-password-form';
 import { AdvancedSettingsForm } from '@/components/profile/advanced-settings-form';
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
-// Removed Metadata import as it's not used for client components
-// import type { Metadata } from 'next';
-// import { projectConfig } from '@/config/project.config'; // For appName (now handled by useTheme)
 import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
-import { useTheme } from '@/contexts/theme-provider'; // Import useTheme
-
-// Removed static metadata export, as this is a client component.
-// Title will be set dynamically using useEffect.
+import { useTheme } from '@/contexts/theme-provider'; 
 
 export default function ProfilePage() {
   const { user, loading: authLoading, updateCurrentLocalUser } = useAuth(); 
   const [anyLoading, setAnyLoading] = useState(false); 
-  const [pageUser, setPageUser] = useState(user); // Initialize with user from context
-  const { appName } = useTheme(); // Get appName from theme for dynamic title
+  const [pageUser, setPageUser] = useState(user); 
+  const { appName } = useTheme(); 
 
   useEffect(() => {
+    // Set document title dynamically
     document.title = `My Profile | ${appName}`;
   }, [appName]);
 
   useEffect(() => {
-    // Update pageUser if the user from context changes (e.g., after a global update)
     setPageUser(user);
   }, [user]);
 
@@ -40,7 +35,6 @@ export default function ProfilePage() {
   }
   
   if (!pageUser) {
-    // This case should ideally be handled by AuthProvider redirecting if no user
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4"><p>Please log in to view your profile.</p></div>
@@ -55,8 +49,8 @@ export default function ProfilePage() {
 
         <PersonalInformationForm
           user={pageUser}
-          setUser={setPageUser} // This will update local pageUser state
-          updateAuthContextUser={updateCurrentLocalUser} // Pass function to update AuthContext
+          setUser={setPageUser} 
+          updateAuthContextUser={updateCurrentLocalUser} 
           anyLoading={anyLoading}
           setAnyLoading={setAnyLoading}
         />
@@ -68,8 +62,8 @@ export default function ProfilePage() {
         
         <AdvancedSettingsForm
           user={pageUser}
-          setUser={setPageUser} // This will update local pageUser state
-          updateAuthContextUser={updateCurrentLocalUser} // Pass function to update AuthContext
+          setUser={setPageUser} 
+          updateAuthContextUser={updateCurrentLocalUser} 
           anyLoading={anyLoading}
           setAnyLoading={setAnyLoading}
         />
@@ -77,3 +71,4 @@ export default function ProfilePage() {
     </AuthenticatedPageLayout>
   );
 }
+

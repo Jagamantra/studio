@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, ShieldQuestion, Lightbulb, Info, Ban } from 'lucide-react';
+import { Loader2, Lightbulb, Info, Ban } from 'lucide-react';
 import type { AnalyzeConfigInput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
@@ -19,7 +20,6 @@ import { AISuggestionsDisplay } from '@/components/config-advisor/ai-suggestions
 import { useAiConfigAnalysis } from '@/hooks/use-ai-config-analysis';
 import { useRouter } from 'next/navigation';
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
-import type { Metadata } from 'next';
 import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 
 const projectConfigFormSchema = z.object({
@@ -42,7 +42,7 @@ export default function ConfigAdvisorPage() {
   const { toast } = useToast();
   const router = useRouter();
   const {
-    appName: currentAppNameFromTheme, // Renamed to avoid conflict with form's appName
+    appName: currentAppNameFromTheme, 
     accentColor: currentAccentColor,
     borderRadius: currentBorderRadius,
     appVersion: currentAppVersion,
@@ -58,6 +58,7 @@ export default function ConfigAdvisorPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   React.useEffect(() => {
+    // Set document title dynamically
     document.title = `Configuration Advisor | ${currentAppNameFromTheme}`;
   }, [currentAppNameFromTheme]);
 
@@ -87,10 +88,7 @@ export default function ConfigAdvisorPage() {
       if (user && user.role === 'admin') {
         setIsAuthorized(true);
       } else if (user) { 
-        // AuthProvider will redirect and set query param for toast
-        // router.replace('/dashboard'); // Let AuthProvider handle this
       } else { 
-        // router.replace('/auth/login'); // Let AuthProvider handle this
       }
     }
   }, [user, authLoading, appProjectConfig.enableConfigAdvisor, router]);
@@ -298,7 +296,6 @@ export const projectConfig = {
     );
   }
 
-  // This case should be rare as AuthProvider handles redirects.
   if (!isAuthorized && appProjectConfig.enableConfigAdvisor) { 
     return (
       <AuthenticatedPageLayout>
@@ -363,3 +360,4 @@ export const projectConfig = {
     </AuthenticatedPageLayout>
   );
 }
+

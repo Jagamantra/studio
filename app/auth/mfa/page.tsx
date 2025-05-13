@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-// Link import removed as we will use logout
 import {
   Card,
   CardContent,
@@ -32,6 +31,7 @@ import {
 import { KeyRound, Info, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-provider';
+import { useTheme } from '@/contexts/theme-provider'; // Import useTheme
 
 const mfaFormSchema = z.object({
   otp: z
@@ -45,7 +45,8 @@ type MfaFormValues = z.infer<typeof mfaFormSchema>;
 export default function MfaPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setIsMfaVerified, logout } = useAuth(); // Added logout
+  const { setIsMfaVerified, logout } = useAuth();
+  const { appName } = useTheme(); // Get appName from theme
   const [mockOtp, setMockOtp] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -54,8 +55,13 @@ export default function MfaPage() {
     setIsClient(true);
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setMockOtp(generatedOtp);
-    document.title = 'Verify Your Identity | Genesis Template';
   }, []);
+
+  useEffect(() => {
+    // Set document title dynamically
+    document.title = `Verify Your Identity | ${appName}`;
+  }, [appName]);
+
 
   const form = useForm<MfaFormValues>({
     resolver: zodResolver(mfaFormSchema),
@@ -88,7 +94,7 @@ export default function MfaPage() {
   };
 
   const handleBackToLogin = async () => {
-    await logout(); // Call logout, which handles redirecting to login page
+    await logout();
   };
 
   if (!isClient) {
@@ -170,3 +176,4 @@ export default function MfaPage() {
     </>
   );
 }
+

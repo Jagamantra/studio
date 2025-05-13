@@ -1,11 +1,12 @@
 
 import { LoginForm } from '@/components/auth/login-form';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { projectConfig } from '@/config/project.config';
 
 export const metadata: Metadata = {
-  title: 'Login | Genesis Template',
-  description: 'Sign in to your Genesis Template account.',
+  title: `Login | ${projectConfig.appName}`,
+  description: `Sign in to your ${projectConfig.appName} account.`,
 };
 
 export default function LoginPage() {
@@ -24,3 +25,4 @@ export default function LoginPage() {
     </>
   );
 }
+
