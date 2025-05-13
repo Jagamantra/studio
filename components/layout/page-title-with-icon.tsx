@@ -1,6 +1,7 @@
 'use client';
 import { useTheme } from '@/contexts/theme-provider';
 import type { ReactNode } from 'react';
+import { FileText } from 'lucide-react'; // Import a generic icon
 
 interface PageTitleWithIconProps {
   title: string;
@@ -8,26 +9,18 @@ interface PageTitleWithIconProps {
 }
 
 export function PageTitleWithIcon({ title, children }: PageTitleWithIconProps) {
-  const { appIconPaths } = useTheme();
+  const { appIconPaths } = useTheme(); // These come from projectConfig.appIconPaths
+
+  // Determine if a global app icon is configured
+  const hasGlobalAppIcon = appIconPaths && appIconPaths.length > 0;
+
   return (
     <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center mb-4 md:mb-6">
       <div className="flex items-center gap-2">
-        {appIconPaths && appIconPaths.length > 0 && (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" // Added flex-shrink-0
-          >
-            {appIconPaths.map((d, index) => (
-              <path key={index} d={d}></path>
-            ))}
-          </svg>
+        {!hasGlobalAppIcon && ( // Show generic icon ONLY if NO global app icon is set
+          <FileText className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
         )}
+        {/* If hasGlobalAppIcon, no icon is rendered here by PageTitleWithIcon, as the app icon is in the main header */}
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{title}</h1>
       </div>
       {children && <div className="flex items-center gap-2 self-start sm:self-center">{children}</div>}

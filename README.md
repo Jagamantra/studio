@@ -32,7 +32,6 @@ To get started with the Genesis Template:
         # Or for a production API:
         # NEXT_PUBLIC_API_BASE_URL="https://api.yourdomain.com"
         ```
-    *   No Firebase configuration is required as Firebase has been removed.
 
 4.  **Restart your development server**:
     If your Next.js development server was already running, you **must restart it** for any new environment variables in `.env.local` to be loaded.
@@ -47,7 +46,7 @@ To get started with the Genesis Template:
     The application should now be running, typically on `http://localhost:9002`.
 
 5.  **Explore the App**:
-    *   Navigate to `src/app/page.tsx` which redirects to `/auth/login`.
+    *   Navigate to the root URL, which redirects to `/auth/login`.
     *   The application uses a dummy authentication system. Default credentials are:
         *   Admin: `admin@dummy.com` / `password123`
         *   User: `user@dummy.com` / `password123`
@@ -75,31 +74,31 @@ This application uses Genkit for AI-related functionalities like the Config Advi
 
 ## Mock API and Data Persistence
 
-The application currently uses a mock API service layer located in `src/services/api.ts`. This layer simulates backend interactions and uses dummy data primarily from `src/data/dummy-data.ts`. This allows for full frontend development and testing without a live backend. User authentication is also handled by a dummy system.
+The application currently uses a mock API service layer located in `services/api.ts`. This layer simulates backend interactions and uses dummy data primarily from `data/dummy-data.ts`. This allows for full frontend development and testing without a live backend. User authentication is also handled by a dummy system.
 
 Data is persisted in the browser's **Local Storage**:
 -   **User Session & Details**:
-    *   `genesis_current_dummy_user`: Stores the profile of the currently logged-in (dummy) user. Managed by `src/contexts/auth-provider.tsx`.
-    *   `genesis_mfa_verified`: Stores a boolean flag indicating if the current user has completed the mock MFA step. Managed by `src/contexts/auth-provider.tsx`.
+    *   `genesis_current_dummy_user`: Stores the profile of the currently logged-in (dummy) user. Managed by `contexts/auth-provider.tsx`.
+    *   `genesis_mfa_verified`: Stores a boolean flag indicating if the current user has completed the mock MFA step. Managed by `contexts/auth-provider.tsx`.
 -   **Dummy User Database**:
-    *   `genesis_dummy_users`: Stores an array of all registered dummy users. This is used by the User Management features and the mock API service in `src/services/api.ts`.
--   **Theme Settings (`src/contexts/theme-provider.tsx`)**:
+    *   `genesis_dummy_users`: Stores an array of all registered dummy users. This is used by the User Management features and the mock API service in `services/api.ts`.
+-   **Theme Settings (`contexts/theme-provider.tsx`)**:
     *   `genesis-theme-mode`: Stores the selected theme (light, dark, system).
     *   `genesis-theme-accent`: Stores the selected accent color (HSL or HEX string).
     *   `genesis-theme-radius`: Stores the selected border radius value (e.g., "0.5rem").
     *   `genesis-theme-version`: Stores the selected application version ID.
     *   `genesis-theme-app-name`: Stores the application name.
     *   `genesis-theme-app-icon-paths`: Stores the SVG path data for the dynamic app icon.
--   **Config Advisor Inputs (`src/app/config-advisor/page.tsx`)**:
+-   **Config Advisor Inputs (`app/config-advisor/page.tsx`)**:
     *   `configAdvisorInputs`: Stores the user's input for the project, sidebar, and roles configuration content for analysis.
 
 **Note**: This Local Storage persistence is for the mock/dummy setup. When you integrate a real backend API, this data would typically be stored in your backend database, and Local Storage would primarily be used for session tokens or minimal client-side preferences.
 
 ## Application Configuration
 
-Most application-level configurations are centralized in the `src/config/` directory.
+Most application-level configurations are centralized in the `config/` directory.
 
-### 1. Project-Wide Settings (`src/config/project.config.ts`)
+### 1. Project-Wide Settings (`config/project.config.ts`)
 
 This file (`projectConfig`) controls fundamental aspects of the application:
 
@@ -107,7 +106,7 @@ This file (`projectConfig`) controls fundamental aspects of the application:
     *   Sets the application's name, displayed in the header, browser title, and other UI elements.
     *   Dynamically updated via the ThemeProvider and `ThemeSwitcher` component if changed at runtime (e.g., through Config Advisor page).
 -   **`appIconPaths: string[]`**:
-    *   An array of SVG path `d` attributes that define the application's main icon. This icon is rendered dynamically in the header and auth layout.
+    *   An array of SVG path `d` attributes that define the application's main icon. This icon is rendered dynamically in the header (e.g., `components/layout/header.tsx`) and potentially other places like the auth layout.
     *   Can be updated via `ThemeProvider` if needed.
 -   **`availableAccentColors: AccentColor[]`** and **`defaultAccentColorName: string`**:
     *   `AccentColor = { name: string; hslValue: string; hexValue: string; }`
@@ -135,12 +134,12 @@ This file (`projectConfig`) controls fundamental aspects of the application:
 
 Users can customize the theme at runtime using the **Theme Switcher** (palette icon in the header):
 -   **Mode**: Light, Dark, or System preference.
--   **Accent Color**: Choose from predefined colors (from `project.config.ts`) or pick a custom HEX color. The application uses HSL CSS variables (`--accent-h`, `--accent-s`, `--accent-l`) in `src/app/globals.css` for dynamic theming.
+-   **Accent Color**: Choose from predefined colors (from `project.config.ts`) or pick a custom HEX color. The application uses HSL CSS variables (`--accent-h`, `--accent-s`, `--accent-l`) in `app/globals.css` for dynamic theming.
 -   **Border Radius**: Select from predefined border radius options (from `project.config.ts`). This updates the `--radius` CSS variable.
 
-These settings are managed by `src/contexts/theme-provider.tsx` and persisted in Local Storage.
+These settings are managed by `contexts/theme-provider.tsx` and persisted in Local Storage.
 
-### 3. Sidebar Navigation (`src/config/sidebar.config.ts`)
+### 3. Sidebar Navigation (`config/sidebar.config.ts`)
 
 This file defines the navigation items displayed in the application sidebar:
 -   Each `SidebarNavItem` object includes:
@@ -154,7 +153,7 @@ This file defines the navigation items displayed in the application sidebar:
 -   The sidebar dynamically renders items based on this configuration and the current user's role.
 -   The Config Advisor link is conditionally added based on `projectConfig.enableConfigAdvisor`.
 
-### 4. Role-Based Access Control (RBAC) (`src/config/roles.config.ts`)
+### 4. Role-Based Access Control (RBAC) (`config/roles.config.ts`)
 
 This file configures user roles and their permissions:
 -   **`roles: Role[]`**: Defines all available roles in the system (e.g., `['admin', 'user', 'guest']`).
@@ -176,17 +175,17 @@ To connect the Genesis Template to your actual backend API, follow these steps:
     *   Restart your Next.js development server for this change to take effect.
 
 2.  **Update API Service Functions**:
-    *   Open `src/services/api.ts`. This file contains functions like `fetchUsers`, `addUser`, `updateUserProfile`, etc. Currently, these functions return mock data or simulate API calls.
+    *   Open `services/api.ts`. This file contains functions like `fetchUsers`, `addUser`, `updateUserProfile`, etc. Currently, these functions return mock data or simulate API calls.
     *   Modify these functions to make actual HTTP requests to your backend endpoints using an HTTP client like `axios` (which is already set up as `apiClient` within this file) or the native `fetch` API.
     *   **Example - Modifying `fetchUsers`**:
         ```typescript
-        // Before (Mock Implementation) in src/services/api.ts
+        // Before (Mock Implementation) in services/api.ts
         // export const fetchUsers = async (): Promise<UserProfile[]> => {
         //   console.log('API Service: Mock fetchUsers called');
         //   return Promise.resolve([...currentMockUsers]);
         // };
 
-        // After (Real API Call) in src/services/api.ts
+        // After (Real API Call) in services/api.ts
         import type { UserProfile } from '@/types'; // Ensure UserProfile type matches your API response
         // ... (apiClient setup remains the same)
 
@@ -201,17 +200,17 @@ To connect the Genesis Template to your actual backend API, follow these steps:
           }
         };
         ```
-    *   Update all relevant functions in `src/services/api.ts` (`addUser`, `updateUser`, `deleteUser`, `loginUser`, `registerUser`, `updateUserProfile`, `changeUserPassword`, `forgotPassword`, etc.) to interact with your backend endpoints. Ensure the request payloads and response data structures match your API's specifications.
+    *   Update all relevant functions in `services/api.ts` (`addUser`, `updateUser`, `deleteUser`, `loginUser`, `registerUser`, `updateUserProfile`, `changeUserPassword`, `forgotPassword`, etc.) to interact with your backend endpoints. Ensure the request payloads and response data structures match your API's specifications.
 
 3.  **Authentication**:
-    *   The current application uses a dummy authentication system managed by `src/contexts/auth-provider.tsx` and `src/services/api.ts` (mock `loginUser`, `registerUser`).
+    *   The current application uses a dummy authentication system managed by `contexts/auth-provider.tsx` and `services/api.ts` (mock `loginUser`, `registerUser`).
     *   You will need to replace this with your backend's authentication mechanism.
-    *   Modify `loginUser` and `registerUser` in `src/services/api.ts` to call your backend's auth endpoints.
-    *   Adjust `src/contexts/auth-provider.tsx` to handle tokens (e.g., JWTs) received from your backend, store them securely (e.g., HttpOnly cookies managed by the backend, or localStorage for client-side tokens if appropriate for your security model), and include them in `apiClient` requests (e.g., via Authorization headers).
-    *   The `apiClient` in `src/services/api.ts` can be configured with interceptors to automatically add auth tokens to requests.
+    *   Modify `loginUser` and `registerUser` in `services/api.ts` to call your backend's auth endpoints.
+    *   Adjust `contexts/auth-provider.tsx` to handle tokens (e.g., JWTs) received from your backend, store them securely (e.g., HttpOnly cookies managed by the backend, or localStorage for client-side tokens if appropriate for your security model), and include them in `apiClient` requests (e.g., via Authorization headers).
+    *   The `apiClient` in `services/api.ts` can be configured with interceptors to automatically add auth tokens to requests.
 
 4.  **Data Types**:
-    *   Ensure the TypeScript types defined in `src/types/index.ts` (e.g., `UserProfile`) match the data structures your backend API expects and returns. Update these types as necessary.
+    *   Ensure the TypeScript types defined in `types/index.ts` (e.g., `UserProfile`) match the data structures your backend API expects and returns. Update these types as necessary.
 
 By following these steps, you can transition the Genesis Template from using its mock API to interacting with your live backend services.
 The folder structure utilizes Next.js App Router conventions. Components are primarily sourced from Shadcn UI, ensuring a consistent and modern look and feel.
@@ -219,30 +218,32 @@ The folder structure utilizes Next.js App Router conventions. Components are pri
 
 ## Adding a New Page
 
-This section guides you on adding new pages to the application and configuring them within the existing structure. Authenticated pages are now placed directly under `src/app/` and should use the `AuthenticatedPageLayout` component.
+This section guides you on adding new pages to the application and configuring them within the existing structure. Authenticated pages are now placed directly under `app/` and should use the `AuthenticatedPageLayout` component.
 
 ### 1. Create the Page File
 
-Create a new `.tsx` file inside the `src/app` directory. Follow Next.js's [App Router conventions](https://nextjs.org/docs/app/building-your-application/routing) for file naming and placement.
+Create a new `.tsx` file inside the `app` directory. Follow Next.js's [App Router conventions](https://nextjs.org/docs/app/building-your-application/routing) for file naming and placement.
 
-*   For a simple authenticated page, place it directly in `src/app`. For example, `src/app/my-new-page/page.tsx`.
-*   For unauthenticated pages (like additional auth-related pages), place them in `src/app/auth/`.
-*   For pages that might have a different overall layout (not using `AppShell`), you can create them in `src/app/` and not use `AuthenticatedPageLayout`.
+*   For a simple authenticated page, place it directly in `app`. For example, `app/my-new-page/page.tsx`.
+*   For unauthenticated pages (like additional auth-related pages), place them in `app/auth/`.
+*   For pages that might have a different overall layout (not using `AppShell`), you can create them in `app/` and not use `AuthenticatedPageLayout`.
 
-**Example:**  `src/app/my-new-page/page.tsx` (This will be accessible at `/my-new-page`)
+**Example:** `app/my-new-page/page.tsx` (This will be accessible at `/my-new-page`)
 
 ```tsx
-// src/app/my-new-page/page.tsx
+// app/my-new-page/page.tsx
 'use client';
 
 import React from 'react';
-import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout'; // Import the layout
+import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
+import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon'; // For page title
 
 const MyNewPage = () => {
   return (
     <AuthenticatedPageLayout> {/* Wrap page content with the layout */}
+      <PageTitleWithIcon title="My New Page Title" /> {/* Add your page title */}
       <div>
-        <h1>My New Page</h1>
+        {/* Page content goes here */}
         <p>This is a dynamically added page within the app shell.</p>
       </div>
     </AuthenticatedPageLayout>
@@ -254,13 +255,13 @@ export default MyNewPage;
 
 ### 2. Add a Sidebar Item (Optional)
 
-If the new page should be accessible from the sidebar, update `src/config/sidebar.config.ts`.
+If the new page should be accessible from the sidebar, update `config/sidebar.config.ts`.
 
 *   Import any necessary icons from `lucide-react`.
 *   Add a new `SidebarNavItem` object to the `items` array.
 
 ```typescript
-// src/config/sidebar.config.ts
+// config/sidebar.config.ts
 import type { SidebarConfig, SidebarNavItem } from '@/types';
 import { LayoutDashboard, Users, UserCircle, Cog, ShieldQuestion, FileText, BarChart3, PlusCircle } from 'lucide-react';
 import { projectConfig } from './project.config'; // Import projectConfig
@@ -302,12 +303,12 @@ export const sidebarConfig: SidebarConfig = {
 
 ### 3. Configure Route Permissions (Optional)
 
-If the page requires specific roles for access, update `src/config/roles.config.ts`.
+If the page requires specific roles for access, update `config/roles.config.ts`.
 
 *   Add the route to the `routePermissions` object, specifying the allowed roles.
 
 ```typescript
-// src/config/roles.config.ts
+// config/roles.config.ts
 import type { RolesConfig } from '@/types';
 
 export const rolesConfig: RolesConfig = {
@@ -325,14 +326,22 @@ export const rolesConfig: RolesConfig = {
   defaultRole: 'user',
 };
 ```
-The `AuthProvider` uses these permissions to protect routes. Ensure your middleware in `src/middleware.ts` also correctly handles routing based on authentication status.
+The `AuthProvider` uses these permissions to protect routes. Ensure your middleware in `middleware.ts` also correctly handles routing based on authentication status.
 
-### 4. Integrate Theme Settings
+### 4. Page Title and Icon
 
-To use theme settings (accent color, border radius, etc.) on the new page, import the `useTheme` hook from `src/contexts/theme-provider.tsx`. This can be done within the content part of your new page (inside `AuthenticatedPageLayout`).
+-   **Page Title**: To set the title displayed on your page (e.g., "My New Page Title"), pass the `title` prop to the `PageTitleWithIcon` component, as shown in the example in Step 1.
+-   **Page Icon (Next to Title)**: The `PageTitleWithIcon` component handles the icon next to the page title automatically:
+    *   If you have **not** configured a global application icon in `config/project.config.ts` (i.e., `projectConfig.appIconPaths` is empty or undefined), `PageTitleWithIcon` will display a generic document icon (`FileText` from Lucide React).
+    *   If you **have** configured a global application icon via `projectConfig.appIconPaths`, `PageTitleWithIcon` will **not** display any icon. This is to avoid redundancy, as the global application icon will already be present in the main application header.
+-   **Global Application Icon (Header)**: To set or change the main application icon that appears in the header, modify the `appIconPaths` array in `config/project.config.ts` with your desired SVG path data.
+
+### 5. Integrate Theme Settings
+
+To use theme settings (accent color, border radius, etc.) on the new page, import the `useTheme` hook from `contexts/theme-provider.tsx`. This can be done within the content part of your new page (inside `AuthenticatedPageLayout`).
 
 ```tsx
-// src/app/my-new-page/page.tsx (content part)
+// app/my-new-page/page.tsx (content part)
 // ...
 import { useTheme } from '@/contexts/theme-provider';
 import { Button } from '@/components/ui/button'; // Example component
@@ -343,7 +352,7 @@ const { appName, accentColor, borderRadius } = useTheme();
 return (
     // ...
     <div className="p-4">
-      <h1>{appName} - My New Page</h1>
+      {/* PageTitleWithIcon handles its own title and icon logic */}
       <p style={{ color: `hsl(${accentColor})` }}>This text uses the current accent color.</p>
       <Button style={{ borderRadius: borderRadius }}>Styled Button</Button>
       {/* Page content */}
@@ -352,12 +361,12 @@ return (
 );
 ```
 
-### 5. Handle Version-Specific Content
+### 6. Handle Version-Specific Content
 
 To display different content or components based on the selected application version, use the `appVersion` property from the `useTheme` hook.
 
 ```tsx
-// src/app/my-new-page/page.tsx (content part)
+// app/my-new-page/page.tsx (content part)
 // ...
 import { useTheme } from '@/contexts/theme-provider';
 
@@ -367,7 +376,8 @@ const { appVersion } = useTheme();
 return (
     // ...
     <div>
-      <h1>My New Page (Version: {appVersion})</h1>
+      {/* PageTitleWithIcon can be here */}
+      <p>Current Version: {appVersion}</p>
       {appVersion === 'v1.0.0' && <p>Content specific to Version 1.0.</p>}
       {appVersion === 'v0.9.0-beta' && <p>This is content for the Beta Preview.</p>}
       {appVersion === 'dev' && <p>Developer-specific features or information can be shown here.</p>}
@@ -376,16 +386,16 @@ return (
 );
 ```
 
-### 6. Add "Appearance" Dropdown Options (Theme Switcher Integration)
+### 7. Add "Appearance" Dropdown Options (Theme Switcher Integration)
 
-The Theme Switcher (`src/components/layout/theme-switcher.tsx`) provides options for mode, accent color, border radius, and app version. If your new page needs to directly interact with or display these options (beyond just using the theme context), you can:
+The Theme Switcher (`components/layout/theme-switcher.tsx`) provides options for mode, accent color, border radius, and app version. If your new page needs to directly interact with or display these options (beyond just using the theme context), you can:
 
 *   **Use the `useTheme` hook**: Access `theme`, `accentColor`, `borderRadius`, `appVersion`, and their respective setters (`setTheme`, `setAccentColor`, etc.).
 *   **Replicate Dropdown Logic**: If you need a similar dropdown structure within your page, you can adapt the JSX and logic from `ThemeSwitcher` or create a new component that consumes `useTheme` and `projectConfig.availableAccentColors`, `projectConfig.availableBorderRadii`, etc.
 
 **Example of a simple custom accent color picker within your page:**
 ```tsx
-// src/app/my-new-page/page.tsx (content part)
+// app/my-new-page/page.tsx (content part)
 // ...
 import { useTheme } from '@/contexts/theme-provider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Shadcn UI
@@ -397,12 +407,13 @@ const { accentColor, setAccentColor, availableAccentColors } = useTheme();
 return (
     // ...
     <div>
-      <h1>My New Page</h1>
+      {/* PageTitleWithIcon can be here */}
       <div className="my-4">
         <Label htmlFor="page-accent-selector">Select Accent Color:</Label>
         <Select
-          value={accentColor} // This should match the HSL value string if a predefined color is selected
-          onValueChange={(newHslValue) => setAccentColor(newHslValue)}
+          // Value should match HSL string if predefined, or HEX if custom via color picker
+          value={accentColor} 
+          onValueChange={(newColorValue) => setAccentColor(newColorValue)}
         >
           <SelectTrigger id="page-accent-selector" className="w-[180px]">
             <SelectValue placeholder="Select color" />
@@ -416,7 +427,7 @@ return (
                 </div>
               </SelectItem>
             ))}
-            {/* You could add a custom color picker input here too */}
+            {/* You could add a custom color picker input here too as in ThemeSwitcher.tsx */}
           </SelectContent>
         </Select>
       </div>
@@ -425,15 +436,15 @@ return (
 );
 ```
 
-### 7. Creating a New Application Version
+### 8. Creating a New Application Version
 
 To add a new application version that users can switch to:
 
-1.  **Define the Version**: Open `src/config/project.config.ts`.
+1.  **Define the Version**: Open `config/project.config.ts`.
 2.  **Add to `availableAppVersions`**: Add a new object to the `availableAppVersions` array. Each object should have a unique `id` (e.g., `'v2.0.0'`) and a user-friendly `name` (e.g., `'Version 2.0 Alpha'`).
 
     ```typescript
-    // src/config/project.config.ts
+    // config/project.config.ts
     export const projectConfig: ProjectConfig = {
       // ... other settings
       availableAppVersions: [
@@ -449,4 +460,3 @@ To add a new application version that users can switch to:
 3.  **Implement Version-Specific Logic**: Use the `appVersion` from the `useTheme` hook in your components and pages to conditionally render content or apply different styles/logic for this new version ID (as shown in "Handle Version-Specific Content" above).
 
 After these steps, the new version will appear in the version switcher dropdowns (in the `AppSidebar` and `ThemeSwitcher`), and your application can react to its selection.
-
