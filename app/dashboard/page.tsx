@@ -79,7 +79,7 @@ export default function DashboardPage() {
   }
 
   const userToRenderOnDashboard: UserProfile | null = (() => {
-    if (!isConfigured) {
+    if (!isConfigured) { // This `isConfigured` comes from `useAuth()`
       return dummyUserForDashboardView;
     }
     return authUser;
@@ -152,7 +152,7 @@ export default function DashboardPage() {
             </div>
           </PageTitleWithIcon>
 
-          {!isConfigured && ( 
+          {!isConfigured && ( // This is where the card is rendered based on useAuth's isConfigured
             <Card className="mb-4 md:mb-6 border-primary bg-primary/10 dark:bg-primary/20">
                 <CardHeader className="p-4">
                 <div className="flex items-center gap-2 sm:gap-3">

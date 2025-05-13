@@ -6,9 +6,9 @@ import type { UserProfile } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Users, ShieldQuestion, BarChart3, Info } from 'lucide-react'; 
+import { Users, ShieldQuestion, BarChart3 } from 'lucide-react'; 
 import Image from 'next/image';
-import { projectConfig } from '@/config/project.config'; // Import projectConfig
+import { projectConfig } from '@/config/project.config'; 
 
 interface DashboardV1ContentProps {
   userToRenderOnDashboard: UserProfile;
@@ -16,26 +16,14 @@ interface DashboardV1ContentProps {
 
 export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1ContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
-  const isConfigured = false; 
+  // The 'isConfigured' check for the "Mock Mode" banner is handled by the parent DashboardPage.
+  // No need to repeat it here.
 
   return (
     <>
-      {!isConfigured && ( 
-         <Card className="mb-4 md:mb-6 border-primary bg-primary/10 dark:bg-primary/20">
-          <CardHeader className="p-4">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Info className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> 
-              <CardTitle className="text-base sm:text-lg text-primary">Application Status: Mock Mode</CardTitle> 
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="text-xs sm:text-sm text-primary/90 dark:text-primary/80">
-              This application is currently running with mock API services and dummy data. 
-              All features are available for demonstration. The frontend is designed to be responsive and separate from backend concerns.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* The "Application Status: Mock Mode" card has been removed from here. 
+          It is now solely managed by app/dashboard/page.tsx */}
+
       <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
@@ -70,7 +58,7 @@ export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1Conte
               </CardContent>
             </Card>
 
-            {projectConfig.enableConfigAdvisor && ( // Conditionally render Config Advisor card
+            {projectConfig.enableConfigAdvisor && ( 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
                   <CardTitle className="text-sm font-medium">Config Advisor</CardTitle>
@@ -136,3 +124,4 @@ export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1Conte
     </>
   );
 }
+
