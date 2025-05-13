@@ -1,4 +1,3 @@
-
 'use client'; // Required for useTheme hook
 
 import type { ReactNode } from 'react'; // Import ReactNode
@@ -22,7 +21,7 @@ import { projectConfig } from '@/config/project.config';
 
 // Create a client component to consume the theme for SonnerToaster
 function ThemedSonnerToaster() {
-  const { theme, accentColor } = useTheme(); // Destructure accentColor
+  const { theme, accentColor } = useTheme(); 
 
   // Memoize toastOptions to ensure it's stable unless theme or accentColor changes.
   // This might help if Sonner is sensitive to prop identity for re-styling.
@@ -35,8 +34,13 @@ function ThemedSonnerToaster() {
     },
   }), [accentColor]); // Add accentColor to dependency array
 
+  // Create a key that changes when theme or accentColor changes
+  // This forces SonnerToaster to re-mount and pick up new styles
+  const sonnerKey = `${theme}-${accentColor}`;
+
   return (
     <SonnerToaster
+      key={sonnerKey} // Add key here
       richColors
       closeButton={false} // Remove the 'x' close button
       theme={theme as 'light' | 'dark' | 'system'} // Apply app theme to toasts
@@ -72,4 +76,3 @@ export default function RootLayout({
     </html>
   );
 }
-
