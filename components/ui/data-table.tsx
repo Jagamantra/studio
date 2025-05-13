@@ -35,10 +35,10 @@ import { ChevronDown, PlusCircle } from "lucide-react"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  searchColumnId?: string 
-  onAdd?: () => void 
-  onEdit?: (rowData: TData) => void 
-  onDelete?: (rowData: TData) => void 
+  searchColumnId?: string
+  onAdd?: () => void
+  onEdit?: (rowData: TData) => void
+  onDelete?: (rowData: TData) => void
   isLoading?: boolean
 }
 
@@ -83,20 +83,20 @@ export function DataTable<TData, TValue>({
             onChange={(event) =>
               table.getColumn(searchColumnId)?.setFilterValue(event.target.value)
             }
-            className="w-full sm:max-w-sm h-9" // Ensure consistent height with buttons
+            className="w-full sm:max-w-sm h-9"
             disabled={isLoading}
           />
         )}
         <div className="flex items-center justify-start sm:justify-end gap-2">
           {onAdd && (
             <Button onClick={onAdd} size="sm" disabled={isLoading} className="w-full sm:w-auto">
-              <PlusCircle className="mr-2 h-4 w-4" /> 
+              <PlusCircle className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">Add New</span>
               <span className="sm:hidden">Add</span>
             </Button>
           )}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild disabled={isLoading}>
               <Button variant="outline" size="sm" disabled={isLoading} className="w-full sm:w-auto">
                 Columns <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
@@ -123,7 +123,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenu>
         </div>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

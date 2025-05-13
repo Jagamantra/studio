@@ -27,26 +27,6 @@ export default function UsersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingUser, setDeletingUser] = React.useState<UserProfile | null>(null);
 
-  React.useEffect(() => {
-    if (!authLoading) {
-      if (user && user.role === 'admin') {
-        setIsAuthorized(true);
-        fetchAndSetUsers();
-      } else if (user) { 
-        toast({
-          title: 'Access Denied',
-          message: 'You do not have permission to view the User Management page.',
-          variant: 'destructive',
-        });
-        router.replace('/dashboard');
-      } else { 
-        router.replace('/auth/login');
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, router, toast]);
-
-
   const fetchAndSetUsers = React.useCallback(async () => {
     setTableLoading(true);
     try {
@@ -59,6 +39,22 @@ export default function UsersPage() {
       setTableLoading(false);
     }
   }, [toast]);
+
+  React.useEffect(() => {
+    if (!authLoading) {
+      if (user && user.role === 'admin') {
+        setIsAuthorized(true);
+        fetchAndSetUsers(); // Fetch users only if authorized
+      } else if (user) {
+        // Access denied, AuthProvider will redirect and handle toast via query param
+        router.replace('/dashboard');
+      } else {
+        router.replace('/auth/login');
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, router]); // Removed fetchAndSetUsers from deps as it's called conditionally
+
 
   const openAddUserModal = React.useCallback(() => {
     setEditingUser(null);
@@ -74,16 +70,16 @@ export default function UsersPage() {
     setDeletingUser(userData);
     setIsDeleteDialogOpen(true);
   }, []);
-  
+
   const confirmDeleteUser = React.useCallback(async () => {
     if (!deletingUser) return;
     setTableLoading(true);
     try {
       await api.deleteUser(deletingUser.uid);
-      toast({ 
-        title: "User Deleted", 
+      toast({
+        title: "User Deleted",
         message: `${deletingUser.displayName} has been removed.`,
-        action: { label: "Undo", onClick: () => console.log("Undo delete (mock)")} 
+        action: { label: "Undo", onClick: () => console.log("Undo delete (mock)")}
       });
       await fetchAndSetUsers();
     } catch (error: any) {
@@ -98,10 +94,10 @@ export default function UsersPage() {
   const handleUserFormSubmit = React.useCallback(async (values: Omit<UserProfile, 'uid' | 'photoURL' | 'password'> & { password?: string }) => {
     setTableLoading(true);
     try {
-      if (editingUser) { 
+      if (editingUser) {
         await api.updateUser(editingUser.uid, values);
         toast({ title: "User Updated", message: `${values.displayName} has been updated.`, variant: "success" });
-      } else { 
+      } else {
         await api.addUser(values);
         toast({ title: "User Added", message: `${values.displayName} has been created.`, variant: "success" });
       }
@@ -115,14 +111,16 @@ export default function UsersPage() {
     }
   }, [editingUser, fetchAndSetUsers, toast]);
 
+  const currentUserId = user?.uid; // Use stable primitive for memo deps
+
   const columns = React.useMemo(
-    () => createUserTableColumns({ openEditUserModal, openDeleteDialog, tableLoading, currentUserUid: user?.uid }),
-    [openEditUserModal, openDeleteDialog, tableLoading, user?.uid] 
+    () => createUserTableColumns({ openEditUserModal, openDeleteDialog, currentUserUid: currentUserId }),
+    [openEditUserModal, openDeleteDialog, currentUserId] // Use stable currentUserId
   );
-  
+
   const anyPageLoading = authLoading || tableLoading || !isAuthorized;
 
-  if (authLoading || !isAuthorized) {
+  if (authLoading || !isAuthorized) { // If not authorized, show loader while redirecting
      return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -132,11 +130,11 @@ export default function UsersPage() {
 
   return (
     <AuthenticatedPageLayout>
-      <div className="space-y-4 md:space-y-6 min-w-0"> 
+      <div className="space-y-4 md:space-y-6 min-w-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
           <Button onClick={openAddUserModal} disabled={anyPageLoading} size="sm">
-            {tableLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />} 
+            {tableLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
             <span className="hidden sm:inline">Add User</span>
             <span className="sm:hidden">Add</span>
           </Button>
@@ -150,7 +148,7 @@ export default function UsersPage() {
           onSubmit={handleUserFormSubmit}
           isLoading={tableLoading}
         />
-        
+
         <UserDeleteDialog
           isOpen={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}

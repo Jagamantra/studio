@@ -10,21 +10,19 @@ import { MoreHorizontal, Edit, Trash2, UserCog } from 'lucide-react';
 interface CreateUserTableColumnsProps {
   openEditUserModal: (userData: UserProfile) => void;
   openDeleteDialog: (userData: UserProfile) => void;
-  tableLoading: boolean;
+  // tableLoading: boolean; // No longer needed as a direct prop for column definition
   currentUserUid?: string | null;
 }
 
-export function createUserTableColumns({ 
-  openEditUserModal, 
-  openDeleteDialog, 
-  tableLoading,
+export function createUserTableColumns({
+  openEditUserModal,
+  openDeleteDialog,
   currentUserUid,
 }: CreateUserTableColumnsProps): ColumnDef<UserProfile>[] {
-  // const isConfigured = false; // Application always runs in mock mode now, this variable is not strictly needed for the logic below
 
   return [
-    { 
-      accessorKey: "displayName", 
+    {
+      accessorKey: "displayName",
       header: "Name",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
@@ -40,8 +38,8 @@ export function createUserTableColumns({
       )
     },
     { accessorKey: "email", header: "Email", cell: ({row}) => <span className="truncate block max-w-[150px] sm:max-w-xs">{row.original.email}</span> },
-    { 
-      accessorKey: "role", 
+    {
+      accessorKey: "role",
       header: "Role",
       cell: ({ row }) => <Badge variant={row.original.role === 'admin' ? 'default' : 'secondary'} className="capitalize">{row.original.role}</Badge>
     },
@@ -49,33 +47,38 @@ export function createUserTableColumns({
     {
       id: "actions",
       header: () => <div className="text-right">Actions</div>,
-      cell: ({ row }) => (
-        <div className="text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0" disabled={tableLoading}>
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => openEditUserModal(row.original)} disabled={tableLoading}>
-                <Edit className="mr-2 h-4 w-4" /> Edit User
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => openDeleteDialog(row.original)} 
-                className="text-destructive focus:text-destructive focus:bg-destructive/10" 
-                // Deleting the current user is disallowed in mock mode.
-                disabled={tableLoading || (currentUserUid === row.original.uid)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete User
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
+      cell: ({ row, table }) => {
+        // Access isLoading from table meta or parent component if DataTable is modified to pass it down
+        // For now, assuming DropdownMenuTrigger's disabled prop in DataTable handles overall loading state for actions
+        const isLoading = (table.options.meta as any)?.isLoading || false;
+
+        return (
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0" disabled={isLoading}>
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => openEditUserModal(row.original)} disabled={isLoading}>
+                  <Edit className="mr-2 h-4 w-4" /> Edit User
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => openDeleteDialog(row.original)}
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                  disabled={isLoading || (currentUserUid === row.original.uid)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete User
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
     },
   ];
 }

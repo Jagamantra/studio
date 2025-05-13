@@ -9,7 +9,7 @@ import { Loader2, ShieldQuestion, Lightbulb, Info, Ban } from 'lucide-react';
 import type { AnalyzeConfigInput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
-import { projectConfig as appProjectConfig } from '@/config/project.config'; 
+import { projectConfig as appProjectConfig } from '@/config/project.config';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/contexts/theme-provider';
 import { placeholderSidebarConfigData, placeholderRolesConfigData } from '@/data/dummy-data';
@@ -39,25 +39,25 @@ export default function ConfigAdvisorPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const { 
+  const {
     appName: currentAppName,
-    accentColor: currentAccentColor, 
+    accentColor: currentAccentColor,
     borderRadius: currentBorderRadius,
     appVersion: currentAppVersion,
-    setAppName, 
-    setAccentColor, 
-    setBorderRadius, 
+    setAppName,
+    setAccentColor,
+    setBorderRadius,
     setAppVersion,
-    availableAccentColors, 
-    availableBorderRadii 
+    availableAccentColors,
+    availableBorderRadii
   } = useTheme();
 
   const { suggestions, isLoadingAi, error: aiError, performAnalysis, resetAnalysis } = useAiConfigAnalysis();
   const [isAuthorized, setIsAuthorized] = useState(false);
-  
+
   const projectConfigForm = useForm<ProjectConfigFormValues>({
     resolver: zodResolver(projectConfigFormSchema),
-    defaultValues: { 
+    defaultValues: {
       appName: currentAppName,
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
       defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
@@ -67,34 +67,28 @@ export default function ConfigAdvisorPage() {
 
   const [sidebarConfigContent, setSidebarConfigContent] = useState('');
   const [rolesConfigContent, setRolesConfigContent] = useState('');
-  
+
   const [isSavingProjectConfig, setIsSavingProjectConfig] = useState(false);
   const [isResettingProjectConfig, setIsResettingProjectConfig] = useState(false);
   const [isLoadingExamples, setIsLoadingExamples] = useState(false);
-  const [showPlaceholders, setShowPlaceholders] = useState(true); 
+  const [showPlaceholders, setShowPlaceholders] = useState(true);
 
   useEffect(() => {
     if (!appProjectConfig.enableConfigAdvisor) {
-      // Feature disabled, authorization check is skipped.
-      // The component will render the "Feature Disabled" message.
       return;
     }
     if (!authLoading) {
       if (user && user.role === 'admin') {
         setIsAuthorized(true);
       } else if (user) { // User exists but not admin
-        toast({
-          title: 'Access Denied',
-          message: 'You do not have permission to view the Config Advisor page.',
-          variant: 'destructive',
-        });
+        // AuthProvider will redirect and set query param for toast
         router.replace('/dashboard');
       } else { // No user
         router.replace('/auth/login');
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, router, toast, appProjectConfig.enableConfigAdvisor]);
+  }, [user, authLoading, router, appProjectConfig.enableConfigAdvisor]);
 
 
   useEffect(() => {
@@ -109,7 +103,7 @@ export default function ConfigAdvisorPage() {
             }
             setSidebarConfigContent(storedInputs.sidebarConfigContent || '');
             setRolesConfigContent(storedInputs.rolesConfigContent || '');
-            
+
             const projectFormIsDefault = JSON.stringify(projectConfigForm.getValues()) === JSON.stringify({
               appName: currentAppName,
               defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
@@ -132,7 +126,7 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appProjectConfig.enableConfigAdvisor, isAuthorized]);
+  }, [appProjectConfig.enableConfigAdvisor, isAuthorized, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion]); // Added theme values to deps
 
   useEffect(() => {
     if (!appProjectConfig.enableConfigAdvisor || !isAuthorized) return;
@@ -155,8 +149,8 @@ export default function ConfigAdvisorPage() {
             rolesConfigContent,
         };
         localStorage.setItem('configAdvisorInputs', JSON.stringify(currentInputs));
-        
-        const isProjectFormUnchangedFromTheme = 
+
+        const isProjectFormUnchangedFromTheme =
              watchedProjectConfig.appName === currentAppName &&
              watchedProjectConfig.defaultAccentColorName === (availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName) &&
              watchedProjectConfig.defaultBorderRadiusName === (availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName) &&
@@ -168,20 +162,20 @@ export default function ConfigAdvisorPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppName, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
-  
+
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
     await new Promise(resolve => setTimeout(resolve, 300));
     projectConfigForm.reset({
-      appName: "Example App", 
-      defaultAccentColorName: appProjectConfig.availableAccentColors[1]?.name || appProjectConfig.defaultAccentColorName, 
-      defaultBorderRadiusName: appProjectConfig.availableBorderRadii[1]?.name || appProjectConfig.defaultBorderRadiusName, 
-      defaultAppVersionId: appProjectConfig.availableAppVersions[1]?.id || appProjectConfig.defaultAppVersionId, 
+      appName: "Example App",
+      defaultAccentColorName: appProjectConfig.availableAccentColors[1]?.name || appProjectConfig.defaultAccentColorName,
+      defaultBorderRadiusName: appProjectConfig.availableBorderRadii[1]?.name || appProjectConfig.defaultBorderRadiusName,
+      defaultAppVersionId: appProjectConfig.availableAppVersions[1]?.id || appProjectConfig.defaultAppVersionId,
     });
     setSidebarConfigContent(placeholderSidebarConfigData);
     setRolesConfigContent(placeholderRolesConfigData);
-    setShowPlaceholders(false); 
-    resetAnalysis(); 
+    setShowPlaceholders(false);
+    resetAnalysis();
     setIsLoadingExamples(false);
     toast({
       title: 'Example Configurations Loaded',
@@ -195,7 +189,7 @@ export default function ConfigAdvisorPage() {
     const isValid = await projectConfigForm.trigger();
     if (isValid) {
       const projectConfigValues = projectConfigForm.getValues();
-      await new Promise(resolve => setTimeout(resolve, 500)); 
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       setAppName(projectConfigValues.appName);
       const selectedAccent = availableAccentColors.find(c => c.name === projectConfigValues.defaultAccentColorName);
@@ -203,8 +197,8 @@ export default function ConfigAdvisorPage() {
       const selectedRadius = availableBorderRadii.find(r => r.name === projectConfigValues.defaultBorderRadiusName);
       if (selectedRadius) setBorderRadius(selectedRadius.value);
       setAppVersion(projectConfigValues.defaultAppVersionId);
-      
-      projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false }); 
+
+      projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false });
 
       toast({
         title: 'Project Configuration Applied',
@@ -223,14 +217,14 @@ export default function ConfigAdvisorPage() {
 
   const handleResetProjectConfig = async () => {
     setIsResettingProjectConfig(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); 
-    
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     const originalAppName = appProjectConfig.appName;
     const originalAccentColorName = appProjectConfig.defaultAccentColorName;
-    const originalAccentHsl = availableAccentColors.find(c => c.name === originalAccentColorName)?.hslValue || 
+    const originalAccentHsl = availableAccentColors.find(c => c.name === originalAccentColorName)?.hslValue ||
                               (appProjectConfig.availableAccentColors.find(ac => ac.name === appProjectConfig.defaultAccentColorName)?.hslValue || appProjectConfig.availableAccentColors[0]?.hslValue);
     const originalBorderRadiusName = appProjectConfig.defaultBorderRadiusName;
-    const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value || 
+    const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value ||
                                       (appProjectConfig.availableBorderRadii.find(br => br.name === appProjectConfig.defaultBorderRadiusName)?.value || appProjectConfig.availableBorderRadii[0]?.value);
     const originalAppVersionId = appProjectConfig.defaultAppVersionId;
 
@@ -275,9 +269,9 @@ export const projectConfig = {
       rolesConfig: rolesConfigContent,
     };
 
-    await performAnalysis(input); 
+    await performAnalysis(input);
   };
-  
+
   if (authLoading) {
     return <AuthenticatedPageLayout><div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></AuthenticatedPageLayout>;
   }
@@ -298,10 +292,8 @@ export const projectConfig = {
       </AuthenticatedPageLayout>
     );
   }
-  
-  // This check happens after the enableConfigAdvisor check.
-  // If the feature is enabled but user is not authorized, they see a loader while redirecting.
-  if (!isAuthorized) {
+
+  if (!isAuthorized) { // If feature enabled, but user not authorized
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4">
@@ -321,7 +313,7 @@ export const projectConfig = {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Configuration Advisor</h1>
           <div className="flex gap-2">
             <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
-              {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />} 
+              {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />}
               <span className="hidden sm:inline">Load Examples</span>
               <span className="sm:hidden">Examples</span>
             </Button>
@@ -355,7 +347,7 @@ export const projectConfig = {
           placeholderRolesConfigData={placeholderRolesConfigData}
           anyLoading={anyLoading}
         />
-        
+
         <AISuggestionsDisplay
           suggestions={suggestions}
           isLoadingAi={isLoadingAi}
