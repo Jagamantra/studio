@@ -2,6 +2,7 @@
 'use client'; // Required for useTheme hook
 
 import type { ReactNode } from 'react'; // Import ReactNode
+import React from 'react'; // Import React for useMemo
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 import { ThemeProvider, useTheme } from '@/contexts/theme-provider'; // Import useTheme
@@ -21,23 +22,25 @@ import { projectConfig } from '@/config/project.config';
 
 // Create a client component to consume the theme for SonnerToaster
 function ThemedSonnerToaster() {
-  const { theme } = useTheme();
+  const { theme, accentColor } = useTheme(); // Destructure accentColor
+
+  // Memoize toastOptions to ensure it's stable unless theme or accentColor changes.
+  // This might help if Sonner is sensitive to prop identity for re-styling.
+  const toastOptions = React.useMemo(() => ({
+    classNames: {
+      // Style the action button (e.g., "Undo") to use primary/accent color
+      actionButton: 'bg-primary text-primary-foreground hover:bg-primary/90',
+      // Optional: Style cancel button if ever used
+      // cancelButton: 'bg-muted text-muted-foreground hover:bg-muted/80',
+    },
+  }), [accentColor]); // Add accentColor to dependency array
+
   return (
     <SonnerToaster
       richColors
       closeButton={false} // Remove the 'x' close button
       theme={theme as 'light' | 'dark' | 'system'} // Apply app theme to toasts
-      toastOptions={{
-        classNames: {
-          // Style the action button (e.g., "Undo") to use primary/accent color
-          actionButton: 'bg-primary text-primary-foreground hover:bg-primary/90',
-          // Optional: Style cancel button if ever used
-          // cancelButton: 'bg-muted text-muted-foreground hover:bg-muted/80',
-          // Optional: ensure basic toast matches theme if richColors doesn't cover everything
-          // toast: 'bg-background text-foreground border-border',
-          // description: 'text-muted-foreground',
-        },
-      }}
+      toastOptions={toastOptions}
     />
   );
 }
@@ -69,3 +72,4 @@ export default function RootLayout({
     </html>
   );
 }
+
