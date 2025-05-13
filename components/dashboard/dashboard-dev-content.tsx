@@ -16,7 +16,7 @@ interface DashboardDevContentProps {
   userToRenderOnDashboard: UserProfile;
 }
 
-export function DashboardDevContent({ userToRenderOnDashboard }: DashboardDevContentProps) {
+export const DashboardDevContent = React.memo(function DashboardDevContent({ userToRenderOnDashboard }: DashboardDevContentProps) {
   const { theme, accentColor, borderRadius } = useTheme();
   const { toast } = useToast();
   const [currentProgress, setCurrentProgress] = useState(67);
@@ -86,4 +86,6 @@ export function DashboardDevContent({ userToRenderOnDashboard }: DashboardDevCon
       </div>
     </div>
   );
-}
+});
+
+DashboardDevContent.displayName = 'DashboardDevContent';

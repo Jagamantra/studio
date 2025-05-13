@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -15,7 +16,7 @@ interface RawConfigInputCardProps {
   anyLoading: boolean;
 }
 
-export function RawConfigInputCard({
+export const RawConfigInputCard = React.memo(function RawConfigInputCard({
   sidebarConfigContent,
   handleSidebarChange,
   rolesConfigContent,
@@ -70,4 +71,6 @@ export function RawConfigInputCard({
       </CardFooter>
     </Card>
   );
-}
+});
+
+RawConfigInputCard.displayName = 'RawConfigInputCard';

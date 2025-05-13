@@ -14,7 +14,7 @@ interface DashboardV1ContentProps {
   userToRenderOnDashboard: UserProfile;
 }
 
-export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1ContentProps) {
+export const DashboardV1Content = React.memo(function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1ContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
 
   return (
@@ -134,4 +134,6 @@ export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1Conte
       </Card>
     </>
   );
-}
+});
+
+DashboardV1Content.displayName = 'DashboardV1Content';

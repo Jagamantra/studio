@@ -1,7 +1,7 @@
 
 'use client';
 
-import * as React from 'react';
+import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -30,7 +30,7 @@ interface ChangePasswordFormProps {
   setAnyLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function ChangePasswordForm({ anyLoading, setAnyLoading }: ChangePasswordFormProps) {
+export const ChangePasswordForm = React.memo(function ChangePasswordForm({ anyLoading, setAnyLoading }: ChangePasswordFormProps) {
   const { toast } = useToast();
   const { user } = useAuth(); 
   const [isLoading, setIsLoading] = React.useState(false);
@@ -123,4 +123,6 @@ export function ChangePasswordForm({ anyLoading, setAnyLoading }: ChangePassword
       </Form>
     </Card>
   );
-}
+});
+
+ChangePasswordForm.displayName = 'ChangePasswordForm';

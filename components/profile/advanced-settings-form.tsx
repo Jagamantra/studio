@@ -1,6 +1,7 @@
+
 'use client';
 
-import * as React from 'react';
+import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -12,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Settings2 } from 'lucide-react';
 import type { UserProfile } from '@/types';
-import * as api from '@/services/api'; // Import API service
+import * as api from '@/services/api'; 
 
 const advancedSettingsSchema = z.object({
   receiveNotifications: z.boolean().optional(),
@@ -24,12 +25,12 @@ type AdvancedSettingsFormValues = z.infer<typeof advancedSettingsSchema>;
 interface AdvancedSettingsFormProps {
   user: UserProfile;
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
-  updateAuthContextUser: (updatedProfile: Partial<UserProfile>) => void; // New prop
+  updateAuthContextUser: (updatedProfile: Partial<UserProfile>) => void;
   anyLoading: boolean;
   setAnyLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function AdvancedSettingsForm({ user, setUser, updateAuthContextUser, anyLoading, setAnyLoading }: AdvancedSettingsFormProps) {
+export const AdvancedSettingsForm = React.memo(function AdvancedSettingsForm({ user, setUser, updateAuthContextUser, anyLoading, setAnyLoading }: AdvancedSettingsFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -58,17 +59,11 @@ export function AdvancedSettingsForm({ user, setUser, updateAuthContextUser, any
     };
 
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
-      // In a real app, you would call:
-      // const updatedUserFromApi = await api.updateUserSettings(user.uid, data);
-      // For mock, just merge data
       const updatedUser = { ...user, ...data };
-
-      console.log("Advanced settings saved (mocked):", data); 
       
-      setUser(updatedUser); // Update local page state
-      updateAuthContextUser(updatedUser); // Update AuthContext state
+      setUser(updatedUser);
+      updateAuthContextUser(updatedUser);
 
       form.reset(data, { keepValues: true, keepDirty: false });
       toast({ 
@@ -78,7 +73,6 @@ export function AdvancedSettingsForm({ user, setUser, updateAuthContextUser, any
         action: {
           label: "Undo",
           onClick: async () => {
-            // Simulate reverting
             const revertedUser = { ...user, ...originalSettings };
             setUser(revertedUser);
             updateAuthContextUser(revertedUser);
@@ -165,4 +159,6 @@ export function AdvancedSettingsForm({ user, setUser, updateAuthContextUser, any
       </Form>
     </Card>
   );
-}
+});
+
+AdvancedSettingsForm.displayName = 'AdvancedSettingsForm';

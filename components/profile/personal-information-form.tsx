@@ -1,6 +1,7 @@
+
 'use client';
 
-import * as React from 'react';
+import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -12,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Edit2, UserCircle } from 'lucide-react';
 import type { UserProfile } from '@/types';
-import { useAuth } from '@/contexts/auth-provider'; 
 import * as api from '@/services/api'; 
 
 const profileFormSchema = z.object({
@@ -27,12 +27,12 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 interface PersonalInformationFormProps {
   user: UserProfile;
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>; 
-  updateAuthContextUser: (updatedProfile: Partial<UserProfile>) => void; // New prop
+  updateAuthContextUser: (updatedProfile: Partial<UserProfile>) => void;
   anyLoading: boolean;
   setAnyLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function PersonalInformationForm({ user, setUser, updateAuthContextUser, anyLoading, setAnyLoading }: PersonalInformationFormProps) {
+export const PersonalInformationForm = React.memo(function PersonalInformationForm({ user, setUser, updateAuthContextUser, anyLoading, setAnyLoading }: PersonalInformationFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -96,8 +96,8 @@ export function PersonalInformationForm({ user, setUser, updateAuthContextUser, 
         phoneNumber: data.phoneNumber,
       });
       
-      updateAuthContextUser(updatedProfileFromApi); // Update user in AuthContext
-      setUser(updatedProfileFromApi); // Update local pageUser state
+      updateAuthContextUser(updatedProfileFromApi); 
+      setUser(updatedProfileFromApi); 
 
       form.reset({ ...updatedProfileFromApi, email: user.email }, { keepValues: true, keepDirty: false });
 
@@ -232,4 +232,6 @@ export function PersonalInformationForm({ user, setUser, updateAuthContextUser, 
       </Form>
     </Card>
   );
-}
+});
+
+PersonalInformationForm.displayName = 'PersonalInformationForm';

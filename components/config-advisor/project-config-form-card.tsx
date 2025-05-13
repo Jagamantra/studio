@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -23,7 +24,7 @@ interface ProjectConfigFormCardProps {
   appProjectConfigAvailableAppVersions: AppVersion[];
 }
 
-export function ProjectConfigFormCard({
+export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
   projectConfigForm,
   anyLoading,
   isSavingProjectConfig,
@@ -144,4 +145,6 @@ export function ProjectConfigFormCard({
       </CardFooter>
     </Card>
   );
-}
+});
+
+ProjectConfigFormCard.displayName = 'ProjectConfigFormCard';

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -7,21 +8,34 @@ import { Button } from '@/components/ui/button';
 import { Users, Zap, Activity } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
-import { BarChart as RechartsBarChartComponent, CartesianGrid, XAxis, YAxis, Bar } from 'recharts';
 import { betaDashboardChartData } from '@/data/dummy-data';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const RechartsBarChartComponent = dynamic(
+  () => import('recharts').then(mod => mod.BarChart),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-[250px] w-full" />
+  }
+);
+const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
+const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
+
 
 interface DashboardBetaContentProps {
   userToRenderOnDashboard: UserProfile;
 }
 
-// Updated chartConfig to use direct CSS variable references
 const betaChartConfig = {
-  newUsers: { label: "New Users", color: "var(--chart-1)" }, // Changed from hsl(var(--chart-1))
-  churnedUsers: { label: "Churned Users", color: "var(--chart-2)" }, // Changed from hsl(var(--chart-2))
+  newUsers: { label: "New Users", color: "var(--chart-1)" },
+  churnedUsers: { label: "Churned Users", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
 
-export function DashboardBetaContent({ userToRenderOnDashboard }: DashboardBetaContentProps) {
+export const DashboardBetaContent = React.memo(function DashboardBetaContent({ userToRenderOnDashboard }: DashboardBetaContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
   return (
     <Tabs defaultValue="overview" className="w-full">
@@ -115,4 +129,6 @@ export function DashboardBetaContent({ userToRenderOnDashboard }: DashboardBetaC
       </TabsContent>
     </Tabs>
   );
-}
+});
+
+DashboardBetaContent.displayName = 'DashboardBetaContent';

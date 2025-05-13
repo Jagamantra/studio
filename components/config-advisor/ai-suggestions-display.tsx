@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ interface AISuggestionsDisplayProps {
   error: string | null;
 }
 
-export function AISuggestionsDisplay({ suggestions, isLoadingAi, error }: AISuggestionsDisplayProps) {
+export const AISuggestionsDisplay = React.memo(function AISuggestionsDisplay({ suggestions, isLoadingAi, error }: AISuggestionsDisplayProps) {
   if (error) {
     return (
       <Alert variant="destructive" className="mt-4">
@@ -75,5 +76,7 @@ export function AISuggestionsDisplay({ suggestions, isLoadingAi, error }: AISugg
     );
   }
 
-  return null; // Nothing to display if no suggestions, not loading, and no error
-}
+  return null; 
+});
+
+AISuggestionsDisplay.displayName = 'AISuggestionsDisplay';
