@@ -1,4 +1,3 @@
-
 'use client';
 
 import axios from 'axios';
@@ -18,18 +17,6 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Sample api request
-// export const fetchUsers = async (): Promise<UserProfile[]> => {
-//   try {
-//     const response = await apiClient.get('/users'); // Replace '/users' with your actual endpoint
-//     return response.data; // Assuming your API returns user data in response.data
-//   } catch (error) {
-//     console.error('Error fetching users:', error);
-//     // Handle errors appropriately, e.g., throw error or return empty array
-//     throw error;
-//   }
-// };
 
 // --- User Management ---
 export const fetchUsers = async (): Promise<UserProfile[]> => {
@@ -110,8 +97,6 @@ export const changeUserPassword = async (uid: string, currentPassword?: string, 
 };
 
 // --- Authentication Mocks ---
-// These functions would typically hit /auth/login, /auth/register on a real backend.
-// For now, they manipulate the dummy user store directly or use existing dummy logic.
 export const loginUser = async (email: string, password?: string): Promise<UserProfile> => {
     console.log('API Service: Mock loginUser');
     const user = currentMockUsers.find(u => u.email === email && u.password === password);
@@ -129,17 +114,12 @@ export const registerUser = async (userData: Omit<UserProfile, 'uid' | 'photoURL
 
 export const forgotPassword = async (email: string): Promise<void> => {
   console.log(`API Service: Mock forgotPassword called for email: ${email}`);
-  // Simulate checking if user exists
   const userExists = currentMockUsers.some(u => u.email === email);
   if (!userExists) {
-    // In a real app, you might not want to reveal if an email exists or not for security reasons.
-    // For this mock, we can simulate a delay or a generic success message.
     console.log(`API Service: Mock user with email ${email} not found, but pretending to send email.`);
-    // Simulate a delay
     await new Promise(resolve => setTimeout(resolve, 700));
     return Promise.resolve();
   }
-  // Simulate sending a reset email
   await new Promise(resolve => setTimeout(resolve, 1000));
   console.log(`API Service: Mock password reset email sent to ${email}.`);
   return Promise.resolve();
@@ -152,16 +132,30 @@ export const resetMockUsers = () => {
   console.log('API Service: Mock users reset to initial state.');
 };
 
-// To be called if initial users need to be loaded from localStorage for dummy mode,
-// although AuthProvider now handles its own dummy user persistence.
-// This could be used by other services if needed.
 export const loadMockUsersFromStorage = (storageKey: string) => {
     if (typeof window !== 'undefined') {
         const storedUsers = localStorage.getItem(storageKey);
         if (storedUsers) {
-            currentMockUsers = JSON.parse(storedUsers);
-            console.log('API Service: Mock users loaded from localStorage.');
+            try {
+                const parsedUsers = JSON.parse(storedUsers);
+                // Basic validation: ensure it's an array. A more robust check might verify item structure.
+                if (Array.isArray(parsedUsers)) {
+                    currentMockUsers = parsedUsers;
+                    console.log('API Service: Mock users loaded from localStorage.');
+                } else {
+                    console.error("Invalid user data structure in localStorage (not an array). Reverting to initial data.");
+                    currentMockUsers = JSON.parse(JSON.stringify(initialMockUsersData));
+                    // Optionally clear the corrupted localStorage item
+                    // localStorage.removeItem(storageKey);
+                }
+            } catch (e) {
+                console.error("Failed to parse mock users from localStorage:", e);
+                // Fallback to initial mock data if parsing fails
+                currentMockUsers = JSON.parse(JSON.stringify(initialMockUsersData));
+            }
         }
+        // If no storedUsers, currentMockUsers retains its value from the last successful load/reset
+        // or its initial module-level initialization.
     }
 };
 

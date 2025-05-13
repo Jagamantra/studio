@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
@@ -13,7 +12,6 @@ interface CreateUserTableColumnsProps {
   openDeleteDialog: (userData: UserProfile) => void;
   tableLoading: boolean;
   currentUserUid?: string | null;
-  // isConfigured: boolean; // No longer needed as app is always in mock mode
 }
 
 export function createUserTableColumns({ 
@@ -21,9 +19,8 @@ export function createUserTableColumns({
   openDeleteDialog, 
   tableLoading,
   currentUserUid,
-  // isConfigured // This will always be false in the current setup
 }: CreateUserTableColumnsProps): ColumnDef<UserProfile>[] {
-  const isConfigured = false; // Application always runs in mock mode now
+  // const isConfigured = false; // Application always runs in mock mode now, this variable is not strictly needed for the logic below
 
   return [
     { 
@@ -70,7 +67,7 @@ export function createUserTableColumns({
               <DropdownMenuItem 
                 onClick={() => openDeleteDialog(row.original)} 
                 className="text-destructive focus:text-destructive focus:bg-destructive/10" 
-                // Since isConfigured is false, deleting current user is disallowed in dummy mode.
+                // Deleting the current user is disallowed in mock mode.
                 disabled={tableLoading || (currentUserUid === row.original.uid)}
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete User
