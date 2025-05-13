@@ -152,7 +152,7 @@ export default function DashboardPage() {
             </div>
           </PageTitleWithIcon>
 
-          {!isConfigured && ( // This is where the card is rendered based on useAuth's isConfigured
+          {!isConfigured && appVersion === 'v1.0.0' && (
             <Card className="mb-4 md:mb-6 border-primary bg-primary/10 dark:bg-primary/20">
                 <CardHeader className="p-4">
                 <div className="flex items-center gap-2 sm:gap-3">
