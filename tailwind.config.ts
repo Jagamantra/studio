@@ -3,9 +3,8 @@ import type { Config } from "tailwindcss";
 export default {
     darkMode: ["class"],
     content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
   	extend: {
@@ -21,8 +20,8 @@ export default {
   				foreground: 'hsl(var(--popover-foreground))'
   			},
   			primary: {
-  				DEFAULT: 'var(--primary)', // Corrected: var() instead of hsl(var())
-  				foreground: 'var(--primary-foreground)' // Corrected
+  				DEFAULT: 'var(--primary)', 
+  				foreground: 'var(--primary-foreground)' 
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
@@ -33,8 +32,8 @@ export default {
   				foreground: 'hsl(var(--muted-foreground))'
   			},
   			accent: {
-  				DEFAULT: 'var(--accent)', // Corrected
-  				foreground: 'var(--accent-foreground)' // Corrected
+  				DEFAULT: 'var(--accent)', 
+  				foreground: 'var(--accent-foreground)' 
   			},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
@@ -42,7 +41,7 @@ export default {
   			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
-  			ring: 'var(--ring)', // Corrected
+  			ring: 'var(--ring)', 
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
@@ -51,14 +50,14 @@ export default {
   				'5': 'hsl(var(--chart-5))'
   			},
   			sidebar: {
-  				DEFAULT: 'var(--sidebar-background)', // Corrected
-  				foreground: 'var(--sidebar-foreground)', // Corrected
-  				primary: 'var(--sidebar-primary)', // Corrected
-  				'primary-foreground': 'var(--sidebar-primary-foreground)', // Corrected
-  				accent: 'var(--sidebar-accent)', // Corrected
-  				'accent-foreground': 'var(--sidebar-accent-foreground)', // Corrected
-  				border: 'var(--sidebar-border)', // Corrected
-  				ring: 'var(--sidebar-ring)' // Corrected
+  				DEFAULT: 'var(--sidebar-background)', 
+  				foreground: 'var(--sidebar-foreground)', 
+  				primary: 'var(--sidebar-primary)', 
+  				'primary-foreground': 'var(--sidebar-primary-foreground)', 
+  				accent: 'var(--sidebar-accent)', 
+  				'accent-foreground': 'var(--sidebar-accent-foreground)', 
+  				border: 'var(--sidebar-border)', 
+  				ring: 'var(--sidebar-ring)' 
   			}
   		},
   		borderRadius: {
