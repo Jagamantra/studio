@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, RotateCcw } from 'lucide-react';
-import type { ProjectConfigFormValues } from '@/app/(app)/config-advisor/page';
+import type { ProjectConfigFormValues } from '@/app/config-advisor/page';
 import type { AccentColor, BorderRadiusOption, AppVersion } from '@/types';
 
 interface ProjectConfigFormCardProps {
@@ -145,3 +145,4 @@ export function ProjectConfigFormCard({
     </Card>
   );
 }
+

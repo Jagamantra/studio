@@ -1,3 +1,4 @@
+
 # Genesis Template
 
 This is a Next.js starter template, "Genesis Template", designed for rapid development, now using a mock API service layer for backend interactions.
@@ -448,3 +449,4 @@ To add a new application version that users can switch to:
 3.  **Implement Version-Specific Logic**: Use the `appVersion` from the `useTheme` hook in your components and pages to conditionally render content or apply different styles/logic for this new version ID (as shown in "Handle Version-Specific Content" above).
 
 After these steps, the new version will appear in the version switcher dropdowns (in the `AppSidebar` and `ThemeSwitcher`), and your application can react to its selection.
+
