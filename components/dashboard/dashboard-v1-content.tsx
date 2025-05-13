@@ -16,14 +16,9 @@ interface DashboardV1ContentProps {
 
 export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1ContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
-  // The 'isConfigured' check for the "Mock Mode" banner is handled by the parent DashboardPage.
-  // No need to repeat it here.
 
   return (
     <>
-      {/* The "Application Status: Mock Mode" card has been removed from here. 
-          It is now solely managed by app/dashboard/page.tsx */}
-
       <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
@@ -104,7 +99,15 @@ export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1Conte
         <CardContent className="grid gap-4 md:grid-cols-2 p-4 pt-0">
             <div className="flex flex-col items-center justify-center p-3 sm:p-4 border rounded-lg text-center">
                 <div className="w-full aspect-[2/1] relative mb-3">
-                  <Image src="https://picsum.photos/seed/dashboard1/400/200" alt="Feature placeholder 1" layout="fill" objectFit="cover" className="rounded-md" data-ai-hint="office team" />
+                  <Image 
+                    src="https://picsum.photos/seed/dashboard1/400/200" 
+                    alt="Feature placeholder 1" 
+                    layout="fill" 
+                    objectFit="cover" 
+                    className="rounded-md" 
+                    data-ai-hint="office team" 
+                    unoptimized={true}
+                  />
                 </div>
                 <h3 className="text-sm md:text-base font-semibold mb-1">Customize Your Profile</h3>
                 <p className="text-xs md:text-sm text-muted-foreground mb-2 sm:mb-3">Personalize your account details and preferences.</p>
@@ -114,7 +117,15 @@ export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1Conte
             </div>
             <div className="flex flex-col items-center justify-center p-3 sm:p-4 border rounded-lg text-center">
                 <div className="w-full aspect-[2/1] relative mb-3">
-                  <Image src="https://picsum.photos/seed/dashboard2/400/200" alt="Feature placeholder 2" layout="fill" objectFit="cover" className="rounded-md" data-ai-hint="modern workspace" />
+                  <Image 
+                    src="https://picsum.photos/seed/dashboard2/400/200" 
+                    alt="Feature placeholder 2" 
+                    layout="fill" 
+                    objectFit="cover" 
+                    className="rounded-md" 
+                    data-ai-hint="modern workspace"
+                    unoptimized={true}
+                  />
                 </div>
                 <h3 className="text-sm md:text-base font-semibold mb-1">Explore Theme Options</h3>
                 <p className="text-xs md:text-sm text-muted-foreground mb-2 sm:mb-3">Adjust themes, colors, and more via the palette icon in the header.</p>
@@ -124,4 +135,3 @@ export function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1Conte
     </>
   );
 }
-
