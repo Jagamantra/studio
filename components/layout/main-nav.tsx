@@ -18,7 +18,7 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+// import { useToast } from '@/hooks/use-toast'; // No longer needed here
 
 interface MainNavProps {
   items: SidebarNavItem[];
@@ -28,7 +28,7 @@ export function MainNav({ items }: MainNavProps) {
   const pathname = usePathname();
   const { user: authUser } = useAuth();
   const { state: sidebarState } = useSidebar(); 
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Removed toast from here
   const router = useRouter();
 
   const [openSubmenus, setOpenSubmenus] = React.useState<Record<string, boolean>>({});
@@ -48,20 +48,21 @@ export function MainNav({ items }: MainNavProps) {
       event.preventDefault();
       return;
     }
+    // If the sidebar item itself defines roles and the user doesn't have them,
+    // prevent navigation and redirect. AuthProvider will handle the toast.
     if (navItem.roles && authUser && !navItem.roles.includes(authUser.role)) {
       event.preventDefault();
-      toast({
-        title: 'Access Denied',
-        message: `You do not have permission to access ${navItem.label}.`,
-        variant: 'destructive',
-      });
-      router.push('/dashboard');
+      // AuthProvider will catch the unauthorized navigation attempt and show the toast.
+      // We redirect here to prevent a brief flash of the restricted page content if routing was allowed.
+      router.push('/dashboard'); 
     }
+    // If roles allow or no roles defined on item, proceed with navigation.
+    // AuthProvider will perform the final check based on roles.config.ts.
   };
 
 
   const renderNavItem = (item: SidebarNavItem, isSubItem = false): React.ReactNode => {
-    // Initial role check for visibility, actual click prevention is handled by handleLinkClick
+    // Initial role check for visibility
     if (!userHasRole(item.roles)) {
       return null;
     }
@@ -129,6 +130,8 @@ export function MainNav({ items }: MainNavProps) {
                 {item.disabled && <Badge variant="outline" className="ml-auto">Soon</Badge>}
               </>
             ) : (
+              // For MenuButtons (which are <button> or Slot), content needs to be structured
+              // directly within the span as they are not `asChild` by default
               <span>
                 <Icon />
                 <span>{item.label}</span>

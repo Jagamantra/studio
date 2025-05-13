@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/auth-provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Loader2, AlertTriangle, GitBranch } from 'lucide-react';
+import { Loader2, AlertTriangle, GitBranch, Info } from 'lucide-react';
 import type { UserProfile } from '@/types';
 import { useTheme } from '@/contexts/theme-provider';
 import { projectConfig } from '@/config/project.config';
@@ -35,10 +35,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Set document title dynamically
-    document.title = `Dashboard | ${appName}`;
-  }, [appName]);
+    if (appName && isClient) {
+      document.title = `Dashboard | ${appName}`;
+    }
+  }, [appName, isClient]);
 
   useEffect(() => {
+    if (!isClient) return;
+
     const toastMessageKey = 'toast_message';
     const messageType = searchParams.get(toastMessageKey);
     
@@ -48,15 +52,21 @@ export default function DashboardPage() {
         message: 'You do not have permission for the requested page.',
         variant: 'destructive',
       });
+      // Clean up the URL by removing the toast_message query parameter
+      // This ensures the toast doesn't reappear on refresh if the user stays on the dashboard.
       const currentPath = window.location.pathname;
       const params = new URLSearchParams(searchParams.toString());
       if (params.has(toastMessageKey)) {
           params.delete(toastMessageKey);
           const newUrl = params.toString() ? `${currentPath}?${params.toString()}` : currentPath;
-          router.replace(newUrl, { shallow: true });
+          // Using replace to avoid adding to browser history.
+          // Using { shallow: true } is important if you don't want to re-run data fetching,
+          // but in this case, we are just cleaning the URL.
+          router.replace(newUrl, { shallow: true }); 
       }
     }
-  }, [searchParams, toast, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isClient]); // Removed toast and router from deps as they are stable
 
   if (!isClient || loading) {
     return (
@@ -115,7 +125,7 @@ export default function DashboardPage() {
     <AuthenticatedPageLayout>
       <TooltipProvider>
         <div className="space-y-4 md:space-y-6">
-          <PageTitleWithIcon title="Dashboard">
+           <PageTitleWithIcon title="Dashboard">
             <div className="flex items-center gap-2">
                 {versionDetails && (
                 <Tooltip>
@@ -141,6 +151,23 @@ export default function DashboardPage() {
               </p>
             </div>
           </PageTitleWithIcon>
+
+          {!isConfigured && ( 
+            <Card className="mb-4 md:mb-6 border-primary bg-primary/10 dark:bg-primary/20">
+                <CardHeader className="p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <Info className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> 
+                    <CardTitle className="text-base sm:text-lg text-primary">Application Status: Mock Mode</CardTitle> 
+                </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                <p className="text-xs sm:text-sm text-primary/90 dark:text-primary/80">
+                    This application is currently running with mock API services and dummy data. 
+                    All features are available for demonstration. The frontend is designed to be responsive and separate from backend concerns.
+                </p>
+                </CardContent>
+            </Card>
+          )}
           {renderDashboardContent()}
         </div>
       </TooltipProvider>
