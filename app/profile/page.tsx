@@ -10,6 +10,7 @@ import { AdvancedSettingsForm } from '@/components/profile/advanced-settings-for
 import { AuthenticatedPageLayout } from '@/components/layout/authenticated-page-layout';
 import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 import { useTheme } from '@/contexts/theme-provider'; 
+// import { projectConfig } from '@/config/project.config'; // No longer needed here
 
 export default function ProfilePage() {
   const { user, loading: authLoading, updateCurrentLocalUser } = useAuth(); 
@@ -19,7 +20,9 @@ export default function ProfilePage() {
 
   useEffect(() => {
     // Set document title dynamically
-    document.title = `My Profile | ${appName}`;
+    if (appName) {
+      document.title = `My Profile | ${appName}`;
+    }
   }, [appName]);
 
   useEffect(() => {
@@ -71,4 +74,3 @@ export default function ProfilePage() {
     </AuthenticatedPageLayout>
   );
 }
-
