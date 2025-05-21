@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription as ShadcnCardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, RotateCcw, UploadCloud, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Save, RotateCcw, UploadCloud, Trash2, Image as ImageIcon, CaseSensitive, ZoomIn } from 'lucide-react';
 import type { ProjectConfigFormValues } from '@/app/config-advisor/page';
-import type { AccentColor, BorderRadiusOption, AppVersion } from '@/types';
+import type { AccentColor, BorderRadiusOption, AppVersion, FontSizeOption, ScaleOption } from '@/types';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/theme-provider';
 import { projectConfig } from '@/config/project.config';
@@ -25,6 +25,8 @@ interface ProjectConfigFormCardProps {
   availableAccentColors: AccentColor[];
   availableBorderRadii: BorderRadiusOption[];
   appProjectConfigAvailableAppVersions: AppVersion[];
+  appProjectConfigAvailableFontSizes: FontSizeOption[];
+  appProjectConfigAvailableScales: ScaleOption[];
 }
 
 export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
@@ -37,6 +39,8 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
   availableAccentColors,
   availableBorderRadii,
   appProjectConfigAvailableAppVersions,
+  appProjectConfigAvailableFontSizes,
+  appProjectConfigAvailableScales,
 }: ProjectConfigFormCardProps) {
   const { appLogoUrl: currentGlobalLogoUrl, appIconPaths } = useTheme();
   const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
@@ -44,13 +48,13 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
-    setLogoPreviewUrl(currentGlobalLogoUrl); // Sync with global state
+    setLogoPreviewUrl(currentGlobalLogoUrl); 
   }, [currentGlobalLogoUrl]);
 
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) { 
         projectConfigForm.setError('appLogoUrl' as any, { type: 'manual', message: 'File size should not exceed 5MB.' });
         return;
       }
@@ -72,27 +76,27 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
     setSelectedLogoFile(null);
     setLogoPreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // Clear the file input
+      fileInputRef.current.value = ""; 
     }
-    projectConfigForm.setValue('appLogoUrl' as any, null, { shouldDirty: true }); // Mark form as dirty
+    projectConfigForm.setValue('appLogoUrl' as any, null, { shouldDirty: true }); 
   };
 
   const onSave = async () => {
     if (selectedLogoFile && logoPreviewUrl) {
       await handleSaveProjectConfig(logoPreviewUrl);
-    } else if (logoPreviewUrl === null && currentGlobalLogoUrl !== null) { // Logo was removed
+    } else if (logoPreviewUrl === null && currentGlobalLogoUrl !== null) { 
       await handleSaveProjectConfig(null);
     }
     else {
-      await handleSaveProjectConfig(); // No change to logo, or logo was already null
+      await handleSaveProjectConfig(); 
     }
-    setSelectedLogoFile(null); // Reset after save
+    setSelectedLogoFile(null); 
   };
   
   const onReset = async () => {
     await handleResetProjectConfig();
     setSelectedLogoFile(null);
-    setLogoPreviewUrl(projectConfig.appLogoUrl || null); // Reset preview to original config default
+    setLogoPreviewUrl(projectConfig.appLogoUrl || null); 
      if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -229,6 +233,46 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                     <SelectContent>
                       {appProjectConfigAvailableAppVersions.map(version => (
                         <SelectItem key={version.id} value={version.id}>{version.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={projectConfigForm.control}
+              name="defaultFontSizeName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1"><CaseSensitive className="h-4 w-4 text-muted-foreground" />Default Font Size</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select font size" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {appProjectConfigAvailableFontSizes.map(size => (
+                        <SelectItem key={size.name} value={size.name}>{size.name} ({size.value})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={projectConfigForm.control}
+              name="defaultScaleName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1"><ZoomIn className="h-4 w-4 text-muted-foreground" />Default App Scale</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={anyLoading}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select app scale" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {appProjectConfigAvailableScales.map(scale => (
+                        <SelectItem key={scale.name} value={scale.name}>{scale.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

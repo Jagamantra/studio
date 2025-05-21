@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lightbulb, Info, Ban, FileText } from 'lucide-react';
+import { Loader2, Lightbulb, Info, Ban } from 'lucide-react';
 import type { AnalyzeConfigInput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
@@ -28,6 +28,8 @@ const projectConfigFormSchema = z.object({
   defaultAccentColorName: z.string({required_error: "Accent color is required."}),
   defaultBorderRadiusName: z.string({required_error: "Border radius is required."}),
   defaultAppVersionId: z.string({required_error: "App version is required."}),
+  defaultFontSizeName: z.string({required_error: "Font size is required."}),
+  defaultScaleName: z.string({required_error: "App scale is required."}),
 });
 
 export type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;
@@ -49,14 +51,20 @@ export default function ConfigAdvisorPage() {
     accentColor: currentAccentColor,
     borderRadius: currentBorderRadius,
     appVersion: currentAppVersion,
+    fontSize: currentFontSize,
+    appScale: currentAppScale,
     setAppName,
     setAppLogoUrl,
-    setAppIconPaths, // Assuming you might want to clear SVG paths if a logo is set
+    setAppIconPaths,
     setAccentColor,
     setBorderRadius,
     setAppVersion,
+    setFontSize,
+    setAppScale,
     availableAccentColors,
     availableBorderRadii,
+    availableFontSizes,
+    availableScales,
   } = useTheme();
 
   const { suggestions, isLoadingAi, error: aiError, performAnalysis, resetAnalysis } = useAiConfigAnalysis();
@@ -74,6 +82,8 @@ export default function ConfigAdvisorPage() {
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName,
       defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName,
       defaultAppVersionId: currentAppVersion,
+      defaultFontSizeName: availableFontSizes.find(f => f.value === currentFontSize)?.name || appProjectConfigFromModule.defaultFontSizeName,
+      defaultScaleName: availableScales.find(s => s.value === currentAppScale)?.name || appProjectConfigFromModule.defaultScaleName,
     },
   });
 
@@ -120,6 +130,8 @@ export default function ConfigAdvisorPage() {
               defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName,
               defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName,
               defaultAppVersionId: currentAppVersion,
+              defaultFontSizeName: availableFontSizes.find(f => f.value === currentFontSize)?.name || appProjectConfigFromModule.defaultFontSizeName,
+              defaultScaleName: availableScales.find(s => s.value === currentAppScale)?.name || appProjectConfigFromModule.defaultScaleName,
             });
             setShowPlaceholders(
               projectFormIsDefault &&
@@ -133,12 +145,14 @@ export default function ConfigAdvisorPage() {
             defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName,
             defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName,
             defaultAppVersionId: currentAppVersion,
+            defaultFontSizeName: availableFontSizes.find(f => f.value === currentFontSize)?.name || appProjectConfigFromModule.defaultFontSizeName,
+            defaultScaleName: availableScales.find(s => s.value === currentAppScale)?.name || appProjectConfigFromModule.defaultScaleName,
           });
           setShowPlaceholders(true);
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appProjectConfigFromModule.enableApplicationConfig, isAuthorized, currentAppNameFromTheme, currentLogoUrlFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion]);
+  }, [appProjectConfigFromModule.enableApplicationConfig, isAuthorized]);
   
   useEffect(() => {
     if (!appProjectConfigFromModule.enableApplicationConfig || !isAuthorized) return;
@@ -148,9 +162,11 @@ export default function ConfigAdvisorPage() {
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName,
       defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName,
       defaultAppVersionId: currentAppVersion,
+      defaultFontSizeName: availableFontSizes.find(f => f.value === currentFontSize)?.name || appProjectConfigFromModule.defaultFontSizeName,
+      defaultScaleName: availableScales.find(s => s.value === currentAppScale)?.name || appProjectConfigFromModule.defaultScaleName,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAppNameFromTheme, currentLogoUrlFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfigFromModule.enableApplicationConfig, isAuthorized]);
+  }, [currentAppNameFromTheme, currentLogoUrlFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, currentFontSize, currentAppScale, appProjectConfigFromModule.enableApplicationConfig, isAuthorized]);
 
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
@@ -168,24 +184,29 @@ export default function ConfigAdvisorPage() {
              watchedProjectConfig.appLogoUrl === currentLogoUrlFromTheme &&
              watchedProjectConfig.defaultAccentColorName === (availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName) &&
              watchedProjectConfig.defaultBorderRadiusName === (availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName) &&
-             watchedProjectConfig.defaultAppVersionId === currentAppVersion;
+             watchedProjectConfig.defaultAppVersionId === currentAppVersion &&
+             watchedProjectConfig.defaultFontSizeName === (availableFontSizes.find(f => f.value === currentFontSize)?.name || appProjectConfigFromModule.defaultFontSizeName) &&
+             watchedProjectConfig.defaultScaleName === (availableScales.find(s => s.value === currentAppScale)?.name || appProjectConfigFromModule.defaultScaleName);
+
 
         if (!isProjectFormUnchangedFromTheme || sidebarConfigContent || rolesConfigContent) {
             setShowPlaceholders(false);
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppNameFromTheme, currentLogoUrlFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfigFromModule.enableApplicationConfig, isAuthorized]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, appProjectConfigFromModule.enableApplicationConfig, isAuthorized]);
 
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
     await new Promise(resolve => setTimeout(resolve, 300));
     projectConfigForm.reset({
       appName: "Example App",
-      appLogoUrl: null, // Example doesn't include a logo URL
+      appLogoUrl: null, 
       defaultAccentColorName: appProjectConfigFromModule.availableAccentColors[1]?.name || appProjectConfigFromModule.defaultAccentColorName,
       defaultBorderRadiusName: appProjectConfigFromModule.availableBorderRadii[1]?.name || appProjectConfigFromModule.defaultBorderRadiusName,
       defaultAppVersionId: appProjectConfigFromModule.availableAppVersions[1]?.id || appProjectConfigFromModule.defaultAppVersionId,
+      defaultFontSizeName: appProjectConfigFromModule.availableFontSizes[0]?.name || appProjectConfigFromModule.defaultFontSizeName,
+      defaultScaleName: appProjectConfigFromModule.availableScales[0]?.name || appProjectConfigFromModule.defaultScaleName,
     });
     setSidebarConfigContent(placeholderSidebarConfigData);
     setRolesConfigContent(placeholderRolesConfigData);
@@ -208,12 +229,12 @@ export default function ConfigAdvisorPage() {
 
       setAppName(projectConfigValues.appName);
       
-      if (logoDataUrl !== undefined) { // Check if logoDataUrl was passed (meaning it changed or was removed)
+      if (logoDataUrl !== undefined) { 
         setAppLogoUrl(logoDataUrl);
         if (logoDataUrl) {
-          setAppIconPaths(undefined); // Clear SVG paths if an image logo is set
+          setAppIconPaths(undefined); 
         } else if (!currentIconPathsFromTheme && appProjectConfigFromModule.appIconPaths){
-           setAppIconPaths(appProjectConfigFromModule.appIconPaths); // Restore default SVG paths if logo removed and no current paths
+           setAppIconPaths(appProjectConfigFromModule.appIconPaths);
         }
       }
 
@@ -224,7 +245,12 @@ export default function ConfigAdvisorPage() {
       if (selectedRadius) setBorderRadius(selectedRadius.value);
       setAppVersion(projectConfigValues.defaultAppVersionId);
 
-      // Update form default values to reflect saved state, keep form clean
+      const selectedFontSize = availableFontSizes.find(f => f.name === projectConfigValues.defaultFontSizeName);
+      if (selectedFontSize) setFontSize(selectedFontSize.value);
+      const selectedScale = availableScales.find(s => s.name === projectConfigValues.defaultScaleName);
+      if (selectedScale) setAppScale(selectedScale.value);
+
+
       projectConfigForm.reset({ ...projectConfigValues, appLogoUrl: logoDataUrl !== undefined ? logoDataUrl : currentLogoUrlFromTheme }, { keepValues: false, keepDirty: false });
 
 
@@ -257,6 +283,11 @@ export default function ConfigAdvisorPage() {
     const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value ||
                                       (appProjectConfigFromModule.availableBorderRadii.find(br => br.name === appProjectConfigFromModule.defaultBorderRadiusName)?.value || appProjectConfigFromModule.availableBorderRadii[0]?.value);
     const originalAppVersionId = appProjectConfigFromModule.defaultAppVersionId;
+    const originalFontSizeName = appProjectConfigFromModule.defaultFontSizeName;
+    const originalFontSizeValue = availableFontSizes.find(f => f.name === originalFontSizeName)?.value || appProjectConfigFromModule.availableFontSizes[1]?.value;
+    const originalScaleName = appProjectConfigFromModule.defaultScaleName;
+    const originalScaleValue = availableScales.find(s => s.name === originalScaleName)?.value || appProjectConfigFromModule.availableScales[1]?.value;
+
 
     setAppName(originalAppName);
     setAppLogoUrl(originalLogoUrl || null);
@@ -264,6 +295,8 @@ export default function ConfigAdvisorPage() {
     if(originalAccentHsl) setAccentColor(originalAccentHsl);
     if(originalBorderRadiusValue) setBorderRadius(originalBorderRadiusValue);
     setAppVersion(originalAppVersionId);
+    if(originalFontSizeValue) setFontSize(originalFontSizeValue);
+    if(originalScaleValue) setAppScale(originalScaleValue);
 
     projectConfigForm.reset({
       appName: originalAppName,
@@ -271,6 +304,8 @@ export default function ConfigAdvisorPage() {
       defaultAccentColorName: originalAccentColorName,
       defaultBorderRadiusName: originalBorderRadiusName,
       defaultAppVersionId: originalAppVersionId,
+      defaultFontSizeName: originalFontSizeName,
+      defaultScaleName: originalScaleName,
     });
     setIsResettingProjectConfig(false);
     toast({
@@ -294,6 +329,10 @@ export const projectConfig = {
   defaultBorderRadiusName: '${projectConfigData.defaultBorderRadiusName}',
   availableAppVersions: ${JSON.stringify(appProjectConfigFromModule.availableAppVersions, null, 2)},
   defaultAppVersionId: '${projectConfigData.defaultAppVersionId}',
+  availableFontSizes: ${JSON.stringify(appProjectConfigFromModule.availableFontSizes, null, 2)},
+  defaultFontSizeName: '${projectConfigData.defaultFontSizeName}',
+  availableScales: ${JSON.stringify(appProjectConfigFromModule.availableScales, null, 2)},
+  defaultScaleName: '${projectConfigData.defaultScaleName}',
   enableApplicationConfig: ${appProjectConfigFromModule.enableApplicationConfig ?? true},
   mockApiMode: ${appProjectConfigFromModule.mockApiMode ?? true}
 };`.trim();
@@ -370,6 +409,8 @@ export const projectConfig = {
           availableAccentColors={availableAccentColors}
           availableBorderRadii={availableBorderRadii}
           appProjectConfigAvailableAppVersions={appProjectConfigFromModule.availableAppVersions}
+          appProjectConfigAvailableFontSizes={appProjectConfigFromModule.availableFontSizes}
+          appProjectConfigAvailableScales={appProjectConfigFromModule.availableScales}
         />
 
         <RawConfigInputCard
