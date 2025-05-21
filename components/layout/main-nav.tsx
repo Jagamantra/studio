@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-provider';
+import { useAuth } from '@/contexts/auth-context';
 import type { SidebarNavItem, Role } from '@/types';
 import { cn } from '@/lib/utils';
 import {
@@ -132,7 +133,7 @@ export function MainNav({ items }: MainNavProps) {
             ) : (
               // For MenuButtons (which are <button> or Slot), content needs to be structured
               // directly within the span as they are not `asChild` by default
-              <span>
+              <span className="flex items-center gap-2">
                 <Icon />
                 <span>{item.label}</span>
                 {item.disabled && <Badge variant="outline" className="ml-auto">Soon</Badge>}
