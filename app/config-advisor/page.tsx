@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Loader2, Lightbulb, Info, Ban } from 'lucide-react';
 import type { AnalyzeConfigInput } from '@/ai/flows/config-advisor';
-import { useAuth } from '@/contexts/auth-provider';
+import { useAuth } from '@/contexts/auth-context'; // Corrected import path
 import Link from 'next/link';
 import { projectConfig as appProjectConfigFromModule } from '@/config/project.config';
 import { useToast } from '@/hooks/use-toast';
