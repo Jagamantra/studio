@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useAuth } from '@/contexts/auth-provider';
+import { useAuth } from '@/contexts/auth-context';
 import { DataTable } from '@/components/ui/data-table';
 import type { UserProfile } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -60,11 +60,16 @@ export default function UsersPage() {
         fetchAndSetUsers().then(() => setHasFetchedInitialData(true));
       }
     } else if (user) { 
+      // Non-admin user, AuthProvider will handle redirection via useEffect
+      // if user is not admin, they should be redirected by the AuthProvider's navigation logic
+      // No explicit router.push here to avoid multiple redirects/toast messages.
       setIsAuthorized(false);
     } else { 
+      // No user, AuthProvider will handle redirection
       setIsAuthorized(false);
     }
-  }, [user, authLoading, fetchAndSetUsers, hasFetchedInitialData, tableLoading, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, fetchAndSetUsers, hasFetchedInitialData, tableLoading]);
 
 
   const openAddUserModal = React.useCallback(() => {
@@ -137,14 +142,9 @@ export default function UsersPage() {
      );
   }
   
-  if (!authLoading && user && user.role !== 'admin') {
-    return (
-      <AuthenticatedPageLayout>
-        <div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-      </AuthenticatedPageLayout>
-    );
-  }
-
+  // This check should be handled by AuthProvider's redirect logic.
+  // If AuthProvider has done its job, a non-admin user should not even reach this page content.
+  // The Loader2 above handles the brief period while AuthProvider is deciding.
 
   return (
     <AuthenticatedPageLayout>
