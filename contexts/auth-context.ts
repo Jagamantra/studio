@@ -8,12 +8,13 @@ export interface AuthContextType {
   loading: boolean;
   error: Error | null;
   isMfaVerified: boolean;
-  authEmailForMfa: string | null; // Email used for the current MFA attempt
+  authEmailForMfa: string | null;
+  sessionToken: string | null; // To store the JWT in memory
   login: (email: string, password?: string) => Promise<MfaSentResponse | null>;
   register: (details: { email: string, password?: string, displayName?: string }) => Promise<MfaSentResponse | null>;
-  verifyMfa: (mfaCode: string) => Promise<LoginSuccessResponse | null>; // Email will be taken from authEmailForMfa
+  verifyMfa: (mfaCode: string) => Promise<LoginSuccessResponse | null>;
   logout: () => Promise<void>;
-  fetchCurrentUserInfo: (uid?: string, email?: string, role?: UserProfile['role']) => Promise<UserProfile | null>; // uid optional if relying on token/cookie
+  fetchCurrentUserInfo: (uid: string, email?: string, role?: UserProfile['role']) => Promise<UserProfile | null>;
   setUser: Dispatch<SetStateAction<UserProfile | null>>;
   setIsMfaVerified: (verified: boolean) => void;
   updateUserPreferencesInContext: (preferences: Partial<ThemeSettings>) => void;

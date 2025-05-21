@@ -46,15 +46,18 @@ type MfaFormValues = z.infer<typeof mfaFormSchema>;
 export default function MfaPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { verifyMfa, logout, loading: authLoading, error: authError, authEmailForMfa } = useAuth();
+  const { verifyMfa, logout, loading: authLoading, error: authContextError, authEmailForMfa } = useAuth();
   const { appName } = useTheme();
   const [mockOtp, setMockOtp] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Form-specific loading
   const [isClient, setIsClient] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
 
   useEffect(() => {
     setIsClient(true);
     if (projectConfig.mockApiMode) {
+      // For mock mode, generate and display an OTP
       const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setMockOtp(generatedOtp);
     }
@@ -63,6 +66,13 @@ export default function MfaPage() {
   useEffect(() => {
     document.title = `Verify Your Identity | ${appName}`;
   }, [appName]);
+
+  useEffect(() => {
+    // Display global errors from AuthContext if they occur during MFA process
+    if (authContextError) {
+      setFormError(authContextError.message);
+    }
+  }, [authContextError]);
 
 
   const form = useForm<MfaFormValues>({
@@ -74,30 +84,38 @@ export default function MfaPage() {
 
   const onSubmit = async (data: MfaFormValues) => {
     setIsLoading(true);
-    if (!authEmailForMfa && !projectConfig.mockApiMode) { // In real mode, authEmailForMfa must be set
-        toast({title: "Error", message: "Session context lost. Please log in again.", variant: "destructive"});
+    setFormError(null);
+
+    if (!authEmailForMfa && !projectConfig.mockApiMode) {
+        setFormError("Session context lost. Please log in again.");
         setIsLoading(false);
         await logout();
+        return;
+    }
+    
+    if (projectConfig.mockApiMode && data.otp !== mockOtp) {
+        setFormError('Invalid OTP for mock mode.');
+        form.setError('otp', { type: 'manual', message: 'Invalid OTP for mock mode.' });
+        setIsLoading(false);
         return;
     }
 
     try {
         // verifyMfa now takes only the OTP. Email is sourced from context.
         const response = await verifyMfa(data.otp); 
-        if (response && response.accessToken) { // Successful MFA in real mode returns accessToken and user details
-            toast({
-                title: 'Verification Successful',
-                message: 'You have been successfully verified. Redirecting...',
-                variant: 'success',
-            });
-            // AuthProvider's verifyMfa should handle redirection to dashboard
+        if (response && response.accessToken) { 
+            // Toast for success is now handled within verifyMfa in AuthProvider
+            // AuthProvider handles redirection to dashboard
         } else {
-            const errMsg = authError?.message || (response as any)?.message || 'The OTP entered is incorrect. Please try again.';
-            toast({ title: 'Verification Failed', message: errMsg, variant: 'destructive' });
+            // If response is null or no accessToken, it means verifyMfa itself failed
+            // or the AuthProvider's verifyMfa logic determined a failure.
+            // Use error from AuthContext if available, or provide a generic message.
+            const errMsg = authContextError?.message || (response as any)?.message || 'The OTP entered is incorrect or an error occurred.';
+            setFormError(errMsg);
             form.setError('otp', { type: 'manual', message: 'Invalid OTP.' });
         }
-    } catch (err: any) {
-        toast({ title: 'Verification Error', message: err.message || "An unexpected error occurred.", variant: 'destructive'});
+    } catch (err: any) { // Catch errors from verifyMfa itself
+        setFormError(err.message || "An unexpected error occurred during MFA verification.");
     } finally {
         setIsLoading(false);
     }
@@ -107,13 +125,30 @@ export default function MfaPage() {
     await logout(); 
   };
 
-  if (!isClient || authLoading && !authEmailForMfa && projectConfig.mockApiMode) { // Adjusted loading condition
+  // Show loading spinner if auth context is loading or if it's mock mode and no email for MFA yet (initial load flicker)
+  if (!isClient || (authLoading && (!authEmailForMfa && projectConfig.mockApiMode))) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+  
+  if (!authEmailForMfa && !projectConfig.mockApiMode && !authLoading) {
+     // Should be redirected by AuthProvider, but as a fallback:
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Session Expired</CardTitle>
+          <CardDescription>Your login session is incomplete or has expired. Please log in again.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={handleBackToLogin} className="w-full">Back to Login</Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
 
   return (
     <>
@@ -136,6 +171,13 @@ export default function MfaPage() {
           <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">
             A One-Time Password has been sent to {authEmailForMfa ? `your email (${authEmailForMfa})` : 'your registered MFA method'}.
           </AlertDescription>
+        </Alert>
+      )}
+      {formError && (
+        <Alert variant="destructive" className="mb-4 p-2 sm:p-3">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="text-xs font-semibold">Verification Error</AlertTitle>
+          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">{formError}</AlertDescription>
         </Alert>
       )}
       <Card className="w-full max-w-md">
@@ -163,7 +205,7 @@ export default function MfaPage() {
                         maxLength={6}
                         {...field}
                         className="h-9 sm:h-10 text-center text-sm sm:text-base tracking-[0.15em] sm:tracking-[0.2em]"
-                        disabled={isLoading}
+                        disabled={isLoading || authLoading}
                         autoComplete="one-time-code"
                         inputMode="numeric"
                       />
@@ -175,9 +217,9 @@ export default function MfaPage() {
               <Button
                 type="submit"
                 className="w-full h-9 sm:h-10 text-sm"
-                disabled={isLoading}
+                disabled={isLoading || authLoading}
               >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {(isLoading || authLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Verify Code
               </Button>
             </form>
@@ -188,7 +230,7 @@ export default function MfaPage() {
                 This is a mock MFA screen.
                 </p>
              )}
-            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm" onClick={handleBackToLogin} disabled={isLoading}>
+            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm" onClick={handleBackToLogin} disabled={isLoading || authLoading}>
               Back to Login
             </Button>
           </div>

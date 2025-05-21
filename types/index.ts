@@ -120,35 +120,17 @@ export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appIco
   availableInterfaceDensities: InterfaceDensityOption[];
 }
 
-// For API responses based on new documentation
+// API response types
 export type MfaSentResponse = {
   codeSent: boolean;
   message: string;
 };
 
 export type LoginSuccessResponse = {
-  accessToken: string; // JWT, likely handled by HttpOnly cookie
+  accessToken: string;
   email: string;
-  role: string; // Should be Role type
-  uid: string; // User ID from backend
+  role: Role; // Using Role type here
   expiresIn: number;
-  preferences?: ThemeSettings; // Optional initial preferences from backend
-};
-
-// Kept for backward compatibility if some parts still use the old AuthResponse structure for mock
-export type AuthResponse = {
-  token: string;
-  user: {
-    uid: string;
-    email: string | null;
-    role: Role;
-    preferences?: ThemeSettings;
-  };
-};
-
-// Kept for backward compatibility for mock MFA if needed
-export type MfaVerificationResponse = {
-  success: boolean;
-  user?: UserProfile; 
-  message?: string; 
+  uid?: string; // UID might come from decoded token, or backend could send it.
+  preferences?: ThemeSettings;
 };
