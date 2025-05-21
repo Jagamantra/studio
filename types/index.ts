@@ -3,13 +3,13 @@ import type { LucideIcon } from 'lucide-react';
 
 export type AccentColor = {
   name: string;
-  hslValue: string; // e.g., "180 100% 25%" (without hsl() wrapper) for CSS
-  hexValue: string; // e.g., "#008080" for color input
+  hslValue: string; 
+  hexValue: string; 
 };
 
 export type BorderRadiusOption = {
   name: string;
-  value: string; // e.g., "0.5rem"
+  value: string; 
 };
 
 export type AppVersion = {
@@ -19,12 +19,12 @@ export type AppVersion = {
 
 export type FontSizeOption = {
   name: string;
-  value: string; // e.g., "14px" or "0.9rem"
+  value: string; 
 };
 
 export type ScaleOption = {
   name: string;
-  value: string; // e.g., "0.9" or "1.1"
+  value: string; 
 };
 
 export type InterfaceDensityOption = {
@@ -34,8 +34,8 @@ export type InterfaceDensityOption = {
 
 export type ProjectConfig = {
   appName: string;
-  appIconPaths?: string[]; // SVG path data for the application icon
-  appLogoUrl?: string | null; // URL or data URI for an image logo
+  appIconPaths?: string[]; 
+  appLogoUrl?: string | null; 
   availableAccentColors: AccentColor[];
   defaultAccentColorName: string;
   availableBorderRadii: BorderRadiusOption[];
@@ -49,7 +49,7 @@ export type ProjectConfig = {
   defaultScaleName: string;
   availableInterfaceDensities: InterfaceDensityOption[];
   defaultInterfaceDensity: 'compact' | 'comfortable' | 'spacious';
-  mockApiMode: boolean;
+  mockApiMode: boolean; // If true, use mock API and local storage
 };
 
 export type SidebarNavItem = {
@@ -57,7 +57,7 @@ export type SidebarNavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
-  roles?: Role[]; // Roles that can see this item
+  roles?: Role[]; 
   subItems?: SidebarNavItem[];
   disabled?: boolean;
 };
@@ -74,6 +74,21 @@ export type RolesConfig = {
   defaultRole: Role;
 };
 
+// Represents the user's theme and application preferences
+export type ThemeSettings = {
+  theme?: 'light' | 'dark' | 'system';
+  accentColor?: string; // HSL or HEX string
+  borderRadius?: string; // CSS value
+  appVersion?: string; // ID of the app version
+  appName?: string;
+  appIconPaths?: string[];
+  appLogoUrl?: string | null;
+  fontSize?: string; // CSS value e.g. "16px"
+  appScale?: string; // CSS value e.g. "1.0"
+  interfaceDensity?: 'compact' | 'comfortable' | 'spacious';
+};
+
+
 export type UserProfile = {
   uid: string;
   email: string | null;
@@ -81,37 +96,15 @@ export type UserProfile = {
   photoURL: string | null;
   phoneNumber: string | null;
   role: Role;
-  password?: string; // Only for mock/creation, not stored long-term as plain text
-  // User-specific preferences that could override global theme settings
-  receiveNotifications?: boolean;
-  preferredThemeMode?: 'light' | 'dark' | 'system';
-  preferredAccentColor?: string; // HSL or HEX
-  preferredBorderRadius?: string; // CSS value
-  preferredAppVersion?: string;
-  preferredFontSize?: string; // CSS value
-  preferredScale?: string; // CSS value (e.g. "1.0")
-  preferredAppName?: string;
-  preferredAppIconPaths?: string[];
-  preferredAppLogoUrl?: string | null;
-  preferredInterfaceDensity?: 'compact' | 'comfortable' | 'spacious';
+  password?: string; // Only for mock/creation, not expected from real API after auth
+  receiveNotifications?: boolean; // Example of a non-theme preference
+  preferences?: ThemeSettings; // User's personalized theme/app settings
 };
 
-
-// For theme context
-export type ThemeSettings = {
-  theme: 'light' | 'dark' | 'system';
-  accentColor: string;
-  borderRadius: string;
-  appVersion: string;
-  appName: string;
-  appIconPaths?: string[];
-  appLogoUrl?: string | null;
-  fontSize: string; // e.g. "16px"
-  appScale: string; // e.g. "1.0"
-  interfaceDensity: 'compact' | 'comfortable' | 'spacious';
-};
-
-export interface ThemeProviderState extends ThemeSettings {
+// For ThemeProvider context state
+export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appIconPaths' | 'appLogoUrl'>> {
+  appIconPaths?: string[]; // appIconPaths can be undefined
+  appLogoUrl?: string | null; // appLogoUrl can be null
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setAccentColor: (accentValue: string) => void;
   setBorderRadius: (radiusValue: string) => void;
@@ -128,3 +121,21 @@ export interface ThemeProviderState extends ThemeSettings {
   availableScales: ScaleOption[];
   availableInterfaceDensities: InterfaceDensityOption[];
 }
+
+
+// For API responses
+export type AuthResponse = {
+  token: string; // JWT
+  user: { // Basic user info returned on login/register
+    uid: string;
+    email: string | null;
+    role: Role;
+    preferences?: ThemeSettings; // Initial preferences
+  };
+};
+
+export type MfaVerificationResponse = {
+  success: boolean;
+  user?: UserProfile; // Full or updated user profile on successful MFA
+  message?: string; // Error message if not successful
+};

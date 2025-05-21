@@ -1,181 +1,167 @@
+
 'use client';
 
-import type { ReactNode, Dispatch, SetStateAction } from 'react';
-import React, { createContext, useContext, useEffect, useMemo, useCallback, useState } from 'react';
-import type { UserProfile } from '@/types';
-import { rolesConfig } from '@/config/roles.config';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { UserProfile, AuthResponse, MfaVerificationResponse } from '@/types';
+import { AuthContext, type AuthContextType } from './auth-context';
 import { useRouter, usePathname } from 'next/navigation';
-import {
-    DUMMY_USERS_STORAGE_KEY,
-    CURRENT_DUMMY_USER_STORAGE_KEY,
-    MFA_VERIFIED_STORAGE_KEY,
-    initialDummyUsersForAuth,
-} from '@/data/dummy-data';
-import * as api from '@/services/api';
+import { rolesConfig } from '@/config/roles.config';
+import * as Api from '@/services/api'; // Using the main api.ts dispatcher
+import Cookies from 'js-cookie'; // For client-side cookie management (primarily for clearing)
 
-interface MockFirebaseUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-  phoneNumber: string | null;
-}
-
-interface AuthContextType {
-  user: UserProfile | null;
-  firebaseUser: MockFirebaseUser | null; 
-  loading: boolean;
-  error: Error | null;
-  isConfigured: boolean; 
-  isMfaVerified: boolean;
-  logout: () => Promise<void>;
-  setUser: Dispatch<SetStateAction<UserProfile | null>>;
-  setIsMfaVerified: (verified: boolean) => void;
-  loginWithDummyCredentials: (email: string, password?: string) => Promise<UserProfile | null>;
-  registerDummyUser: (details: Omit<UserProfile, 'uid' | 'photoURL'> & { password?: string }) => Promise<UserProfile | null>;
-  updateCurrentLocalUser: (updatedProfile: Partial<UserProfile>) => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const JWT_COOKIE_NAME = 'genesis_token'; // Example cookie name
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [mockFirebaseUser, setMockFirebaseUser] = useState<MockFirebaseUser | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isMfaVerified, setIsMfaVerifiedState] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  const configured = false; // Application always uses mock API
-
-  const getDummyUsersFromStorage = useCallback((): UserProfile[] => {
-    if (typeof window === 'undefined') return [];
-    const usersJson = localStorage.getItem(DUMMY_USERS_STORAGE_KEY);
-    return usersJson ? JSON.parse(usersJson) : [];
-  }, []);
-
-  const saveDummyUsersToStorage = useCallback((users: UserProfile[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(users));
-      api.resetMockUsers();
-      api.loadMockUsersFromStorage(DUMMY_USERS_STORAGE_KEY);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (!localStorage.getItem(DUMMY_USERS_STORAGE_KEY)) {
-        localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(initialDummyUsersForAuth));
-      }
-      api.loadMockUsersFromStorage(DUMMY_USERS_STORAGE_KEY);
-    }
-  }, [saveDummyUsersToStorage]);
-
   const setIsMfaVerified = useCallback((verified: boolean) => {
     setIsMfaVerifiedState(verified);
-    if (typeof window !== 'undefined') {
-      if (verified) {
-        localStorage.setItem(MFA_VERIFIED_STORAGE_KEY, 'true');
-      } else {
-        localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY);
-      }
-    }
+    // No local storage for MFA state in real API mode; backend drives this.
   }, []);
 
-  useEffect(() => {
+  const fetchCurrentUserInfo = useCallback(async (tokenPresent: boolean = false): Promise<UserProfile | null> => {
+    // This function tries to fetch user info if a token might exist
+    // Or if we have a UID from a previous state (e.g., post-MFA)
+    // It's crucial for rehydrating state or getting full profile after basic login response
     setLoading(true);
-    let mfaFlag = false;
-    if (typeof window !== 'undefined') { 
-        const storedUserJson = localStorage.getItem(CURRENT_DUMMY_USER_STORAGE_KEY);
-        if (storedUserJson) {
-            try {
-                const loggedInDummyUser: UserProfile = JSON.parse(storedUserJson);
-                setUserProfile(loggedInDummyUser);
-                setMockFirebaseUser({
-                    uid: loggedInDummyUser.uid,
-                    email: loggedInDummyUser.email,
-                    displayName: loggedInDummyUser.displayName,
-                    photoURL: loggedInDummyUser.photoURL,
-                    phoneNumber: loggedInDummyUser.phoneNumber,
-                });
-                const storedMfaVerified = localStorage.getItem(MFA_VERIFIED_STORAGE_KEY);
-                if (storedMfaVerified === 'true') {
-                    mfaFlag = true;
-                }
-            } catch (e) {
-                console.error("Error parsing stored dummy user:", e);
-                localStorage.removeItem(CURRENT_DUMMY_USER_STORAGE_KEY);
-                localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY);
-                setUserProfile(null);
-                setMockFirebaseUser(null);
-            }
-        } else {
-            setUserProfile(null);
-            setMockFirebaseUser(null);
-            localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY);
-        }
+    setError(null);
+    try {
+      // If there's no user.uid yet but a token might be in cookies (e.g. page refresh)
+      // The backend's /users/me (or similar) endpoint would use the cookie to identify the user.
+      // For now, we assume login/register gives us a basic user object with UID.
+      // This function will be more robust if backend has a dedicated /me endpoint.
+      
+      // For the current flow, we primarily use this after login/register/MFA provides a UID.
+      // If we have a user object (even basic) with UID, fetch their full profile.
+      let profileToFetchUid: string | undefined = user?.uid;
+
+      if (!profileToFetchUid) {
+         // Attempt to get UID from token if no user object is set yet
+         const token = Cookies.get(JWT_COOKIE_NAME);
+         if (token) {
+            // In a real app, you might have a /auth/me endpoint that returns user based on token
+            // For now, we can't get UID from an HttpOnly cookie on client.
+            // This part highlights a dependency on backend design or a different token strategy (e.g. non-HttpOnly for UID).
+            // Assuming login/register flow will set a basic user object with UID.
+            console.warn("Trying to fetch user info without UID, relying on cookie for backend to identify user.");
+            // If you had a /auth/me endpoint:
+            // const { data: meUser } = await Api.apiClient.get('/auth/me');
+            // setUser(meUser); setLoading(false); return meUser;
+            // Since we don't, and UID is needed for fetchUserProfile:
+            setLoading(false);
+            return null; // Or handle differently if backend /auth/me exists
+         } else {
+            setLoading(false);
+            return null;
+         }
+      }
+      
+      const fetchedProfile = await Api.fetchUserProfile(profileToFetchUid);
+      setUser(fetchedProfile);
+      return fetchedProfile;
+    } catch (err: any) {
+      console.error("Error fetching current user info (real):", err);
+      setError(err);
+      setUser(null); // Clear user on error
+      Cookies.remove(JWT_COOKIE_NAME); // Clear token cookie on error
+      return null;
+    } finally {
+      setLoading(false);
     }
-    setIsMfaVerifiedState(mfaFlag);
-    setLoading(false);
-  }, []);
+  }, [user?.uid]);
 
-  const contextDisplayUser = useMemo(() => userProfile, [userProfile]);
 
+  // Initial auth check
   useEffect(() => {
+    const token = Cookies.get(JWT_COOKIE_NAME);
+    if (token) {
+      // Token exists, try to fetch user profile.
+      // `fetchCurrentUserInfo` will set user and loading states.
+      // The navigation useEffect will then handle redirection based on fetched user.
+      // We need a mechanism to get UID if only token is present. For now, this path is tricky.
+      // This highlights the need for a /auth/me endpoint or initial user data post-login.
+      // For simplicity, if token exists but no user, we assume login is needed or state is stale.
+      // A robust app might try a /auth/me here.
+      // For now, if user is not set, but token is, this means we might be in an inconsistent state
+      // or relying on backend to redirect if token is invalid at protected route.
+      // Let's assume if user is null but token exists, user needs to go through login to re-establish session state with UID.
+      // This is a simplification. A real app might try a /me endpoint.
+      if(!user){
+        console.log("Token found, but no user in state. User might need to re-login or /auth/me needs to be called.");
+        // Potentially call fetchCurrentUserInfo if it can work without UID (e.g. /auth/me)
+        // For now, let the navigation logic handle it. If user is null, it will redirect to login.
+         setLoading(false); // Stop loading as we can't fetch without UID here
+      } else {
+         fetchCurrentUserInfo(true);
+      }
+    } else {
+      setUser(null);
+      setIsMfaVerified(false);
+      setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Runs once on mount
+
+
+  // Navigation logic
+ useEffect(() => {
     if (loading) return;
 
     const isAuthRoute = pathname.startsWith('/auth/');
     const isMfaPage = pathname === '/auth/mfa';
-    const isLoginPage = pathname === '/auth/login';
-    const isRegisterPage = pathname === '/auth/register';
-    const isPublicRoot = pathname === '/';
+    const token = Cookies.get(JWT_COOKIE_NAME);
 
-    if (contextDisplayUser) {
+    if (user && token) { // User object exists and token is present
       if (!isMfaVerified) {
         if (!isMfaPage) {
           router.replace('/auth/mfa');
         }
-      } else { // MFA is verified
-        if (isAuthRoute) { // User is authenticated with MFA and on an auth page
+      } else { // User logged in and MFA verified
+        if (isAuthRoute) {
           router.replace('/dashboard');
-        } else if (!isPublicRoot) { // User is on a non-auth, non-root page
-          const baseRoute = `/${pathname.split('/')[1]}`; // e.g. /users from /users/edit/1
-          // Check permissions for the current route
-          // Order of preference for checking: exact path, then base path
-          const requiredRolesForCurrentPage = rolesConfig.routePermissions[pathname as keyof typeof rolesConfig.routePermissions] ||
-                                              rolesConfig.routePermissions[baseRoute as keyof typeof rolesConfig.routePermissions];
-          
-          if (requiredRolesForCurrentPage && !requiredRolesForCurrentPage.includes(contextDisplayUser.role)) {
-            // User does not have permission for the current page
+        } else {
+          const baseRoute = `/${pathname.split('/')[1]}`;
+          const requiredRoles = rolesConfig.routePermissions[pathname as keyof typeof rolesConfig.routePermissions] ||
+                                rolesConfig.routePermissions[baseRoute as keyof typeof rolesConfig.routePermissions];
+          if (requiredRoles && !requiredRoles.includes(user.role)) {
             router.replace('/dashboard?toast_message=access_denied_role');
-            return; 
           }
         }
       }
-    } else { // No user logged in
-      if (!isAuthRoute && !isPublicRoot) { // Not an auth route and not the root page
+    } else { // No user object or no token
+      if (token && !user && !loading) {
+        // Token exists but user object not loaded yet (e.g. after refresh)
+        // Attempt to fetch user info. This should ideally be handled by an /auth/me endpoint on backend.
+        // For now, this situation might lead to brief redirect to login if fetchCurrentUserInfo isn't triggered correctly.
+        // This logic relies on fetchCurrentUserInfo being effective when only a token is present.
+        // If not, it falls through to redirecting to login.
+         // This path might be redundant if initial useEffect handles it, but kept for safety.
+         console.log("Token exists, user object not yet loaded. Consider /auth/me or ensure initial fetch covers this.")
+      } else if (!isAuthRoute && pathname !== '/') {
         router.replace('/auth/login');
-      } else if (isPublicRoot) { // On the root page
+      } else if (pathname === '/') {
         router.replace('/auth/login');
       }
     }
-  }, [contextDisplayUser, isMfaVerified, loading, pathname, router]);
+  }, [user, isMfaVerified, loading, pathname, router]);
 
 
-  const loginWithDummyCredentials = useCallback(async (email: string, password?: string): Promise<UserProfile | null> => {
+  const login = useCallback(async (email: string, password?: string): Promise<AuthResponse | null> => {
     setLoading(true);
     setError(null);
     try {
-      const user = await api.loginUser(email, password);
-      setUserProfile(user);
-      setMockFirebaseUser(user as MockFirebaseUser); 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(user));
-      }
-      setIsMfaVerified(false); 
+      const response = await Api.loginUser(email, password); // Backend sets HttpOnly cookie
+      // Assuming response.user contains basic info { uid, email, role, preferences? }
+      setUser({ ...response.user, preferences: response.user.preferences || {} } as UserProfile); 
+      setIsMfaVerified(false); // Always require MFA after login
       router.push('/auth/mfa');
-      return user;
+      return response;
     } catch (err: any) {
       setError(err);
       return null;
@@ -184,91 +170,97 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [router, setIsMfaVerified]);
 
-  const registerDummyUser = useCallback(async (details: Omit<UserProfile, 'uid' | 'photoURL'> & { password?: string }): Promise<UserProfile | null> => {
+  const register = useCallback(async (details: Omit<UserProfile, 'uid' | 'photoURL'> & { password?: string }): Promise<AuthResponse | null> => {
     setLoading(true);
     setError(null);
     try {
-      const newUser = await api.registerUser({ ...details, role: details.role || rolesConfig.defaultRole });
-      setUserProfile(newUser);
-      setMockFirebaseUser(newUser as MockFirebaseUser);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(newUser));
-      }
-
-      const currentUsers = getDummyUsersFromStorage();
-      currentUsers.push(newUser);
-      saveDummyUsersToStorage(currentUsers);
-
-      setIsMfaVerified(false); 
+      const response = await Api.registerUser(details); // Backend sets HttpOnly cookie
+      setUser({ ...response.user, preferences: response.user.preferences || {} } as UserProfile);
+      setIsMfaVerified(false); // Always require MFA after registration
       router.push('/auth/mfa');
-      return newUser;
+      return response;
     } catch (err: any) {
       setError(err);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [router, getDummyUsersFromStorage, saveDummyUsersToStorage, setIsMfaVerified]);
+  }, [router, setIsMfaVerified]);
+
+  const verifyMfa = useCallback(async (uid: string, otp: string): Promise<MfaVerificationResponse> => {
+    setLoading(true);
+    setError(null);
+    if (!user && !uid) { // uid might come from user state or passed if user state not yet full
+        setError(new Error("User ID not available for MFA verification."));
+        setLoading(false);
+        return { success: false, message: "User ID not available." };
+    }
+    const targetUid = user?.uid || uid;
+
+    try {
+      const response = await Api.verifyMfa(targetUid, otp);
+      if (response.success) {
+        // Fetch full user profile again to ensure all data is up-to-date including preferences
+        const fullUserProfile = await Api.fetchUserProfile(targetUid);
+        setUser(fullUserProfile);
+        setIsMfaVerified(true);
+        router.push('/dashboard');
+      } else {
+        setIsMfaVerified(false);
+        setError(new Error(response.message || 'MFA verification failed'));
+      }
+      return response;
+    } catch (err: any) {
+      setError(err);
+      setIsMfaVerified(false);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
+  }, [user, router, setIsMfaVerified]);
 
   const logout = useCallback(async () => {
     setLoading(true);
     setError(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(CURRENT_DUMMY_USER_STORAGE_KEY);
-      localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY);
+    try {
+      await Api.logoutUser(); // Call backend logout if exists
+    } catch (e) {
+      console.warn("Error during backend logout:", e); // Log but continue client-side logout
     }
-    setUserProfile(null);
-    setMockFirebaseUser(null); 
+    Cookies.remove(JWT_COOKIE_NAME); // Remove client-accessible cookie if any (though HttpOnly is preferred)
+    setUser(null);
     setIsMfaVerified(false);
     router.push('/auth/login');
     setLoading(false);
   }, [router, setIsMfaVerified]);
 
-  const updateCurrentLocalUser = useCallback((updatedProfileData: Partial<UserProfile>) => {
-    setUserProfile(prev => {
-      if (!prev) return null;
-      const newProfile = { ...prev, ...updatedProfileData };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(newProfile));
-        const allUsers = getDummyUsersFromStorage();
-        const userIndex = allUsers.findIndex(u => u.uid === newProfile.uid);
-        if (userIndex > -1) {
-          allUsers[userIndex] = { ...allUsers[userIndex], ...newProfile };
-          saveDummyUsersToStorage(allUsers);
-        }
-      }
-      return newProfile;
+  const updateUserPreferencesInContext = useCallback((preferences: Partial<UserProfile['preferences']>) => {
+    setUser(prevUser => {
+        if (!prevUser) return null;
+        const updatedUser = {
+            ...prevUser,
+            preferences: { ...(prevUser.preferences || {}), ...preferences },
+        };
+        // In real mode, this state update is temporary. Actual persistence is by ThemeProvider calling updateUserPreferences API.
+        return updatedUser;
     });
-     setMockFirebaseUser(prev => prev ? { ...prev, ...updatedProfileData } : null);
-  }, [getDummyUsersFromStorage, saveDummyUsersToStorage]);
+  }, []);
 
 
-  const contextValue = useMemo(() => ({
-    user: contextDisplayUser,
-    firebaseUser: mockFirebaseUser,
+  const contextValue: AuthContextType = useMemo(() => ({
+    user,
     loading,
     error,
-    isConfigured: configured,
     isMfaVerified,
+    login,
+    register,
+    verifyMfa,
     logout,
-    setUser: setUserProfile,
+    fetchCurrentUserInfo,
+    setUser,
     setIsMfaVerified,
-    loginWithDummyCredentials,
-    registerDummyUser,
-    updateCurrentLocalUser,
-  }), [contextDisplayUser, mockFirebaseUser, loading, error, configured, isMfaVerified, logout, loginWithDummyCredentials, registerDummyUser, updateCurrentLocalUser, setIsMfaVerified]);
+    updateUserPreferencesInContext,
+  }), [user, loading, error, isMfaVerified, login, register, verifyMfa, logout, fetchCurrentUserInfo, setIsMfaVerified, updateUserPreferencesInContext]);
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};

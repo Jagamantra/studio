@@ -8,7 +8,7 @@ export const projectConfig: ProjectConfig = {
     "M2 17l10 5 10-5",
     "M2 12l10 5 10-5"
   ],
-  appLogoUrl: null, // Default to no custom image logo
+  appLogoUrl: null,
   availableAccentColors: [
     { name: 'Teal', hslValue: '180 100% 25%', hexValue: '#008080' },
     { name: 'Blue', hslValue: '221.2 83.2% 53.3%', hexValue: '#2563EB' },
@@ -53,5 +53,5 @@ export const projectConfig: ProjectConfig = {
   ],
   defaultInterfaceDensity: 'comfortable',
 
-  mockApiMode: true,
+  mockApiMode: false, // Default to false to use real API
 };

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useAuth } from '@/contexts/auth-provider';
+import { useAuth } from '@/contexts/auth-context'; // Using the unified AuthContext
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -21,7 +21,7 @@ import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 
 
 export default function DashboardPage() {
-  const { user: authUser, loading, isConfigured } = useAuth();
+  const { user: authUser, loading } = useAuth();
   const { appName, appVersion } = useTheme(); 
   const [isClient, setIsClient] = useState(false);
 
@@ -46,21 +46,19 @@ export default function DashboardPage() {
     );
   }
 
-  const userToRenderOnDashboard: UserProfile | null = (() => {
-    if (!isConfigured) { 
-      return dummyUserForDashboardView;
-    }
-    return authUser;
-  })();
+  const userToRenderOnDashboard: UserProfile | null = authUser || (projectConfig.mockApiMode ? dummyUserForDashboardView : null);
+
 
   if (!userToRenderOnDashboard) {
+    // This case should ideally be handled by AuthProvider redirecting to login if no user
+    // But as a fallback:
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4">
           <Card className="w-full max-w-md text-center p-4">
             <CardHeader>
               <CardTitle className="text-xl md:text-2xl">Access Denied</CardTitle>
-              <CardDescription>You need to be logged in to view this page, or the application is in a preview state.</CardDescription>
+              <CardDescription>You need to be logged in to view this page.</CardDescription>
             </CardHeader>
             <CardContent>
               <Button asChild>
@@ -122,27 +120,10 @@ export default function DashboardPage() {
               </p>
             </div>
           </PageTitleWithIcon>
-
-          {!isConfigured && appVersion === 'v1.0.0' && (
-            <Card className="mb-4 md:mb-6 border-primary bg-primary/10 dark:bg-primary/20">
-                <CardHeader className="p-4">
-                <div className="flex items-center gap-2 sm:gap-3">
-                    <Info className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> 
-                    <CardTitle className="text-base sm:text-lg text-primary">Application Status: Mock Mode</CardTitle> 
-                </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                <p className="text-xs sm:text-sm text-primary/90 dark:text-primary/80">
-                    This application is currently running with mock API services and dummy data. 
-                    All features are available for demonstration. The frontend is designed to be responsive and separate from backend concerns.
-                </p>
-                </CardContent>
-            </Card>
-          )}
+          {/* Removed the mock mode warning card here, as requested. */}
           {renderDashboardContent()}
         </div>
       </TooltipProvider>
     </AuthenticatedPageLayout>
   );
 }
-

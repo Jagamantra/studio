@@ -30,8 +30,9 @@ import {
 } from '@/components/ui/form';
 import { KeyRound, Info, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/auth-provider';
-import { useTheme } from '@/contexts/theme-provider'; // Import useTheme
+import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/contexts/theme-provider';
+import { projectConfig } from '@/config/project.config';
 
 const mfaFormSchema = z.object({
   otp: z
@@ -45,20 +46,22 @@ type MfaFormValues = z.infer<typeof mfaFormSchema>;
 export default function MfaPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setIsMfaVerified, logout } = useAuth();
-  const { appName } = useTheme(); // Get appName from theme
+  const { user, verifyMfa, logout, loading: authLoading, error: authError } = useAuth();
+  const { appName } = useTheme();
   const [mockOtp, setMockOtp] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setMockOtp(generatedOtp);
+    // Only generate mock OTP if in mockApiMode
+    if (projectConfig.mockApiMode) {
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setMockOtp(generatedOtp);
+    }
   }, []);
 
   useEffect(() => {
-    // Set document title dynamically
     document.title = `Verify Your Identity | ${appName}`;
   }, [appName]);
 
@@ -72,32 +75,39 @@ export default function MfaPage() {
 
   const onSubmit = async (data: MfaFormValues) => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (data.otp === mockOtp) {
-      setIsMfaVerified(true);
-      toast({
-        title: 'Verification Successful',
-        message: 'You have been successfully verified. Redirecting...',
-        variant: 'success',
-      });
-      router.push('/dashboard');
-    } else {
-      toast({
-        title: 'Verification Failed',
-        message: 'The OTP entered is incorrect. Please try again.',
-        variant: 'destructive',
-      });
-      form.setError('otp', { type: 'manual', message: 'Invalid OTP.' });
+    if (!user?.uid) {
+        toast({title: "Error", message: "User session not found. Please log in again.", variant: "destructive"});
+        setIsLoading(false);
+        await logout();
+        return;
     }
-    setIsLoading(false);
+
+    try {
+        const response = await verifyMfa(user.uid, data.otp);
+        if (response.success) {
+            toast({
+                title: 'Verification Successful',
+                message: 'You have been successfully verified. Redirecting...',
+                variant: 'success',
+            });
+            // AuthProvider's verifyMfa should handle redirection to dashboard
+        } else {
+            const errMsg = response.message || authError?.message || 'The OTP entered is incorrect. Please try again.';
+            toast({ title: 'Verification Failed', message: errMsg, variant: 'destructive' });
+            form.setError('otp', { type: 'manual', message: 'Invalid OTP.' });
+        }
+    } catch (err: any) {
+        toast({ title: 'Verification Error', message: err.message || "An unexpected error occurred.", variant: 'destructive'});
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleBackToLogin = async () => {
-    await logout();
+    await logout(); // AuthProvider's logout will redirect to login
   };
 
-  if (!isClient) {
+  if (!isClient || authLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -107,15 +117,24 @@ export default function MfaPage() {
 
   return (
     <>
-      {mockOtp && (
+      {projectConfig.mockApiMode && mockOtp && (
         <Alert variant="default" className="mb-6 sm:mb-8 p-2 sm:p-3">
           <Info className="h-4 w-4" />
-          <AlertTitle className="text-xs font-semibold">Mock MFA Code</AlertTitle>
+          <AlertTitle className="text-xs font-semibold">Mock MFA Code (Mock Mode Only)</AlertTitle>
           <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">
-            For testing purposes, your One-Time Password is:{' '}
+            Your One-Time Password is:{' '}
             <strong className="text-sm sm:text-base font-semibold tracking-wider">
               {mockOtp}
             </strong>
+          </AlertDescription>
+        </Alert>
+      )}
+      {!projectConfig.mockApiMode && (
+         <Alert variant="default" className="mb-6 sm:mb-8 p-2 sm:p-3">
+          <Info className="h-4 w-4" />
+          <AlertTitle className="text-xs font-semibold">Check Your Authentication Device</AlertTitle>
+          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">
+            A One-Time Password has been sent to your registered MFA method.
           </AlertDescription>
         </Alert>
       )}
@@ -126,7 +145,7 @@ export default function MfaPage() {
           </div>
           <CardTitle className="text-base sm:text-lg">Two-Factor Authentication</CardTitle>
           <CardDescription className="text-[10px] sm:text-xs">
-            Enter the 6-digit code shown in the alert above.
+            Enter the 6-digit code.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-3 sm:p-4">
@@ -164,9 +183,11 @@ export default function MfaPage() {
             </form>
           </Form>
           <div className="text-center text-xs sm:text-sm mt-3">
-            <p className="text-muted-foreground text-[10px] sm:text-xs mb-1">
-              This is a mock MFA screen. No real authentication is performed.
-            </p>
+             {projectConfig.mockApiMode && (
+                <p className="text-muted-foreground text-[10px] sm:text-xs mb-1">
+                This is a mock MFA screen.
+                </p>
+             )}
             <Button variant="link" className="p-0 h-auto text-xs sm:text-sm" onClick={handleBackToLogin} disabled={isLoading}>
               Back to Login
             </Button>
@@ -176,4 +197,3 @@ export default function MfaPage() {
     </>
   );
 }
-

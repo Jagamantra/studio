@@ -16,10 +16,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle, Info } from 'lucide-react'; 
+import { Loader2, AlertTriangle } from 'lucide-react'; 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { rolesConfig } from '@/config/roles.config';
-import { useAuth } from '@/contexts/auth-provider'; 
+import { useAuth } from '@/contexts/auth-context'; // Using unified AuthContext
 import type { UserProfile } from '@/types';
 
 const registerFormSchema = z.object({
@@ -64,71 +64,57 @@ export function RegisterForm() {
     setIsLoading(true);
     setFormError(null);
 
-    if (!isClient) {
+    if (!isClient || !authContext) {
         setIsLoading(false);
+        setFormError("Authentication service not available.");
         return;
     }
 
-    if (authContext.registerDummyUser) {
-      try {
-        const newUserProfile: Omit<UserProfile, 'uid' | 'photoURL'> & { password?: string } = {
-          displayName: data.displayName,
-          email: data.email,
-          password: data.password, 
-          role: rolesConfig.defaultRole, 
-          phoneNumber: null,
-        };
-        const dummyUser = await authContext.registerDummyUser(newUserProfile);
-        if (dummyUser) {
-          // Toast for registration success is now handled after MFA verification
-          // Redirection to MFA is handled by registerDummyUser
-        } else {
-           const errMsg = authContext.error?.message || "Failed to register mock user.";
-           setFormError(errMsg);
-           toast({ title: 'Registration Failed', message: errMsg, variant: 'destructive' });
-        }
-      } catch (err: any) {
-        const errMsg = err.message || "Mock registration process failed.";
+    try {
+      const newUserDetails: Omit<UserProfile, 'uid' | 'photoURL' | 'preferences'> & { password?: string } = {
+        displayName: data.displayName,
+        email: data.email,
+        password: data.password, 
+        role: rolesConfig.defaultRole, 
+        phoneNumber: null, // Defaulting phone number, can be updated later
+      };
+
+      const response = await authContext.register(newUserDetails);
+      if (response && response.user) {
+        // Successful registration, AuthProvider will handle redirection to MFA
+      } else {
+        const errMsg = authContext.error?.message || "Failed to register user.";
         setFormError(errMsg);
-        toast({ title: 'Registration Error', message: errMsg, variant: 'destructive' });
-      } finally {
-        setIsLoading(false);
+        toast({ title: 'Registration Failed', message: errMsg, variant: 'destructive' });
       }
-    } else {
-      setFormError("Registration function not available in context.");
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || err.message || "Registration process failed.";
+      setFormError(errMsg);
+      toast({ title: 'Registration Error', message: errMsg, variant: 'destructive' });
+    } finally {
       setIsLoading(false);
-      toast({ title: 'Registration Error', message: "Registration function not available.", variant: 'destructive' });
     }
   }
   
-  const systemModeMessage = "Application is running with mock API and dummy data. Your data will be stored locally in your browser.";
+  // Removed the "System Mode" Alert as per user request
 
   return (
-    <div className="grid gap-3 sm:gap-4"> {/* Reduced gap */}
-      {isClient && ( 
-         <Alert variant="default" className="p-2 sm:p-3"> {/* Reduced padding */}
-          <Info className="h-4 w-4" /> 
-          <AlertTitle className="text-xs font-semibold">System Mode</AlertTitle> {/* Ensured small text */}
-          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight"> {/* Further reduced text size */}
-            {systemModeMessage}
-          </AlertDescription>
-        </Alert>
-      )}
+    <div className="grid gap-3 sm:gap-4">
        {formError && (
-        <Alert variant="destructive" className="p-2 sm:p-3"> {/* Reduced padding */}
+        <Alert variant="destructive" className="p-2 sm:p-3">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="text-xs font-semibold">Error</AlertTitle> {/* Ensured small text */}
-          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">{formError}</AlertDescription> {/* Further reduced text size */}
+          <AlertTitle className="text-xs font-semibold">Error</AlertTitle>
+          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">{formError}</AlertDescription>
         </Alert>
       )}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 sm:space-y-3"> {/* Reduced space-y */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 sm:space-y-3">
           <FormField
             control={form.control}
             name="displayName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm">Full Name</FormLabel> {/* Ensured text size */}
+                <FormLabel className="text-sm">Full Name</FormLabel>
                 <FormControl>
                   <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
@@ -141,7 +127,7 @@ export function RegisterForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm">Email</FormLabel> {/* Ensured text size */}
+                <FormLabel className="text-sm">Email</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -151,7 +137,7 @@ export function RegisterForm() {
                     autoCorrect="off"
                     disabled={isLoading || !isClient}
                     {...field}
-                    className="h-9 sm:h-10 text-sm" /* Adjusted input height and text */
+                    className="h-9 sm:h-10 text-sm"
                   />
                 </FormControl>
                 <FormMessage />
@@ -163,7 +149,7 @@ export function RegisterForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm">Password</FormLabel> {/* Ensured text size */}
+                <FormLabel className="text-sm">Password</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
@@ -176,7 +162,7 @@ export function RegisterForm() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm">Confirm Password</FormLabel> {/* Ensured text size */}
+                <FormLabel className="text-sm">Confirm Password</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
                 </FormControl>
@@ -184,7 +170,7 @@ export function RegisterForm() {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full h-9 sm:h-10 text-sm" disabled={isLoading || !isClient}> {/* Adjusted button height and text */}
+          <Button type="submit" className="w-full h-9 sm:h-10 text-sm" disabled={isLoading || !isClient}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Account
           </Button>
