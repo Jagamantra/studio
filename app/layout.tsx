@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -17,7 +18,7 @@ export default function RootLayout({
 }>) {
   const AuthProviderComponent = projectConfig.mockApiMode ? MockAuthProvider : RealAuthProvider;
 
-  // Determine initial favicon href based on projectConfig
+  // Determine initial favicon href based on projectConfig for SSR
   // This provides a server-rendered default. ThemeProvider will update it client-side.
   let initialFaviconHref = '/favicon.svg'; // Default to the static SVG in /public
   let initialFaviconType = 'image/svg+xml';
@@ -36,8 +37,8 @@ export default function RootLayout({
       initialFaviconType = projectConfig.appLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png'; 
     }
   }
-  // If no projectConfig.appLogoUrl, it defaults to /favicon.svg which should be our static default icon.
-  // ThemeProvider will handle dynamic updates using theme context's appIconPaths or appLogoUrl.
+  // If no projectConfig.appLogoUrl, it defaults to /favicon.svg.
+  // The ThemeProvider will handle dynamic updates using theme context's appIconPaths or appLogoUrl client-side.
 
   return (
     <html lang="en" suppressHydrationWarning>

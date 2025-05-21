@@ -34,7 +34,7 @@ export type InterfaceDensityOption = {
 
 export type ProjectConfig = {
   appName: string;
-  appIconPaths?: string[]; 
+  appIconPaths: string[]; // Changed to non-optional
   appLogoUrl?: string | null; 
   availableAccentColors: AccentColor[];
   defaultAccentColorName: string;
@@ -80,7 +80,7 @@ export type ThemeSettings = {
   borderRadius?: string; 
   appVersion?: string; 
   appName?: string;
-  appIconPaths?: string[];
+  appIconPaths: string[]; // Changed to non-optional, mirrors ProjectConfig
   appLogoUrl?: string | null;
   fontSize?: string; 
   appScale?: string; 
@@ -97,18 +97,18 @@ export type UserProfile = {
   role: Role;
   password?: string; 
   receiveNotifications?: boolean; 
-  preferences?: ThemeSettings; 
+  preferences?: Partial<ThemeSettings>; // Preferences can be partial
 };
 
-export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appIconPaths' | 'appLogoUrl'>> {
-  appIconPaths?: string[]; 
+export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appLogoUrl' | 'appIconPaths'>> {
+  appIconPaths: string[]; // Non-optional
   appLogoUrl?: string | null; 
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setAccentColor: (accentValue: string) => void;
   setBorderRadius: (radiusValue: string) => void;
   setAppVersion: (versionId: string) => void;
   setAppName: (appName: string) => void;
-  setAppIconPaths: (paths: string[] | undefined) => void;
+  setAppIconPaths: (paths: string[] | undefined) => void; // Allow undefined for clearing
   setAppLogoUrl: (url: string | null) => void;
   setFontSize: (fontSizeValue: string) => void;
   setAppScale: (scaleValue: string) => void;
@@ -120,7 +120,7 @@ export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appIco
   availableInterfaceDensities: InterfaceDensityOption[];
 }
 
-// API response types
+// API response types for real API
 export type MfaSentResponse = {
   codeSent: boolean;
   message: string;
@@ -129,8 +129,8 @@ export type MfaSentResponse = {
 export type LoginSuccessResponse = {
   accessToken: string;
   email: string;
-  role: Role; // Using Role type here
-  expiresIn: number;
-  uid?: string; // UID might come from decoded token, or backend could send it.
-  preferences?: ThemeSettings;
+  role: Role;
+  expiresIn: number; // Assuming this is in seconds
+  // uid will be derived from token's 'sub' claim
+  // preferences will be fetched separately or included if backend supports
 };

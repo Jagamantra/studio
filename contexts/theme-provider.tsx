@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -23,7 +24,7 @@ const initialState: ThemeProviderState = {
   borderRadius: getInitialBorderRadius(),
   appVersion: projectConfig.defaultAppVersionId,
   appName: projectConfig.appName,
-  appIconPaths: projectConfig.appIconPaths || [],
+  appIconPaths: projectConfig.appIconPaths || [], // Ensure it's always an array
   appLogoUrl: projectConfig.appLogoUrl || null,
   fontSize: projectConfig.availableFontSizes.find(f => f.name === projectConfig.defaultFontSizeName)?.value || projectConfig.availableFontSizes[1]?.value || '16px',
   appScale: projectConfig.availableScales.find(s => s.name === projectConfig.defaultScaleName)?.value || projectConfig.availableScales[1]?.value || '1.0',
@@ -63,7 +64,8 @@ export function ThemeProvider({
   const [borderRadius, setBorderRadiusInternal] = useLocalStorage<string>(`${storageKey}-radius`, initialState.borderRadius);
   const [appVersion, setAppVersionInternal] = useLocalStorage<string>(`${storageKey}-version`, initialState.appVersion);
   const [appName, setAppNameInternal] = useLocalStorage<string>(`${storageKey}-app-name`, initialState.appName);
-  const [appIconPaths, setAppIconPathsInternal] = useLocalStorage<string[] | undefined>(`${storageKey}-app-icon-paths`, initialState.appIconPaths);
+  // Ensure appIconPaths is always initialized as an array, falling back to projectConfig or empty array
+  const [appIconPaths, setAppIconPathsInternal] = useLocalStorage<string[]>(`${storageKey}-app-icon-paths`, projectConfig.appIconPaths || []);
   const [appLogoUrl, setAppLogoUrlInternal] = useLocalStorage<string | null>(`${storageKey}-app-logo-url`, initialState.appLogoUrl);
   const [fontSize, setFontSizeInternal] = useLocalStorage<string>(`${storageKey}-font-size`, initialState.fontSize);
   const [appScale, setAppScaleInternal] = useLocalStorage<string>(`${storageKey}-scale`, initialState.appScale);
@@ -107,8 +109,9 @@ export function ThemeProvider({
   }, [setAppNameInternal, persistPreference]);
 
   const setAppIconPaths = useCallback((newPaths: string[] | undefined) => {
-    setAppIconPathsInternal(newPaths);
-    persistPreference('appIconPaths', newPaths);
+    const pathsToSet = newPaths || projectConfig.appIconPaths || []; // Fallback to projectConfig or empty array
+    setAppIconPathsInternal(pathsToSet);
+    persistPreference('appIconPaths', pathsToSet);
   }, [setAppIconPathsInternal, persistPreference]);
   
   const setAppLogoUrl = useCallback((newUrl: string | null) => {
@@ -139,14 +142,15 @@ export function ThemeProvider({
       if (prefs.borderRadius) setBorderRadiusInternal(prefs.borderRadius);
       if (prefs.appVersion) setAppVersionInternal(prefs.appVersion);
       if (prefs.appName) setAppNameInternal(prefs.appName);
-      if (prefs.appIconPaths) setAppIconPathsInternal(prefs.appIconPaths);
+      // Handle appIconPaths carefully: if undefined in prefs, use projectConfig default or empty array
+      setAppIconPathsInternal(prefs.appIconPaths !== undefined ? prefs.appIconPaths : (projectConfig.appIconPaths || []));
       if (prefs.appLogoUrl !== undefined) setAppLogoUrlInternal(prefs.appLogoUrl);
       if (prefs.fontSize) setFontSizeInternal(prefs.fontSize);
       if (prefs.appScale) setAppScaleInternal(prefs.appScale);
       if (prefs.interfaceDensity) setInterfaceDensityInternal(prefs.interfaceDensity);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user]); // Only re-sync when user object changes. Setters are stable.
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -204,55 +208,41 @@ export function ThemeProvider({
     if (!faviconLink) {
       faviconLink = document.createElement('link'); 
       faviconLink.rel = 'icon'; 
-      faviconLink.id = 'app-favicon'; // Ensure it has an ID
+      faviconLink.id = 'app-favicon';
       document.head.appendChild(faviconLink);
     }
 
-    // Determine effective logo URL and icon paths from theme context first, then projectConfig
-    const effectiveAppLogoUrl = appLogoUrl !== undefined ? appLogoUrl : projectConfig.appLogoUrl;
-    const effectiveAppIconPaths = appIconPaths !== undefined ? appIconPaths : projectConfig.appIconPaths;
-    const currentAccentColor = accentColor || getInitialAccentHsl(); // Use current or default accent
+    const currentAccentColorForFavicon = accentColor || getInitialAccentHsl();
+    const oldObjectUrl = (faviconLink as any)._objectUrl; // Store to revoke later
 
-    if (effectiveAppLogoUrl) {
-      faviconLink.href = effectiveAppLogoUrl;
-      if (effectiveAppLogoUrl.startsWith('data:image/svg+xml')) {
+    if (appLogoUrl) { // Prioritize user-uploaded/configured logo URL
+      faviconLink.href = appLogoUrl;
+      if (appLogoUrl.startsWith('data:image/svg+xml')) {
         faviconLink.type = 'image/svg+xml';
-      } else if (effectiveAppLogoUrl.startsWith('data:image/png')) {
+      } else if (appLogoUrl.startsWith('data:image/png')) {
         faviconLink.type = 'image/png';
-      } else if (effectiveAppLogoUrl.endsWith('.ico')) {
+      } else if (appLogoUrl.endsWith('.ico')) {
         faviconLink.type = 'image/x-icon';
       } else {
-        faviconLink.type = effectiveAppLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png';
+        faviconLink.type = appLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png';
       }
-      // Clean up old object URL if it was a dynamic SVG
-      const oldObjectUrl = (faviconLink as any)._objectUrl;
-      if (oldObjectUrl) {
-        URL.revokeObjectURL(oldObjectUrl);
-        delete (faviconLink as any)._objectUrl;
-      }
-    } else if (effectiveAppIconPaths && effectiveAppIconPaths.length > 0) {
-      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(${currentAccentColor})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${effectiveAppIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
+    } else if (appIconPaths && appIconPaths.length > 0) { // Then theme's appIconPaths
+      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(${currentAccentColorForFavicon})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${appIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
       const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' }); 
       const newObjectUrl = URL.createObjectURL(svgBlob);
-      
-      // Revoke old object URL if it exists to prevent memory leaks
-      const oldObjectUrl = (faviconLink as any)._objectUrl;
-      if (oldObjectUrl) {
-        URL.revokeObjectURL(oldObjectUrl);
-      }
-
       faviconLink.href = newObjectUrl; 
       faviconLink.type = 'image/svg+xml';
-      (faviconLink as any)._objectUrl = newObjectUrl; // Store new object URL
-    } else {
-      faviconLink.href = '/favicon.svg'; // Fallback to static default
+      (faviconLink as any)._objectUrl = newObjectUrl;
+    } else { // Fallback to static default
+      faviconLink.href = '/favicon.svg'; 
       faviconLink.type = 'image/svg+xml';
-      // Clean up old object URL if it existed
-      const oldObjectUrl = (faviconLink as any)._objectUrl;
-      if (oldObjectUrl) {
-        URL.revokeObjectURL(oldObjectUrl);
-        delete (faviconLink as any)._objectUrl;
-      }
+    }
+
+    if (oldObjectUrl && oldObjectUrl !== faviconLink.href) { // Revoke old only if it's different and was an object URL
+       URL.revokeObjectURL(oldObjectUrl);
+       if (faviconLink.href !== (faviconLink as any)._objectUrl) { // If new href is not the new object URL (e.g. it's a static path or data URI)
+         delete (faviconLink as any)._objectUrl;
+       }
     }
   }, [appLogoUrl, appIconPaths, accentColor, theme]);
 
