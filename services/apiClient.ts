@@ -28,66 +28,74 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Log the full error object first for comprehensive debugging
-    console.error("Full API Error Object:", error);
-
     const requestUrl = error.config?.url || 'N/A';
-    let customErrorMessage: string | null = null;
+    let userFriendlyMessage = error.message; // Default to original Axios message
 
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      const { status, data, statusText: responseStatusText } = error.response;
-      const baseErrorMessage = `API request to ${requestUrl} failed with status ${status}`;
-      console.error(baseErrorMessage); // Log status and URL first
+      const { status, data, statusText } = error.response;
+      const apiBaseMessage = `API request to ${requestUrl} failed with status ${status}`;
 
       if (status === 401) {
-        customErrorMessage = data?.message || "Unauthorized. Your session may have expired or your credentials are not valid. Please try logging in again.";
-        console.error(`API Authentication Error (401): ${customErrorMessage}`);
+        userFriendlyMessage = data?.message || "Unauthorized. Your session may have expired or your credentials are not valid. Please try logging in again.";
+        console.error(`API Authentication Error (401): ${userFriendlyMessage} URL: ${requestUrl}`);
       } else if (status === 403) {
-        customErrorMessage = data?.message || "Forbidden. You do not have permission to perform this action or access this resource.";
-        console.error(`API Permission Error (403): ${customErrorMessage}`);
+        userFriendlyMessage = data?.message || "Forbidden. You do not have permission to perform this action or access this resource.";
+        console.error(`API Permission Error (403): ${userFriendlyMessage} URL: ${requestUrl}`);
       } else if (status === 500) {
-        customErrorMessage = data?.message || `A server error occurred (500) while processing your request for ${requestUrl}. Please try again later or contact support if the issue persists.`;
-        console.error(`API Server Error (500): ${customErrorMessage}`);
+        userFriendlyMessage = data?.message || `A server error occurred (500) while processing your request for ${requestUrl}. Please try again later or contact support if the issue persists.`;
+        console.error(`API Server Error (500): ${userFriendlyMessage} URL: ${requestUrl}`);
+      } else {
+        // For other error statuses
+        let detailedMessage = apiBaseMessage;
+        const responseDataMessage = typeof data?.message === 'string' ? data.message : (typeof data === 'string' ? data : null);
+        
+        if (responseDataMessage) {
+          detailedMessage += `. Server message: ${responseDataMessage}`;
+        } else if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+          // Try to extract a meaningful message from the data object
+          const mainErrorKey = Object.keys(data).find(key => key.toLowerCase().includes('error') || key.toLowerCase().includes('message'));
+          if (mainErrorKey && typeof data[mainErrorKey] === 'string') {
+            detailedMessage += `. Details: ${data[mainErrorKey]}`;
+          } else {
+            detailedMessage += `. Response data: ${JSON.stringify(data)}`;
+          }
+        } else {
+          detailedMessage += `. ${statusText || 'No further details from server.'}`;
+        }
+        userFriendlyMessage = detailedMessage;
+        console.error(userFriendlyMessage); // Log the constructed detailed message
       }
-      // Fallback for other error statuses if a specific message isn't set above
-      else if (!customErrorMessage && data && typeof data === 'object' && Object.keys(data).length > 0) {
-        // Data is a non-empty object
-        console.error('Response Data (JSON):', JSON.stringify(data, null, 2));
-        customErrorMessage = data.message || (data.error ? `${data.error} (Status: ${status})` : baseErrorMessage);
-      } else if (!customErrorMessage && data && typeof data !== 'object') {
-        // Data is a string or other primitive (e.g. HTML error page from server)
-        console.error('Response Data (String/Primitive):', String(data));
-        customErrorMessage = String(data);
-      } else if (!customErrorMessage) {
-        // Data is an empty object {}, null, or undefined, or no specific handler above caught it
-        const statusText = responseStatusText || 'No error message provided by server.';
-        console.error(`Response Body: Empty or not a non-empty object. Server Status Text: "${statusText}"`);
-        customErrorMessage = `${baseErrorMessage}. ${statusText}.`;
+
+      // If the backend provides a structured error (e.g., { statusCode, message, error })
+      // and it's more specific, prioritize that for the error.message property.
+      if (data?.message && typeof data.message === 'string') {
+         // If 'data.message' is an array (e.g. validation errors), join them.
+        if (Array.isArray(data.message)) {
+          userFriendlyMessage = data.message.join('; ');
+        } else {
+          userFriendlyMessage = data.message;
+        }
+      } else if (data?.error && typeof data.error === 'string') {
+        userFriendlyMessage = `Error: ${data.error}`;
       }
-      // Ensure error.message is updated with the custom message
-      error.message = customErrorMessage || error.message; // Fallback to original Axios message if no custom one set
+
     } else if (error.request) {
       // The request was made but no response was received
-      console.error('API Error: No response received from server for request to', requestUrl, error.request);
-      error.message = `No response received from server for ${requestUrl}. Please check your network connection and the API server status.`;
+      userFriendlyMessage = `No response received from server for ${requestUrl}. Please check your network connection and the API server status.`;
+      console.error(userFriendlyMessage);
     } else {
       // Something happened in setting up the request that triggered an Error
-      console.error('API Error: Error setting up request to', requestUrl, error.message);
-      // error.message should already be set by Axios for setup errors
+      userFriendlyMessage = `Error setting up API request to ${requestUrl}: ${error.message}`;
+      console.error(userFriendlyMessage);
     }
 
-    // Fallback if error.message is still not descriptive enough or is the generic Axios message
-    if (!error.message || String(error.message).toLowerCase().includes('request failed with status code')) {
-        const status = error.response?.status || 'Unknown';
-        const statusText = error.response?.statusText || 'An unexpected error occurred.';
-        let detailedMessage = `API Error`;
-        if (status !== 'Unknown') detailedMessage += ` (${status})`;
-        detailedMessage += `: ${statusText}`;
-        if (requestUrl !== 'N/A') detailedMessage += `. URL: ${requestUrl}`;
-        error.message = detailedMessage;
-    }
+    // Ensure the error object that's rejected carries the most user-friendly message
+    error.message = userFriendlyMessage;
+
+    // For detailed debugging, one might still want to log the full error object.
+    // This will still show "AxiosError: ..." by default when the error object is stringified by the console.
+    // console.error('Full AxiosError Object (for debugging):', error);
+
     return Promise.reject(error);
   }
 );
