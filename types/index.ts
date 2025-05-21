@@ -27,6 +27,11 @@ export type ScaleOption = {
   value: string; // e.g., "0.9" or "1.1"
 };
 
+export type InterfaceDensityOption = {
+  name: 'Compact' | 'Comfortable' | 'Spacious';
+  value: 'compact' | 'comfortable' | 'spacious';
+};
+
 export type ProjectConfig = {
   appName: string;
   appIconPaths?: string[]; // SVG path data for the application icon
@@ -37,11 +42,13 @@ export type ProjectConfig = {
   defaultBorderRadiusName: string;
   availableAppVersions: AppVersion[];
   defaultAppVersionId: string;
-  enableApplicationConfig: boolean; 
+  enableApplicationConfig: boolean;
   availableFontSizes: FontSizeOption[];
   defaultFontSizeName: string;
   availableScales: ScaleOption[];
   defaultScaleName: string;
+  availableInterfaceDensities: InterfaceDensityOption[];
+  defaultInterfaceDensity: 'compact' | 'comfortable' | 'spacious';
   mockApiMode: boolean;
 };
 
@@ -75,9 +82,8 @@ export type UserProfile = {
   phoneNumber: string | null;
   role: Role;
   password?: string; // Only for mock/creation, not stored long-term as plain text
+  // User-specific preferences that could override global theme settings
   receiveNotifications?: boolean;
-  interfaceDensity?: 'compact' | 'comfortable' | 'spacious';
-  // Theme preferences that could be stored per user in a real backend
   preferredThemeMode?: 'light' | 'dark' | 'system';
   preferredAccentColor?: string; // HSL or HEX
   preferredBorderRadius?: string; // CSS value
@@ -87,7 +93,9 @@ export type UserProfile = {
   preferredAppName?: string;
   preferredAppIconPaths?: string[];
   preferredAppLogoUrl?: string | null;
+  preferredInterfaceDensity?: 'compact' | 'comfortable' | 'spacious';
 };
+
 
 // For theme context
 export type ThemeSettings = {
@@ -100,6 +108,7 @@ export type ThemeSettings = {
   appLogoUrl?: string | null;
   fontSize: string; // e.g. "16px"
   appScale: string; // e.g. "1.0"
+  interfaceDensity: 'compact' | 'comfortable' | 'spacious';
 };
 
 export interface ThemeProviderState extends ThemeSettings {
@@ -112,8 +121,10 @@ export interface ThemeProviderState extends ThemeSettings {
   setAppLogoUrl: (url: string | null) => void;
   setFontSize: (fontSizeValue: string) => void;
   setAppScale: (scaleValue: string) => void;
+  setInterfaceDensity: (density: 'compact' | 'comfortable' | 'spacious') => void;
   availableAccentColors: AccentColor[];
   availableBorderRadii: BorderRadiusOption[];
   availableFontSizes: FontSizeOption[];
   availableScales: ScaleOption[];
+  availableInterfaceDensities: InterfaceDensityOption[];
 }

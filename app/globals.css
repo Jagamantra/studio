@@ -9,7 +9,7 @@
     --accent-h: 180;       /* Teal Hue */
     --accent-s: 100%;      /* Teal Saturation */
     --accent-l: 25%;       /* Teal Lightness */
-    
+
     /* Foreground lightness based on theme */
     --accent-foreground-l-light-theme: 98%; /* For light text on dark accent */
     --accent-foreground-l-dark-theme: 10%;  /* For dark text on light accent */
@@ -88,10 +88,10 @@
     --sidebar-background-raw: 220 25% 98%;
     --sidebar-foreground-raw: 220 25% 20%;
     --sidebar-border-raw: 220 15% 88%;
-    
+
     --sidebar-background: hsl(var(--sidebar-background-raw));
     --sidebar-foreground: hsl(var(--sidebar-foreground-raw));
-    --sidebar-primary: var(--primary); 
+    --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: var(--primary-foreground);
     --sidebar-accent: var(--accent);
     --sidebar-accent-foreground: var(--accent-foreground);
@@ -104,9 +104,9 @@
     --accent-s: 70%;       /* Teal Saturation for dark mode */
     --accent-l: 40%;       /* Teal Lightness for dark mode */
 
-    --accent-foreground-l-light-theme: 95%; 
-    --accent-foreground-l-dark-theme: 15%;  
-    
+    --accent-foreground-l-light-theme: 95%;
+    --accent-foreground-l-dark-theme: 15%;
+
     --primary-h: var(--accent-h);
     --primary-s: var(--accent-s);
     --primary-l: var(--accent-l);
@@ -115,24 +115,22 @@
     --ring-s: var(--accent-s);
     --ring-l: calc(var(--accent-l) - 10%); /* Ring lightness slightly darker for dark mode accent */
 
-    /* Updated to #000000 (black) for dark mode backgrounds */
-    --background: 0 0% 0%; 
-    --foreground: 220 10% 95%; /* Kept foreground for contrast */
+    --background: 0 0% 0%;
+    --foreground: 220 10% 95%;
 
-    --card: 0 0% 0%; 
-    --card-foreground: 220 10% 95%; /* Kept foreground for contrast */
+    --card: 0 0% 0%;
+    --card-foreground: 220 10% 95%;
 
-    --popover: 0 0% 0%; 
-    --popover-foreground: 220 10% 95%; /* Kept foreground for contrast */
+    --popover: 0 0% 0%;
+    --popover-foreground: 220 10% 95%;
 
     --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
     --primary-foreground: hsl(0, 0%, var(--accent-foreground-l-light-theme));
 
-    /* Consider if secondary and muted should also be pure black or slightly off-black for hierarchy */
-    --secondary: 220 15% 30%; 
+    --secondary: 220 15% 30%;
     --secondary-foreground: 220 10% 85%;
 
-    --muted: 220 15% 20%; 
+    --muted: 220 15% 20%;
     --muted-foreground: 220 10% 65%;
 
     --accent: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
@@ -141,9 +139,8 @@
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Borders might need to be slightly visible against black background */
-    --border: 220 15% 15%; /* Adjusted to be slightly off-black */
-    --input: 220 15% 15%;  /* Adjusted to be slightly off-black */
+    --border: 220 15% 15%;
+    --input: 220 15% 15%;
     --ring: hsl(var(--ring-h), var(--ring-s), clamp(0%, var(--ring-l), 100%));
 
     /* Dynamic Chart Colors based on Accent Color for Dark Theme */
@@ -175,9 +172,9 @@
     --chart-5: hsl(var(--chart-4-h), var(--chart-4-s), var(--chart-4-l));
 
     /* Sidebar specific variables for dark mode */
-    --sidebar-background-raw: 0 0% 0%; /* Updated to black */
+    --sidebar-background-raw: 0 0% 0%;
     --sidebar-foreground-raw: 220 10% 90%;
-    --sidebar-border-raw: 220 15% 10%; /* Adjusted to be slightly off-black */
+    --sidebar-border-raw: 220 15% 10%;
 
     --sidebar-background: hsl(var(--sidebar-background-raw));
     --sidebar-foreground: hsl(var(--sidebar-foreground-raw));
@@ -190,15 +187,23 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Use Geist font variables from layout.tsx */
     font-family: var(--font-geist-sans), sans-serif;
-    /* Default zoom applied by ThemeProvider */
   }
   html {
     @apply h-full;
-     /* Default font size applied by ThemeProvider */
   }
   body {
     @apply flex h-full flex-col;
+  }
+
+  /* Example density-based styling (conceptual) */
+  html[data-density="compact"] .dense-target {
+    @apply p-1 text-xs; /* Example for a hypothetical dense-target class */
+  }
+  html[data-density="comfortable"] .dense-target {
+    @apply p-2 text-sm;
+  }
+  html[data-density="spacious"] .dense-target {
+    @apply p-4 text-base;
   }
 }

@@ -13,7 +13,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Settings2 } from 'lucide-react';
 import type { UserProfile } from '@/types';
-import * as api from '@/services/api'; 
+import * as api from '@/services/api';
+import { useTheme } from '@/contexts/theme-provider'; // Import useTheme
 
 const advancedSettingsSchema = z.object({
   receiveNotifications: z.boolean().optional(),
@@ -32,51 +33,87 @@ interface AdvancedSettingsFormProps {
 
 export const AdvancedSettingsForm = React.memo(function AdvancedSettingsForm({ user, setUser, updateAuthContextUser, anyLoading, setAnyLoading }: AdvancedSettingsFormProps) {
   const { toast } = useToast();
+  const { interfaceDensity: currentThemeDensity, setInterfaceDensity: setThemeDensity, availableInterfaceDensities } = useTheme(); // Get theme context
   const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<AdvancedSettingsFormValues>({
     resolver: zodResolver(advancedSettingsSchema),
     defaultValues: {
       receiveNotifications: user?.receiveNotifications ?? true,
-      interfaceDensity: user?.interfaceDensity ?? 'comfortable',
+      interfaceDensity: user?.preferredInterfaceDensity ?? currentThemeDensity ?? projectConfig.defaultInterfaceDensity,
     },
   });
 
   React.useEffect(() => {
+    // Sync form with user profile preference or current theme density
+    const densityToSet = user.preferredInterfaceDensity || currentThemeDensity || projectConfig.defaultInterfaceDensity;
     form.reset({
       receiveNotifications: user.receiveNotifications ?? true,
-      interfaceDensity: user.interfaceDensity ?? 'comfortable',
+      interfaceDensity: densityToSet,
     });
-  }, [user, form]);
+    // If user has a preference, ensure theme provider reflects it
+    if (user.preferredInterfaceDensity && user.preferredInterfaceDensity !== currentThemeDensity) {
+        setThemeDensity(user.preferredInterfaceDensity);
+    } else if (!user.preferredInterfaceDensity && currentThemeDensity !== densityToSet){
+        // This case might occur if localstorage for theme has a value but user profile doesn't
+        // We'd typically want the user profile to be the source of truth if it exists
+        // Or ensure the form just picks up the current theme's density from local storage if no user pref.
+    }
+  }, [user, form, currentThemeDensity, setThemeDensity]);
+
 
   async function onSubmit(data: AdvancedSettingsFormValues) {
-    if(!user) return;
+    if (!user) return;
     setIsLoading(true);
     setAnyLoading(true);
-    const originalSettings = { 
-      receiveNotifications: user.receiveNotifications, 
-      interfaceDensity: user.interfaceDensity 
+    const originalSettings = {
+      receiveNotifications: user.receiveNotifications,
+      preferredInterfaceDensity: user.preferredInterfaceDensity
     };
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const updatedUser = { ...user, ...data };
-      
-      setUser(updatedUser);
-      updateAuthContextUser(updatedUser);
+      // Update theme provider immediately
+      if (data.interfaceDensity) {
+        setThemeDensity(data.interfaceDensity);
+      }
 
-      form.reset(data, { keepValues: true, keepDirty: false });
-      toast({ 
-        title: 'Settings Saved', 
+      // Update user profile (mock API call)
+      const updatedProfileData: Partial<UserProfile> = {
+        receiveNotifications: data.receiveNotifications,
+        preferredInterfaceDensity: data.interfaceDensity,
+      };
+      const updatedUserFromApi = await api.updateUserProfile(user.uid, updatedProfileData);
+
+
+      setUser(updatedUserFromApi); // Update local page state
+      updateAuthContextUser(updatedUserFromApi); // Update auth context and its storage
+
+      form.reset(
+        {
+          receiveNotifications: updatedUserFromApi.receiveNotifications ?? true,
+          interfaceDensity: updatedUserFromApi.preferredInterfaceDensity ?? currentThemeDensity
+        },
+        { keepValues: true, keepDirty: false }
+      );
+
+
+      toast({
+        title: 'Settings Saved',
         message: 'Your advanced settings have been updated.',
         variant: 'success',
         action: {
           label: "Undo",
           onClick: async () => {
-            const revertedUser = { ...user, ...originalSettings };
+            if (originalSettings.preferredInterfaceDensity) {
+              setThemeDensity(originalSettings.preferredInterfaceDensity);
+            }
+            const revertedUser = await api.updateUserProfile(user.uid, originalSettings);
             setUser(revertedUser);
             updateAuthContextUser(revertedUser);
-            form.reset(originalSettings);
+            form.reset({
+                receiveNotifications: revertedUser.receiveNotifications ?? true,
+                interfaceDensity: revertedUser.preferredInterfaceDensity ?? currentThemeDensity
+            });
             toast({ message: "Advanced settings changes undone.", variant: "info" });
           }
         }
@@ -130,20 +167,30 @@ export const AdvancedSettingsForm = React.memo(function AdvancedSettingsForm({ u
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Interface Density</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || anyLoading}>
-                    <FormControl> 
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      // Optionally set theme density immediately on change, or wait for save
+                      // setThemeDensity(value as 'compact' | 'comfortable' | 'spacious');
+                    }}
+                    value={field.value}
+                    disabled={isLoading || anyLoading}
+                  >
+                    <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select interface density" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="compact">Compact</SelectItem>
-                      <SelectItem value="comfortable">Comfortable</SelectItem>
-                      <SelectItem value="spacious">Spacious</SelectItem>
+                      {availableInterfaceDensities.map(densityOption => (
+                        <SelectItem key={densityOption.value} value={densityOption.value}>
+                          {densityOption.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormDescription className="text-xs sm:text-sm">
-                    Adjust the spacing and size of UI elements. (This is a conceptual setting)
+                    Adjust the spacing and size of UI elements.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -162,3 +209,6 @@ export const AdvancedSettingsForm = React.memo(function AdvancedSettingsForm({ u
 });
 
 AdvancedSettingsForm.displayName = 'AdvancedSettingsForm';
+
+// Need to import projectConfig if it's used for defaultInterfaceDensity fallback in useEffect
+import { projectConfig } from '@/config/project.config';

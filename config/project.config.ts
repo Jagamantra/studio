@@ -3,7 +3,7 @@ import type { ProjectConfig } from '@/types';
 
 export const projectConfig: ProjectConfig = {
   appName: 'Genesis Template',
-  appIconPaths: [ 
+  appIconPaths: [
     "M12 2L2 7l10 5 10-5-10-5z",
     "M2 17l10 5 10-5",
     "M2 12l10 5 10-5"
@@ -31,7 +31,7 @@ export const projectConfig: ProjectConfig = {
   ],
   defaultAppVersionId: 'v1.0.0',
   enableApplicationConfig: true,
-  
+
   availableFontSizes: [
     { name: 'Small', value: '14px' },
     { name: 'Default', value: '16px' },
@@ -45,5 +45,13 @@ export const projectConfig: ProjectConfig = {
     { name: 'Large (110%)', value: '1.1' },
   ],
   defaultScaleName: 'Default (100%)',
+
+  availableInterfaceDensities: [
+    { name: 'Compact', value: 'compact' },
+    { name: 'Comfortable', value: 'comfortable' },
+    { name: 'Spacious', value: 'spacious' },
+  ],
+  defaultInterfaceDensity: 'comfortable',
+
   mockApiMode: true,
 };
