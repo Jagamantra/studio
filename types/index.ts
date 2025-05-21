@@ -49,7 +49,7 @@ export type ProjectConfig = {
   defaultScaleName: string;
   availableInterfaceDensities: InterfaceDensityOption[];
   defaultInterfaceDensity: 'compact' | 'comfortable' | 'spacious';
-  mockApiMode: boolean; // If true, use mock API and local storage
+  mockApiMode: boolean; 
 };
 
 export type SidebarNavItem = {
@@ -74,17 +74,16 @@ export type RolesConfig = {
   defaultRole: Role;
 };
 
-// Represents the user's theme and application preferences
 export type ThemeSettings = {
   theme?: 'light' | 'dark' | 'system';
-  accentColor?: string; // HSL or HEX string
-  borderRadius?: string; // CSS value
-  appVersion?: string; // ID of the app version
+  accentColor?: string; 
+  borderRadius?: string; 
+  appVersion?: string; 
   appName?: string;
   appIconPaths?: string[];
   appLogoUrl?: string | null;
-  fontSize?: string; // CSS value e.g. "16px"
-  appScale?: string; // CSS value e.g. "1.0"
+  fontSize?: string; 
+  appScale?: string; 
   interfaceDensity?: 'compact' | 'comfortable' | 'spacious';
 };
 
@@ -96,15 +95,14 @@ export type UserProfile = {
   photoURL: string | null;
   phoneNumber: string | null;
   role: Role;
-  password?: string; // Only for mock/creation, not expected from real API after auth
-  receiveNotifications?: boolean; // Example of a non-theme preference
-  preferences?: ThemeSettings; // User's personalized theme/app settings
+  password?: string; 
+  receiveNotifications?: boolean; 
+  preferences?: ThemeSettings; 
 };
 
-// For ThemeProvider context state
 export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appIconPaths' | 'appLogoUrl'>> {
-  appIconPaths?: string[]; // appIconPaths can be undefined
-  appLogoUrl?: string | null; // appLogoUrl can be null
+  appIconPaths?: string[]; 
+  appLogoUrl?: string | null; 
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setAccentColor: (accentValue: string) => void;
   setBorderRadius: (radiusValue: string) => void;
@@ -122,20 +120,35 @@ export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appIco
   availableInterfaceDensities: InterfaceDensityOption[];
 }
 
+// For API responses based on new documentation
+export type MfaSentResponse = {
+  codeSent: boolean;
+  message: string;
+};
 
-// For API responses
+export type LoginSuccessResponse = {
+  accessToken: string; // JWT, likely handled by HttpOnly cookie
+  email: string;
+  role: string; // Should be Role type
+  uid: string; // User ID from backend
+  expiresIn: number;
+  preferences?: ThemeSettings; // Optional initial preferences from backend
+};
+
+// Kept for backward compatibility if some parts still use the old AuthResponse structure for mock
 export type AuthResponse = {
-  token: string; // JWT
-  user: { // Basic user info returned on login/register
+  token: string;
+  user: {
     uid: string;
     email: string | null;
     role: Role;
-    preferences?: ThemeSettings; // Initial preferences
+    preferences?: ThemeSettings;
   };
 };
 
+// Kept for backward compatibility for mock MFA if needed
 export type MfaVerificationResponse = {
   success: boolean;
-  user?: UserProfile; // Full or updated user profile on successful MFA
-  message?: string; // Error message if not successful
+  user?: UserProfile; 
+  message?: string; 
 };

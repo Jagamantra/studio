@@ -46,7 +46,7 @@ type MfaFormValues = z.infer<typeof mfaFormSchema>;
 export default function MfaPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, verifyMfa, logout, loading: authLoading, error: authError } = useAuth();
+  const { verifyMfa, logout, loading: authLoading, error: authError, authEmailForMfa } = useAuth();
   const { appName } = useTheme();
   const [mockOtp, setMockOtp] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +54,6 @@ export default function MfaPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // Only generate mock OTP if in mockApiMode
     if (projectConfig.mockApiMode) {
       const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setMockOtp(generatedOtp);
@@ -75,16 +74,17 @@ export default function MfaPage() {
 
   const onSubmit = async (data: MfaFormValues) => {
     setIsLoading(true);
-    if (!user?.uid) {
-        toast({title: "Error", message: "User session not found. Please log in again.", variant: "destructive"});
+    if (!authEmailForMfa && !projectConfig.mockApiMode) { // In real mode, authEmailForMfa must be set
+        toast({title: "Error", message: "Session context lost. Please log in again.", variant: "destructive"});
         setIsLoading(false);
         await logout();
         return;
     }
 
     try {
-        const response = await verifyMfa(user.uid, data.otp);
-        if (response.success) {
+        // verifyMfa now takes only the OTP. Email is sourced from context.
+        const response = await verifyMfa(data.otp); 
+        if (response && response.accessToken) { // Successful MFA in real mode returns accessToken and user details
             toast({
                 title: 'Verification Successful',
                 message: 'You have been successfully verified. Redirecting...',
@@ -92,7 +92,7 @@ export default function MfaPage() {
             });
             // AuthProvider's verifyMfa should handle redirection to dashboard
         } else {
-            const errMsg = response.message || authError?.message || 'The OTP entered is incorrect. Please try again.';
+            const errMsg = authError?.message || (response as any)?.message || 'The OTP entered is incorrect. Please try again.';
             toast({ title: 'Verification Failed', message: errMsg, variant: 'destructive' });
             form.setError('otp', { type: 'manual', message: 'Invalid OTP.' });
         }
@@ -104,10 +104,10 @@ export default function MfaPage() {
   };
 
   const handleBackToLogin = async () => {
-    await logout(); // AuthProvider's logout will redirect to login
+    await logout(); 
   };
 
-  if (!isClient || authLoading) {
+  if (!isClient || authLoading && !authEmailForMfa && projectConfig.mockApiMode) { // Adjusted loading condition
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -134,7 +134,7 @@ export default function MfaPage() {
           <Info className="h-4 w-4" />
           <AlertTitle className="text-xs font-semibold">Check Your Authentication Device</AlertTitle>
           <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">
-            A One-Time Password has been sent to your registered MFA method.
+            A One-Time Password has been sent to {authEmailForMfa ? `your email (${authEmailForMfa})` : 'your registered MFA method'}.
           </AlertDescription>
         </Alert>
       )}
