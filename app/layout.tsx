@@ -19,10 +19,10 @@ export default function RootLayout({
 
   // Determine initial favicon href based on projectConfig
   // This provides a server-rendered default. ThemeProvider will update it client-side.
-  let initialFaviconHref = '/favicon.svg'; // Ultimate fallback
+  let initialFaviconHref = '/favicon.svg'; // Default to the static SVG in /public
   let initialFaviconType = 'image/svg+xml';
 
-  if (projectConfig.appLogoUrl) {
+  if (projectConfig.appLogoUrl) { // Check projectConfig for a globally set logo URL first
     initialFaviconHref = projectConfig.appLogoUrl;
     // Determine type from URL (basic check)
     if (projectConfig.appLogoUrl.startsWith('data:image/svg+xml')) {
@@ -33,21 +33,17 @@ export default function RootLayout({
       initialFaviconType = 'image/x-icon';
     } else {
       // Assume common image types or let browser infer if not a data URI or known extension
-      // For data URIs without explicit svg/png, image/x-icon is a safe default
       initialFaviconType = projectConfig.appLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png'; 
     }
-  } else if (projectConfig.appIconPaths && projectConfig.appIconPaths.length > 0) {
-    // If only appIconPaths are defined, ThemeProvider will generate the dynamic SVG client-side.
-    // For SSR, we stick to the /favicon.svg default.
-    initialFaviconHref = '/favicon.svg';
-    initialFaviconType = 'image/svg+xml';
   }
+  // If no projectConfig.appLogoUrl, it defaults to /favicon.svg which should be our static default icon.
+  // ThemeProvider will handle dynamic updates using theme context's appIconPaths or appLogoUrl.
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href={initialFaviconHref} type={initialFaviconType} />
-        {/* ThemeProvider will find and update this link client-side if necessary */}
+        <link rel="icon" href={initialFaviconHref} type={initialFaviconType} id="app-favicon" />
+        {/* ThemeProvider will find and update this link with id="app-favicon" client-side */}
       </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
         <AuthProviderComponent> {/* This needs to wrap ThemeProvider if ThemeProvider uses useAuth */}

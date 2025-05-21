@@ -7,7 +7,7 @@ import { projectConfig } from '@/config/project.config';
 import type { ThemeProviderState, ThemeSettings } from '@/types';
 import { hexToHsl } from '@/lib/utils';
 import { useAuth } from './auth-context';
-import * as Api from '@/services/api'; // Using the main api.ts dispatcher
+import * as Api from '@/services/api';
 
 const getInitialAccentHsl = () => {
   return projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0]?.hslValue || '180 100% 25%';
@@ -72,13 +72,10 @@ export function ThemeProvider({
   const persistPreference = useCallback(async <K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) => {
     if (user && user.uid) {
       try {
-        // Optimistically update context via AuthProvider
         updateUserPreferencesInContext({ [key]: value });
-        // Persist to backend (or dummy store via api.ts)
         await Api.updateUserPreferences(user.uid, { [key]: value });
       } catch (error) {
         console.error(`Failed to save preference ${key} via API:`, error);
-        // Potentially revert optimistic update or show error to user
       }
     }
   }, [user, updateUserPreferencesInContext]);
@@ -134,11 +131,9 @@ export function ThemeProvider({
     persistPreference('interfaceDensity', newDensity);
   }, [setInterfaceDensityInternal, persistPreference]);
 
-  // Load preferences from user object when user logs in
   useEffect(() => {
     if (user && user.preferences) {
       const prefs = user.preferences;
-      // Only update from user.preferences if they exist, otherwise keep localStorage/default
       if (prefs.theme) setThemeState(prefs.theme);
       if (prefs.accentColor) setAccentColorInternal(prefs.accentColor);
       if (prefs.borderRadius) setBorderRadiusInternal(prefs.borderRadius);
@@ -151,9 +146,8 @@ export function ThemeProvider({
       if (prefs.interfaceDensity) setInterfaceDensityInternal(prefs.interfaceDensity);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Removed projectConfig.mockApiMode as direct dependency here, as Api.updateUserPreferences handles the mode.
+  }, [user]);
 
-  // Theme application effects (CSS variables, classes, etc.)
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
@@ -206,31 +200,61 @@ export function ThemeProvider({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    let faviconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    let faviconLink = document.querySelector<HTMLLinkElement>('link#app-favicon');
     if (!faviconLink) {
-      faviconLink = document.createElement('link'); faviconLink.rel = 'icon'; document.head.appendChild(faviconLink);
+      faviconLink = document.createElement('link'); 
+      faviconLink.rel = 'icon'; 
+      faviconLink.id = 'app-favicon'; // Ensure it has an ID
+      document.head.appendChild(faviconLink);
     }
 
-    const effectiveAppLogoUrl = appLogoUrl || projectConfig.appLogoUrl; // Use theme's appLogoUrl first
-    const effectiveAppIconPaths = appIconPaths || projectConfig.appIconPaths; // Use theme's appIconPaths first
+    // Determine effective logo URL and icon paths from theme context first, then projectConfig
+    const effectiveAppLogoUrl = appLogoUrl !== undefined ? appLogoUrl : projectConfig.appLogoUrl;
+    const effectiveAppIconPaths = appIconPaths !== undefined ? appIconPaths : projectConfig.appIconPaths;
+    const currentAccentColor = accentColor || getInitialAccentHsl(); // Use current or default accent
 
     if (effectiveAppLogoUrl) {
       faviconLink.href = effectiveAppLogoUrl;
-      faviconLink.type = effectiveAppLogoUrl.startsWith('data:image/svg+xml') ? 'image/svg+xml' : (effectiveAppLogoUrl.startsWith('data:image/png') ? 'image/png' : 'image/x-icon');
+      if (effectiveAppLogoUrl.startsWith('data:image/svg+xml')) {
+        faviconLink.type = 'image/svg+xml';
+      } else if (effectiveAppLogoUrl.startsWith('data:image/png')) {
+        faviconLink.type = 'image/png';
+      } else if (effectiveAppLogoUrl.endsWith('.ico')) {
+        faviconLink.type = 'image/x-icon';
+      } else {
+        faviconLink.type = effectiveAppLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png';
+      }
+      // Clean up old object URL if it was a dynamic SVG
+      const oldObjectUrl = (faviconLink as any)._objectUrl;
+      if (oldObjectUrl) {
+        URL.revokeObjectURL(oldObjectUrl);
+        delete (faviconLink as any)._objectUrl;
+      }
     } else if (effectiveAppIconPaths && effectiveAppIconPaths.length > 0) {
-      // Generate SVG from paths
-      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary-h) var(--primary-s) var(--primary-l))" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${effectiveAppIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
+      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(${currentAccentColor})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${effectiveAppIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
       const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' }); 
-      const url = URL.createObjectURL(svgBlob);
-      faviconLink.href = url; 
+      const newObjectUrl = URL.createObjectURL(svgBlob);
+      
+      // Revoke old object URL if it exists to prevent memory leaks
+      const oldObjectUrl = (faviconLink as any)._objectUrl;
+      if (oldObjectUrl) {
+        URL.revokeObjectURL(oldObjectUrl);
+      }
+
+      faviconLink.href = newObjectUrl; 
       faviconLink.type = 'image/svg+xml';
-      // Consider revoking URL.createObjectURL if the icon paths change frequently
-      // return () => URL.revokeObjectURL(url); // Example cleanup
+      (faviconLink as any)._objectUrl = newObjectUrl; // Store new object URL
     } else {
-      faviconLink.href = '/favicon.svg'; // Default fallback
+      faviconLink.href = '/favicon.svg'; // Fallback to static default
       faviconLink.type = 'image/svg+xml';
+      // Clean up old object URL if it existed
+      const oldObjectUrl = (faviconLink as any)._objectUrl;
+      if (oldObjectUrl) {
+        URL.revokeObjectURL(oldObjectUrl);
+        delete (faviconLink as any)._objectUrl;
+      }
     }
-  }, [appLogoUrl, appIconPaths, accentColor, theme]); // Re-run if accent changes for SVG stroke color
+  }, [appLogoUrl, appIconPaths, accentColor, theme]);
 
 
   const value = useMemo(() => ({
