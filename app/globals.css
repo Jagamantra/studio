@@ -196,14 +196,44 @@
     @apply flex h-full flex-col;
   }
 
-  /* Example density-based styling (conceptual) */
-  html[data-density="compact"] .dense-target {
-    @apply p-1 text-xs; /* Example for a hypothetical dense-target class */
+  /* Interface Density CSS Variables */
+  html[data-density="compact"] {
+    --density-padding-xs: 0.125rem; /* 2px */
+    --density-padding-sm: 0.25rem;  /* 4px */
+    --density-padding-md: 0.5rem;   /* 8px */
+    --density-padding-lg: 0.75rem;  /* 12px */
+    --density-text-xs: 0.65rem;     /* ~10.4px */
+    --density-text-sm: 0.75rem;     /* 12px */
+    --density-text-base: 0.875rem;  /* 14px */
   }
-  html[data-density="comfortable"] .dense-target {
-    @apply p-2 text-sm;
+  html[data-density="comfortable"] {
+    --density-padding-xs: 0.25rem; /* 4px */
+    --density-padding-sm: 0.5rem;  /* 8px */
+    --density-padding-md: 0.75rem; /* 12px */
+    --density-padding-lg: 1rem;    /* 16px */
+    --density-text-xs: 0.75rem;    /* 12px */
+    --density-text-sm: 0.875rem;   /* 14px */
+    --density-text-base: 1rem;     /* 16px */
   }
-  html[data-density="spacious"] .dense-target {
-    @apply p-4 text-base;
+  html[data-density="spacious"] {
+    --density-padding-xs: 0.5rem;  /* 8px */
+    --density-padding-sm: 0.75rem; /* 12px */
+    --density-padding-md: 1rem;    /* 16px */
+    --density-padding-lg: 1.5rem;  /* 24px */
+    --density-text-xs: 0.875rem;   /* 14px */
+    --density-text-sm: 1rem;       /* 16px */
+    --density-text-base: 1.125rem; /* 18px */
   }
+
+  /* Example: Apply density to Shadcn Button padding using CSS variables if its internal classes don't directly support it */
+  /* This is a conceptual example; actual application might differ based on Shadcn component structure */
+  /*
+  .button-density-aware {
+    padding-left: var(--density-padding-md);
+    padding-right: var(--density-padding-md);
+    padding-top: var(--density-padding-sm);
+    padding-bottom: var(--density-padding-sm);
+    font-size: var(--density-text-base);
+  }
+  */
 }

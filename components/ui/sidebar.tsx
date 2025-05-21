@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -18,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useTheme } from "@/contexts/theme-provider" // Added useTheme
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -216,24 +218,20 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground fixed inset-y-0 z-30" // Added fixed positioning
+        className="group peer hidden md:block text-sidebar-foreground fixed inset-y-0 z-30" 
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
       >
-        {/* This is what handles the sidebar gap on desktop */}
-         {/* Removed the placeholder div that created a gap. The sidebar itself is now fixed. */}
         <div
           className={cn(
             "duration-200 h-svh w-[--sidebar-width] transition-[width] ease-linear md:flex",
-            // "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]", // This was for relative positioning
-            // "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
-            side === "left" ? "left-0" : "right-0", // Ensure it sticks to the correct side
-            state === "collapsed" && collapsible === "offcanvas" ? (side === "left" ? "-left-[--sidebar-width]" : "-right-[--sidebar-width]") : "", // Offcanvas logic
+            side === "left" ? "left-0" : "right-0", 
+            state === "collapsed" && collapsible === "offcanvas" ? (side === "left" ? "-left-[--sidebar-width]" : "-right-[--sidebar-width]") : "", 
             className
           )}
           {...props}
@@ -317,18 +315,8 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        "relative flex min-h-svh flex-1 flex-col bg-background transition-[margin-left] duration-200 ease-linear", // Added transition
-        // Apply margin-left only on desktop and when sidebar is not inset/floating variant
-        // (assuming 'sidebar' is the default variant that pushes content)
+        "relative flex min-h-svh flex-1 flex-col bg-background transition-[margin-left] duration-200 ease-linear", 
         !isMobile && "md:ml-[var(--sidebar-actual-width)]", 
-        // The following lines for inset variant seem complex and might need review based on exact desired behavior for 'inset'.
-        // Keeping them for now but they might interact with the new md:ml logic.
-        // "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))]",
-        // "md:peer-data-[variant=inset]:m-2",
-        // "md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2", // This might be redundant or conflicting
-        // "md:peer-data-[variant=inset]:ml-0", //This might be redundant or conflicting
-        // "md:peer-data-[variant=inset]:rounded-xl",
-        // "md:peer-data-[variant=inset]:shadow",
         className
       )}
       style={
@@ -527,7 +515,7 @@ const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md text-left outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -535,10 +523,10 @@ const sidebarMenuButtonVariants = cva(
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
-      size: {
-        default: "h-8 text-sm",
+      size: { // This size variant is more about overall button height/text size, not density-specific padding
+        default: "h-8 text-sm", // Default was text-sm
         sm: "h-7 text-xs",
-        lg: "h-12 text-sm group-data-[collapsible=icon]:!p-0",
+        lg: "h-12 text-base group-data-[collapsible=icon]:!p-0", // was text-sm
       },
     },
     defaultVariants: {
@@ -564,12 +552,27 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
+      children, // Added children prop
       ...props
     },
     ref
   ) => {
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
+    const { interfaceDensity } = useTheme(); // Get interfaceDensity
+
+    const getDensityClasses = () => {
+      switch (interfaceDensity) {
+        case 'compact':
+          return 'p-1.5 text-xs'; // Smaller padding and text for compact
+        case 'comfortable':
+          return 'p-2 text-sm';   // Default padding and text
+        case 'spacious':
+          return 'p-3 text-base'; // Larger padding and text for spacious
+        default:
+          return 'p-2 text-sm';
+      }
+    };
 
     const button = (
       <Comp
@@ -577,9 +580,15 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(
+          sidebarMenuButtonVariants({ variant, size }), // Base variants
+          getDensityClasses(), // Density-specific padding and text size
+          className
+        )}
         {...props}
-      />
+      >
+        {children}
+      </Comp>
     )
 
     if (!tooltip) {
@@ -724,23 +733,36 @@ const SidebarMenuSubButton = React.forwardRef<
   HTMLAnchorElement,
   React.ComponentProps<"a"> & {
     asChild?: boolean
-    size?: "sm" | "md"
+    size?: "sm" | "md" // Renamed from 'default' to avoid conflict with HTMLAnchorElement's 'size'
     isActive?: boolean
   }
->(({ asChild = false, size = "md", isActive, className, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a"
+>(({ asChild = false, size: subButtonSize = "md", isActive, className, ...props }, ref) => {
+  const Comp = asChild ? Slot : "a";
+  const { interfaceDensity } = useTheme();
+
+  const getDensityClasses = () => {
+    switch (interfaceDensity) {
+      case 'compact':
+        return cn('h-6 px-1.5 text-xs', subButtonSize === 'sm' ? 'text-[0.65rem]' : 'text-xs');
+      case 'comfortable':
+        return cn('h-7 px-2', subButtonSize === 'sm' ? 'text-xs' : 'text-sm');
+      case 'spacious':
+        return cn('h-8 px-2.5', subButtonSize === 'sm' ? 'text-sm' : 'text-base');
+      default:
+        return cn('h-7 px-2', subButtonSize === 'sm' ? 'text-xs' : 'text-sm');
+    }
+  };
 
   return (
     <Comp
       ref={ref}
       data-sidebar="menu-sub-button"
-      data-size={size}
+      data-size={subButtonSize}
       data-active={isActive}
       className={cn(
-        "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
+        "flex min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
-        size === "sm" && "text-xs",
-        size === "md" && "text-sm",
+        getDensityClasses(),
         "group-data-[collapsible=icon]:hidden",
         className
       )}
