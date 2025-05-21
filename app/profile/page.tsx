@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react'; 
-import { useAuth } from '@/contexts/auth-provider';
+import { useAuth } from '@/contexts/auth-context';
 import { Loader2 } from 'lucide-react';
 import { PersonalInformationForm } from '@/components/profile/personal-information-form';
 import { ChangePasswordForm } from '@/components/profile/change-password-form';

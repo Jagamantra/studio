@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ShieldCheck } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-provider'; 
+import { useAuth } from '@/contexts/auth-context'; 
 import * as api from '@/services/api'; 
 
 const passwordFormSchema = z.object({
@@ -126,3 +126,4 @@ export const ChangePasswordForm = React.memo(function ChangePasswordForm({ anyLo
 });
 
 ChangePasswordForm.displayName = 'ChangePasswordForm';
+
