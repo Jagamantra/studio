@@ -1,8 +1,9 @@
+
 import type { ProjectConfig } from '@/types';
 
 export const projectConfig: ProjectConfig = {
   appName: 'Genesis Template',
-  appIconPaths: [ // Default SVG paths for the application icon - layered hexagon
+  appIconPaths: [ 
     "M12 2L2 7l10 5 10-5-10-5z",
     "M2 17l10 5 10-5",
     "M2 12l10 5 10-5"
@@ -28,5 +29,20 @@ export const projectConfig: ProjectConfig = {
     { name: 'Dev Build', id: 'dev' },
   ],
   defaultAppVersionId: 'v1.0.0',
-  enableConfigAdvisor: true, // Default to enabled
+  enableConfigAdvisor: true,
+  
+  availableFontSizes: [
+    { name: 'Small', value: '14px' }, // affects base font size for rem units
+    { name: 'Default', value: '16px' },
+    { name: 'Large', value: '18px' },
+  ],
+  defaultFontSizeName: 'Default',
+
+  availableScales: [
+    { name: 'Compact (90%)', value: '0.9' },
+    { name: 'Default (100%)', value: '1.0' },
+    { name: 'Large (110%)', value: '1.1' },
+  ],
+  defaultScaleName: 'Default (100%)',
+  mockApiMode: true, // Default to true, meaning mock API is used
 };

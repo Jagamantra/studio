@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Moon, Sun, Palette, SquareRadical, Check, ChevronsUpDown, GitBranch } from 'lucide-react';
+import { Moon, Sun, Palette, SquareRadical, Check, ChevronsUpDown, GitBranch, ZoomIn, ZoomOut, CaseSensitive } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { projectConfig } from '@/config/project.config';
-import type { AccentColor, BorderRadiusOption } from '@/types';
+import type { AccentColor, BorderRadiusOption, FontSizeOption, ScaleOption } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function ThemeSwitcher() {
@@ -35,28 +35,32 @@ export function ThemeSwitcher() {
     setBorderRadius,
     appVersion,
     setAppVersion,
+    fontSize,
+    setFontSize,
+    appScale,
+    setAppScale,
     availableAccentColors,
     availableBorderRadii,
+    availableFontSizes,
+    availableScales,
   } = useTheme();
 
   const colorInputRef = React.useRef<HTMLInputElement>(null);
 
   const currentRadius = availableBorderRadii.find(br => br.value === borderRadius);
   const currentVersion = projectConfig.availableAppVersions.find(v => v.id === appVersion);
+  const currentFontSize = availableFontSizes.find(f => f.value === fontSize);
+  const currentScale = availableScales.find(s => s.value === appScale);
+
 
   const currentPredefinedAccent = availableAccentColors.find(ac => ac.hslValue === accentColor);
   
-  // Determine the HEX value for the color input. If current accentColor is HSL, convert or use default.
-  // For simplicity, if it's an HSL value from predefined, use its hex. Otherwise, if it's already hex, use it.
-  // If it's a custom HSL (not in predefined), this input might not perfectly reflect it.
-  // The color input type="color" expects a hex value.
   const colorInputValue = currentPredefinedAccent 
     ? currentPredefinedAccent.hexValue 
     : (accentColor.startsWith('#') ? accentColor : projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hexValue || '#008080');
 
 
   const accentDisplayName = currentPredefinedAccent ? currentPredefinedAccent.name : 'Custom';
-  // Use HSL for display if it's from predefined or seems like HSL, otherwise use the raw accentColor (could be HEX)
   const accentDisplayColorValue = currentPredefinedAccent 
     ? `hsl(${currentPredefinedAccent.hslValue})` 
     : (accentColor.includes(' ') && !accentColor.startsWith('hsl(') ? `hsl(${accentColor})` : accentColor);
@@ -98,7 +102,7 @@ export function ThemeSwitcher() {
           </DropdownMenuPortal>
         </DropdownMenuSub>
         
-        {/* Accent Color Section - Now a SubMenu */}
+        {/* Accent Color Section */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <div className="mr-2 h-4 w-4 rounded-full border" style={{ backgroundColor: accentDisplayColorValue }} />
@@ -108,10 +112,9 @@ export function ThemeSwitcher() {
             <DropdownMenuSubContent className="p-2">
               <ScrollArea className="h-auto max-h-40">
                 <DropdownMenuRadioGroup
-                  // Ensure value matches HSL string if a predefined color is selected
                   value={currentPredefinedAccent ? currentPredefinedAccent.hslValue : ""} 
                   onValueChange={(newHslValue) => { 
-                    setAccentColor(newHslValue); // setAccentColor expects HSL or HEX
+                    setAccentColor(newHslValue);
                   }}
                 >
                   {availableAccentColors.map((colorOption: AccentColor) => (
@@ -137,7 +140,7 @@ export function ThemeSwitcher() {
                   >
                     <div 
                       className="h-4 w-4 rounded-full" 
-                      style={{ backgroundColor: colorInputValue }} // Shows current custom color (HEX)
+                      style={{ backgroundColor: colorInputValue }}
                     /> 
                   </Button>
                 </div>
@@ -145,9 +148,9 @@ export function ThemeSwitcher() {
                   ref={colorInputRef}
                   id="custom-color-picker-hidden"
                   type="color"
-                  className="hidden" // Hidden input, triggered programmatically
-                  value={colorInputValue} // Must be HEX
-                  onChange={(e) => setAccentColor(e.target.value)} // e.target.value will be HEX
+                  className="hidden" 
+                  value={colorInputValue} 
+                  onChange={(e) => setAccentColor(e.target.value)} 
                 />
               </div>
             </DropdownMenuSubContent>
@@ -166,6 +169,44 @@ export function ThemeSwitcher() {
                 {availableBorderRadii.map((radius: BorderRadiusOption) => (
                   <DropdownMenuRadioItem key={radius.name} value={radius.value}>
                     {radius.name} ({radius.value})
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
+
+        {/* Font Size */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <CaseSensitive className="mr-2 h-4 w-4" />
+            <span>Font Size: {currentFontSize?.name || 'Default'}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup value={fontSize} onValueChange={setFontSize}>
+                {availableFontSizes.map((sizeOption: FontSizeOption) => (
+                  <DropdownMenuRadioItem key={sizeOption.name} value={sizeOption.value}>
+                    {sizeOption.name} ({sizeOption.value})
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
+
+        {/* Screen Scale */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <ZoomIn className="mr-2 h-4 w-4" /> {/* Or use a different icon like Maximize2 */}
+            <span>Scale: {currentScale?.name || 'Default'}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup value={appScale} onValueChange={setAppScale}>
+                {availableScales.map((scaleOption: ScaleOption) => (
+                  <DropdownMenuRadioItem key={scaleOption.name} value={scaleOption.value}>
+                    {scaleOption.name}
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>

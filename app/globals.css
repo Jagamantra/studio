@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -191,9 +192,11 @@
     @apply bg-background text-foreground;
     /* Use Geist font variables from layout.tsx */
     font-family: var(--font-geist-sans), sans-serif;
+    /* Default zoom applied by ThemeProvider */
   }
   html {
     @apply h-full;
+     /* Default font size applied by ThemeProvider */
   }
   body {
     @apply flex h-full flex-col;

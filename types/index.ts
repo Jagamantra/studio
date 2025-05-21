@@ -17,6 +17,16 @@ export type AppVersion = {
   id: string;
 };
 
+export type FontSizeOption = {
+  name: string;
+  value: string; // e.g., "14px" or "0.9rem"
+};
+
+export type ScaleOption = {
+  name: string;
+  value: string; // e.g., "0.9" or "1.1"
+};
+
 export type ProjectConfig = {
   appName: string;
   appIconPaths?: string[]; // SVG path data for the application icon
@@ -26,7 +36,11 @@ export type ProjectConfig = {
   defaultBorderRadiusName: string;
   availableAppVersions: AppVersion[];
   defaultAppVersionId: string;
-  enableConfigAdvisor?: boolean; // Added to control Config Advisor feature
+  enableConfigAdvisor?: boolean;
+  availableFontSizes: FontSizeOption[];
+  defaultFontSizeName: string;
+  availableScales: ScaleOption[];
+  defaultScaleName: string;
 };
 
 export type SidebarNavItem = {
@@ -47,9 +61,8 @@ export type Role = 'admin' | 'user' | 'guest';
 
 export type RolesConfig = {
   roles: Role[];
-  // Defines which roles can access which base paths. More granular control can be added.
-  routePermissions: Record<string, Role[]>; // e.g. { "/users": ["admin"] }
-  defaultRole: Role; // Default role for new users
+  routePermissions: Record<string, Role[]>;
+  defaultRole: Role;
 };
 
 export type UserProfile = {
@@ -59,23 +72,26 @@ export type UserProfile = {
   photoURL: string | null;
   phoneNumber: string | null;
   role: Role;
-  password?: string; // For dummy authentication system
-  // Advanced settings example
+  password?: string;
   receiveNotifications?: boolean;
   interfaceDensity?: 'compact' | 'comfortable' | 'spacious';
+  // Theme preferences that could be stored per user in a real backend
+  preferredThemeMode?: 'light' | 'dark' | 'system';
+  preferredAccentColor?: string; // HSL or HEX
+  preferredBorderRadius?: string; // CSS value
+  preferredAppVersion?: string;
+  preferredFontSize?: string; // CSS value
+  preferredScale?: string; // CSS value (e.g. "1.0")
 };
 
 // For theme context
 export type ThemeSettings = {
   theme: 'light' | 'dark' | 'system';
-  accentColor: string; // HSL value string (e.g., "180 100% 25%") or HEX string (e.g., "#008080")
-  borderRadius: string; // CSS rem/px value
-  appVersion: string; // ID of the app version
-  appName: string; 
-  appIconPaths?: string[]; // SVG path data for dynamic icon
+  accentColor: string;
+  borderRadius: string;
+  appVersion: string;
+  appName: string;
+  appIconPaths?: string[];
+  fontSize: string; // e.g. "16px"
+  appScale: string; // e.g. "1.0"
 };
-
-// This type is defined in config-advisor/page.tsx but used in its child components.
-// If it were to be used more broadly, it could stay here.
-// For now, child components import it from the page.
-// export type ProjectConfigFormValues = z.infer<typeof projectConfigFormSchema>;

@@ -1,10 +1,11 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { projectConfig } from '@/config/project.config';
-import type { ThemeSettings, AccentColor, BorderRadiusOption } from '@/types';
+import type { ThemeSettings, AccentColor, BorderRadiusOption, FontSizeOption, ScaleOption } from '@/types';
 import { hexToHsl } from '@/lib/utils'; 
 
 interface ThemeProviderState extends ThemeSettings {
@@ -14,8 +15,12 @@ interface ThemeProviderState extends ThemeSettings {
   setAppVersion: (versionId: string) => void;
   setAppName: (appName: string) => void; 
   setAppIconPaths: (paths: string[]) => void; 
+  setFontSize: (fontSizeValue: string) => void;
+  setAppScale: (scaleValue: string) => void;
   availableAccentColors: AccentColor[];
   availableBorderRadii: BorderRadiusOption[];
+  availableFontSizes: FontSizeOption[];
+  availableScales: ScaleOption[];
 }
 
 const getInitialAccentHsl = () => {
@@ -30,6 +35,14 @@ const getInitialAppIconPaths = () => {
   return projectConfig.appIconPaths || [];
 }
 
+const getInitialFontSize = () => {
+  return projectConfig.availableFontSizes.find(f => f.name === projectConfig.defaultFontSizeName)?.value || projectConfig.availableFontSizes[1]?.value || '16px';
+}
+
+const getInitialScale = () => {
+  return projectConfig.availableScales.find(s => s.name === projectConfig.defaultScaleName)?.value || projectConfig.availableScales[1]?.value || '1.0';
+}
+
 const initialState: ThemeProviderState = {
   theme: 'system',
   accentColor: getInitialAccentHsl(),
@@ -37,14 +50,20 @@ const initialState: ThemeProviderState = {
   appVersion: projectConfig.defaultAppVersionId,
   appName: projectConfig.appName, 
   appIconPaths: getInitialAppIconPaths(), 
+  fontSize: getInitialFontSize(),
+  appScale: getInitialScale(),
   setTheme: () => null,
   setAccentColor: () => null,
   setBorderRadius: () => null,
   setAppVersion: () => null,
   setAppName: () => null, 
   setAppIconPaths: () => null, 
+  setFontSize: () => null,
+  setAppScale: () => null,
   availableAccentColors: projectConfig.availableAccentColors,
   availableBorderRadii: projectConfig.availableBorderRadii,
+  availableFontSizes: projectConfig.availableFontSizes,
+  availableScales: projectConfig.availableScales,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -76,11 +95,19 @@ export function ThemeProvider({
   );
   const [appName, setAppNameInternal] = useLocalStorage<string>(
     `${storageKey}-app-name`,
-    initialState.appName // Initialize with projectConfig's appName
+    initialState.appName
   );
   const [appIconPaths, setAppIconPathsInternal] = useLocalStorage<string[]>(
     `${storageKey}-app-icon-paths`,
-    initialState.appIconPaths // Initialize with projectConfig's appIconPaths
+    initialState.appIconPaths
+  );
+  const [fontSize, setFontSizeInternal] = useLocalStorage<string>(
+    `${storageKey}-font-size`,
+    initialState.fontSize
+  );
+  const [appScale, setAppScaleInternal] = useLocalStorage<string>(
+    `${storageKey}-scale`,
+    initialState.appScale
   );
 
 
@@ -90,6 +117,8 @@ export function ThemeProvider({
   const setAppVersion = useCallback((newAppVersion: string) => setAppVersionInternal(newAppVersion), [setAppVersionInternal]);
   const setAppName = useCallback((newAppName: string) => setAppNameInternal(newAppName), [setAppNameInternal]);
   const setAppIconPaths = useCallback((newPaths: string[]) => setAppIconPathsInternal(newPaths), [setAppIconPathsInternal]);
+  const setFontSize = useCallback((newFontSize: string) => setFontSizeInternal(newFontSize), [setFontSizeInternal]);
+  const setAppScale = useCallback((newScale: string) => setAppScaleInternal(newScale), [setAppScaleInternal]);
 
 
   useEffect(() => {
@@ -186,9 +215,23 @@ export function ThemeProvider({
 
   useEffect(() => {
     if (appName && typeof document !== 'undefined') {
-      document.title = appName;
+      document.title = appName; 
     }
   }, [appName]);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (fontSize) {
+      root.style.fontSize = fontSize;
+    }
+  }, [fontSize]);
+
+  useEffect(() => {
+    const body = window.document.body;
+    if (appScale) {
+      body.style.zoom = appScale;
+    }
+  }, [appScale]);
 
   const value = useMemo(() => ({
     theme,
@@ -197,16 +240,22 @@ export function ThemeProvider({
     appVersion,
     appName, 
     appIconPaths, 
+    fontSize,
+    appScale,
     setTheme,
     setAccentColor,
     setBorderRadius,
     setAppVersion,
     setAppName, 
     setAppIconPaths, 
+    setFontSize,
+    setAppScale,
     availableAccentColors: projectConfig.availableAccentColors,
     availableBorderRadii: projectConfig.availableBorderRadii,
-  }), [theme, accentColor, borderRadius, appVersion, appName, appIconPaths, 
-      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths]);
+    availableFontSizes: projectConfig.availableFontSizes,
+    availableScales: projectConfig.availableScales,
+  }), [theme, accentColor, borderRadius, appVersion, appName, appIconPaths, fontSize, appScale,
+      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths, setFontSize, setAppScale]);
 
   return (
     <ThemeProviderContext.Provider value={value}>
