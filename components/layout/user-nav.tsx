@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/auth-provider';
+import { useAuth } from '@/contexts/auth-context'; // Corrected import path
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { projectConfig } from '@/config/project.config';
@@ -82,7 +82,7 @@ export function UserNav() {
                 </DropdownMenuItem>
               </Link>
             )}
-             {user.role === 'admin' && projectConfig.enableApplicationConfig && ( // Updated to use enableApplicationConfig
+             {user.role === 'admin' && projectConfig.enableApplicationConfig && (
                 <Link href="/config-advisor" passHref>
                     <DropdownMenuItem>
                         <ShieldQuestion className="mr-2 h-4 w-4" />
