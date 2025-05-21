@@ -12,6 +12,7 @@ import { betaDashboardChartData } from '@/data/dummy-data';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// Dynamically import the main BarChart component from recharts
 const RechartsBarChartComponent = dynamic(
   () => import('recharts').then(mod => mod.BarChart),
   {
@@ -19,10 +20,9 @@ const RechartsBarChartComponent = dynamic(
     loading: () => <Skeleton className="h-[250px] w-full" />
   }
 );
-const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
-const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
-const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
+
+// Directly import sub-components from recharts
+import { CartesianGrid, XAxis, YAxis, Bar } from 'recharts';
 
 
 interface DashboardBetaContentProps {
