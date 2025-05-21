@@ -29,10 +29,10 @@ export const projectConfig: ProjectConfig = {
     { name: 'Dev Build', id: 'dev' },
   ],
   defaultAppVersionId: 'v1.0.0',
-  enableConfigAdvisor: true,
+  enableApplicationConfig: true, // Renamed from enableConfigAdvisor
   
   availableFontSizes: [
-    { name: 'Small', value: '14px' }, // affects base font size for rem units
+    { name: 'Small', value: '14px' },
     { name: 'Default', value: '16px' },
     { name: 'Large', value: '18px' },
   ],
@@ -44,5 +44,6 @@ export const projectConfig: ProjectConfig = {
     { name: 'Large (110%)', value: '1.1' },
   ],
   defaultScaleName: 'Default (100%)',
-  mockApiMode: true, // Default to true, meaning mock API is used
+  mockApiMode: true,
 };
+

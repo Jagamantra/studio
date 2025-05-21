@@ -53,10 +53,10 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
               </CardContent>
             </Card>
 
-            {projectConfig.enableConfigAdvisor && ( 
+            {projectConfig.enableApplicationConfig && (  // Updated to use enableApplicationConfig
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                  <CardTitle className="text-sm font-medium">Config Advisor</CardTitle>
+                  <CardTitle className="text-sm font-medium">Application Config</CardTitle> {/* Changed title */}
                   <ShieldQuestion className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -100,7 +100,7 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
             <div className="flex flex-col items-center justify-center p-3 sm:p-4 border rounded-lg text-center">
                 <div className="w-full aspect-[2/1] relative mb-3">
                   <Image 
-                    src="https://picsum.photos/seed/dashboard1/400/200" 
+                    src="https://placehold.co/400x200.png"
                     alt="Feature placeholder 1" 
                     layout="fill" 
                     objectFit="cover" 
@@ -118,7 +118,7 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
             <div className="flex flex-col items-center justify-center p-3 sm:p-4 border rounded-lg text-center">
                 <div className="w-full aspect-[2/1] relative mb-3">
                   <Image 
-                    src="https://picsum.photos/seed/dashboard2/400/200" 
+                    src="https://placehold.co/400x200.png"
                     alt="Feature placeholder 2" 
                     layout="fill" 
                     objectFit="cover" 

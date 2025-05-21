@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut, User, Settings, LogIn } from 'lucide-react';
+import { LogOut, User, Settings, LogIn, ShieldQuestion } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/auth-provider';
 import { Skeleton } from '@/components/ui/skeleton';
-import Image from 'next/image'; // Import next/image
+import Image from 'next/image';
+import { projectConfig } from '@/config/project.config';
 
 export function UserNav() {
   const { user, logout, loading } = useAuth();
@@ -46,7 +47,7 @@ export function UserNav() {
                   height={32} 
                   className="rounded-full object-cover" 
                   data-ai-hint="user avatar"
-                  unoptimized={true} // if photoURL can be external
+                  unoptimized={true}
                 />
               ) : (
                 <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
@@ -81,11 +82,11 @@ export function UserNav() {
                 </DropdownMenuItem>
               </Link>
             )}
-             {user.role === 'admin' && projectConfig.enableConfigAdvisor && (
+             {user.role === 'admin' && projectConfig.enableApplicationConfig && ( // Updated to use enableApplicationConfig
                 <Link href="/config-advisor" passHref>
                     <DropdownMenuItem>
                         <ShieldQuestion className="mr-2 h-4 w-4" />
-                        <span>Config Advisor</span>
+                        <span>Application Config</span> 
                     </DropdownMenuItem>
                 </Link>
             )}
@@ -99,7 +100,6 @@ export function UserNav() {
       </DropdownMenu>
     );
   } else {
-    // No user logged in
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -134,8 +134,3 @@ export function UserNav() {
     );
   }
 }
-
-// Need to import projectConfig if it's used here
-import { projectConfig } from '@/config/project.config';
-import { ShieldQuestion } from 'lucide-react'; // Ensure ShieldQuestion is imported
-

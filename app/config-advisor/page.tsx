@@ -59,7 +59,7 @@ export default function ConfigAdvisorPage() {
 
   React.useEffect(() => {
     // Set document title dynamically
-    document.title = `Configuration Advisor | ${currentAppNameFromTheme}`;
+    document.title = `Application Config | ${currentAppNameFromTheme}`;
   }, [currentAppNameFromTheme]);
 
   const projectConfigForm = useForm<ProjectConfigFormValues>({
@@ -81,7 +81,7 @@ export default function ConfigAdvisorPage() {
   const [showPlaceholders, setShowPlaceholders] = useState(true);
 
   useEffect(() => {
-    if (!appProjectConfig.enableConfigAdvisor) {
+    if (!appProjectConfig.enableApplicationConfig) { // Updated to use enableApplicationConfig
       return;
     }
     if (!authLoading) {
@@ -91,11 +91,11 @@ export default function ConfigAdvisorPage() {
       } else { 
       }
     }
-  }, [user, authLoading, appProjectConfig.enableConfigAdvisor, router]);
+  }, [user, authLoading, router]);
 
 
   useEffect(() => {
-    if (!appProjectConfig.enableConfigAdvisor || !isAuthorized) return;
+    if (!appProjectConfig.enableApplicationConfig || !isAuthorized) return; // Updated to use enableApplicationConfig
 
     if (typeof window !== 'undefined') {
         const storedInputsJSON = localStorage.getItem('configAdvisorInputs');
@@ -129,10 +129,10 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appProjectConfig.enableConfigAdvisor, isAuthorized, currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion]);
+  }, [appProjectConfig.enableApplicationConfig, isAuthorized, currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion]);
 
   useEffect(() => {
-    if (!appProjectConfig.enableConfigAdvisor || !isAuthorized) return;
+    if (!appProjectConfig.enableApplicationConfig || !isAuthorized) return; // Updated to use enableApplicationConfig
     projectConfigForm.reset({
       appName: currentAppNameFromTheme,
       defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
@@ -140,11 +140,11 @@ export default function ConfigAdvisorPage() {
       defaultAppVersionId: currentAppVersion,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
+  }, [currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableApplicationConfig, isAuthorized]);
 
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
-    if (!appProjectConfig.enableConfigAdvisor || !isAuthorized) return;
+    if (!appProjectConfig.enableApplicationConfig || !isAuthorized) return; // Updated to use enableApplicationConfig
     if (typeof window !== 'undefined') {
         const currentInputs: StoredConfigAdvisorInputs = {
             projectConfigFormData: watchedProjectConfig,
@@ -164,7 +164,7 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableConfigAdvisor, isAuthorized]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableApplicationConfig, isAuthorized]);
 
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
@@ -263,7 +263,7 @@ export const projectConfig = {
   defaultBorderRadiusName: '${projectConfigData.defaultBorderRadiusName}',
   availableAppVersions: ${JSON.stringify(appProjectConfig.availableAppVersions, null, 2)},
   defaultAppVersionId: '${projectConfigData.defaultAppVersionId}',
-  enableConfigAdvisor: ${appProjectConfig.enableConfigAdvisor ?? true}
+  enableApplicationConfig: ${appProjectConfig.enableApplicationConfig ?? true} // Updated key
 };`.trim();
 
     const input: AnalyzeConfigInput = {
@@ -275,18 +275,18 @@ export const projectConfig = {
     await performAnalysis(input);
   };
 
-  if (authLoading || (!isAuthorized && appProjectConfig.enableConfigAdvisor && user && user.role !== 'admin')) {
+  if (authLoading || (!isAuthorized && appProjectConfig.enableApplicationConfig && user && user.role !== 'admin')) { // Updated to use enableApplicationConfig
     return <AuthenticatedPageLayout><div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></AuthenticatedPageLayout>;
   }
 
-  if (!appProjectConfig.enableConfigAdvisor) {
+  if (!appProjectConfig.enableApplicationConfig) { // Updated to use enableApplicationConfig
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
           <Ban className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4" />
           <h1 className="text-xl md:text-2xl font-bold">Feature Disabled</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2">
-            The Config Advisor feature is currently disabled by the administrator.
+            The Application Config feature is currently disabled by the administrator.
           </p>
           <Button asChild className="mt-6">
             <Link href="/dashboard">Go to Dashboard</Link>
@@ -296,7 +296,7 @@ export const projectConfig = {
     );
   }
 
-  if (!isAuthorized && appProjectConfig.enableConfigAdvisor) { 
+  if (!isAuthorized && appProjectConfig.enableApplicationConfig) {  // Updated to use enableApplicationConfig
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4">
@@ -313,7 +313,7 @@ export const projectConfig = {
   return (
     <AuthenticatedPageLayout>
       <div className="space-y-4 md:space-y-6 min-w-0">
-        <PageTitleWithIcon title="Configuration Advisor">
+        <PageTitleWithIcon title="Application Config"> {/* Changed title */}
           <div className="flex gap-2">
             <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
               {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />}

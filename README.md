@@ -38,20 +38,20 @@ Follow these steps to run the Genesis Template locally:
         *   Admin: `admin@dummy.com` / `password123`
         *   User: `user@dummy.com` / `password123`
     *   You can register new dummy users. Their data is stored in your browser's Local Storage.
-    *   Key features: Theme Switcher, Profile Editor, (Mock) Role-Based Access Control, Dynamic Sidebar, AI Config Advisor.
+    *   Key features: Theme Switcher, Profile Editor, (Mock) Role-Based Access Control, Dynamic Sidebar, AI Application Config.
 
 ## Core Features
 
--   **Theme Switcher**: Change themes (dark/light), accent colors, and border radius. Find it via the palette icon in the header.
+-   **Theme Switcher**: Change themes (dark/light), accent colors, border radius, font size, and app scale. Find it via the palette icon in the header.
 -   **Profile Editor**: Manage user profiles (details, password) using mock services.
 -   **Access Control**: (Mocked) Role-based route access. Configure in `config/roles.config.ts`. Unauthorized access attempts redirect to the dashboard with a toast notification.
 -   **Dynamic Sidebar**: Navigation configured in `config/sidebar.config.ts`. Varies with user role.
--   **Config Advisor**: (Admin-only) AI tool to analyze app configuration files. Enable/disable in `config/project.config.ts`.
+-   **Application Config (AI Analyzer)**: (Admin-only) AI tool to analyze app configuration files. Enable/disable in `config/project.config.ts` via the `enableApplicationConfig` flag.
 -   **Mock MFA**: A mock Multi-Factor Authentication step is included in the login/registration flow for demonstration.
 
 ## Genkit for AI
 
-The app uses Genkit for AI features like the Config Advisor.
+The app uses Genkit for AI features like the Application Config analyzer.
 -   Genkit flows are in `ai/flows/`.
 -   To run Genkit locally for development:
     ```bash
@@ -62,18 +62,18 @@ The app uses Genkit for AI features like the Config Advisor.
 
 ## Mock API & Data Persistence
 
-This template uses a **mock API service** (`services/api.ts`) and dummy data (`data/dummy-data.ts`). This lets you build the entire frontend without a real backend.
+This template uses a **mock API service** (`services/api.ts` and `services/api.mock.ts`) and dummy data (`data/dummy-data.ts`). This lets you build the entire frontend without a real backend. It can be switched to a real API by setting `mockApiMode: false` in `config/project.config.ts` and providing your API base URL in `.env.local`.
 
-**Data is stored in your browser's Local Storage**:
+**When `mockApiMode` is `true`, data is stored in your browser's Local Storage**:
 -   **User Session & Details**:
     *   `genesis_current_dummy_user`: Current logged-in (dummy) user's profile.
     *   `genesis_mfa_verified`: Mock MFA status.
 -   **Dummy User Database**:
     *   `genesis_dummy_users`: All registered dummy users.
 -   **Theme Settings**:
-    *   `genesis-theme-mode`, `genesis-theme-accent`, `genesis-theme-radius`, `genesis-theme-version`, `genesis-theme-app-name`, `genesis-theme-app-icon-paths`.
--   **Config Advisor Inputs**:
-    *   `configAdvisorInputs`: User inputs for the Config Advisor.
+    *   `genesis-theme-mode`, `genesis-theme-accent`, `genesis-theme-radius`, `genesis-theme-version`, `genesis-theme-app-name`, `genesis-theme-app-icon-paths`, `genesis-theme-font-size`, `genesis-theme-scale`.
+-   **Application Config Inputs**:
+    *   `configAdvisorInputs`: User inputs for the Application Config analyzer. (Note: The key `configAdvisorInputs` is historical; the feature is now called "Application Config").
 
 **Note**: Local Storage is for the mock setup. A real backend would store this data in a database.
 
@@ -85,12 +85,15 @@ Key configurations are in the `config/` directory.
 
 This file (`projectConfig`) controls:
 
--   **`appName: string`**: Your application's name. Used in headers, tab titles, etc. Can be updated at runtime (e.g., via Config Advisor) and is persisted in Local Storage.
--   **`appIconPaths: string[]`**: SVG path `d` attributes for the main app icon (shown in header and next to page titles). If empty or not provided, a generic document icon (`FileText` from Lucide) is used. This setting also dynamically updates the browser tab icon (favicon).
+-   **`appName: string`**: Your application's name. Used in headers, tab titles, etc. Can be updated at runtime (e.g., via Application Config) and is persisted in Local Storage.
+-   **`appIconPaths: string[]`**: SVG path `d` attributes for the main app icon (shown in header and next to page titles). If empty or not provided, a generic document icon (`FileText` from Lucide) is used. This setting also dynamically sets the browser tab icon (favicon).
 -   **`availableAccentColors` & `defaultAccentColorName`**: Predefined accent colors for the Theme Switcher.
 -   **`availableBorderRadii` & `defaultBorderRadiusName`**: Border radius options.
 -   **`availableAppVersions` & `defaultAppVersionId`**: Define different app "versions" (e.g., 'v1.0.0', 'beta'). Affects UI/features (see Dashboard).
--   **`enableConfigAdvisor: boolean`**: Toggle the AI Config Advisor feature (default: `true`). If `false`, links/cards are hidden, and direct access shows a "disabled" message.
+-   **`availableFontSizes` & `defaultFontSizeName`**: Font size options for base HTML font size.
+-   **`availableScales` & `defaultScaleName`**: Screen scaling/zoom options.
+-   **`enableApplicationConfig: boolean`**: Toggle the AI Application Config feature (default: `true`). If `false`, links/cards are hidden, and direct access shows a "disabled" message.
+-   **`mockApiMode: boolean`**: Set to `true` to use mock API and Local Storage for data. Set to `false` to use real API calls (requires `NEXT_PUBLIC_API_BASE_URL` to be set in `.env.local`).
 
 ### 2. Theme Customization (Runtime)
 
@@ -98,6 +101,8 @@ Users can customize:
 -   **Mode**: Light, Dark, System.
 -   **Accent Color**: Predefined or custom HEX.
 -   **Border Radius**: Predefined options.
+-   **Font Size**: Predefined options.
+-   **App Scale**: Predefined options.
 Managed by `contexts/theme-provider.tsx`, saved in Local Storage.
 
 ### 3. Sidebar Navigation (`config/sidebar.config.ts`)
@@ -111,7 +116,7 @@ Defines sidebar items:
 -   **`roles: Role[]`**: Available roles (e.g., `admin`, `user`).
 -   **`routePermissions: Record<string, Role[]>`**: Maps routes to allowed roles (e.g., `'/users': ['admin']`).
 -   **`defaultRole: Role`**: Role for new (dummy) users.
--   Access control is enforced by `contexts/auth-provider.tsx`. Unauthorized navigation attempts redirect to `/dashboard` with a toast message.
+-   Access control is enforced by `contexts/auth-provider.tsx` (or `contexts/mock-auth-provider.tsx` if in mock mode). Unauthorized navigation attempts redirect to `/dashboard` with a toast message.
 
 ## Connecting to Your Backend API
 
@@ -121,38 +126,51 @@ To switch from the mock API to your real backend:
     *   In `.env.local`, set `NEXT_PUBLIC_API_BASE_URL` to your backend's URL (e.g., `https://your-api.com/v1`).
     *   Restart your Next.js server.
 
-2.  **Update API Service Functions (`services/api.ts`)**:
-    *   This file currently has mock functions (e.g., `fetchUsers`, `addUser`).
-    *   Modify these to make real HTTP requests to your backend endpoints. `apiClient` (an Axios instance) is already set up.
-    *   **Example - Modifying `fetchUsers`**:
+2.  **Disable Mock API Mode**:
+    *   In `config/project.config.ts`, set `mockApiMode: false`.
+
+3.  **Update API Service Functions (`services/api.real.ts`)**:
+    *   This file currently has placeholder functions for real API calls.
+    *   Modify these functions (e.g., `_realFetchUsers`, `_realLoginUser`) to make actual HTTP requests to your backend endpoints using the pre-configured `apiClient` (an Axios instance).
+    *   **Example - Modifying `_realFetchUsers`**:
         ```typescript
-        // Before (Mock)
-        // export const fetchUsers = async (): Promise<UserProfile[]> => {
-        //   return Promise.resolve([...currentMockUsers]);
+        // Before (Placeholder)
+        // export const _realFetchUsers = async (): Promise<UserProfile[]> => {
+        //   // Replace with actual API call
+        //   console.warn('Real API: _realFetchUsers not implemented');
+        //   return [];
         // };
 
         // After (Real API Call)
         import type { UserProfile } from '@/types';
-        export const fetchUsers = async (): Promise<UserProfile[]> => {
+        export const _realFetchUsers = async (): Promise<UserProfile[]> => {
           try {
             const response = await apiClient.get('/users'); // Your endpoint
-            return response.data;
+            return response.data; // Assuming your API returns an array of UserProfile
           } catch (error) {
             console.error('Error fetching users:', error);
-            throw error;
+            throw error; // Or handle error as appropriate
           }
         };
         ```
-    *   Update all relevant functions in `services/api.ts` to match your backend's API.
+    *   Update all relevant functions in `services/api.real.ts` to match your backend's API.
 
-3.  **Authentication**:
-    *   Replace the dummy auth in `contexts/auth-provider.tsx` and `services/api.ts` (mock `loginUser`, `registerUser`) with your backend's auth.
-    *   Modify `loginUser`, `registerUser` in `services/api.ts` to call your auth endpoints.
-    *   Adjust `contexts/auth-provider.tsx` to handle tokens (e.g., JWTs) from your backend.
-    *   Configure `apiClient` in `services/api.ts` to include auth tokens in requests (e.g., via Authorization headers).
+4.  **Authentication (Real API)**:
+    *   The `contexts/auth-provider.tsx` handles real API authentication when `mockApiMode` is `false`.
+    *   **Login (`_realLoginUser` in `services/api.real.ts`)**:
+        *   This function should call your backend's login endpoint.
+        *   It's expected to return a JWT token (or similar session identifier) and basic user info (UID, role).
+        *   The `apiClient` in `services/api.ts` is set up to automatically include the JWT token from cookies in subsequent requests. Ensure your backend sets an HTTP-only cookie for the token.
+    *   **Fetch User Profile (`_realFetchUserProfile` in `services/api.real.ts`)**:
+        *   After login, this function is called to get detailed user profile information (including theme preferences if stored on the backend).
+    *   **Registration, Password Change, etc.**: Implement these in `services/api.real.ts` to call your backend.
+    *   **Token Management**:
+        *   The `apiClient` in `services/api.ts` automatically includes the `Authorization: Bearer <token>` header if a token is found in cookies (key: `genesis_token`).
+        *   Your backend should issue this token upon login and verify it for protected routes.
 
-4.  **Data Types**:
+5.  **Data Types**:
     *   Ensure TypeScript types in `types/index.ts` (e.g., `UserProfile`) match your API's data structures.
+    *   If your backend stores user theme preferences (accent color, radius, etc.), ensure `UserProfile` type includes these, and `_realFetchUserProfile` returns them. The `ThemeProvider` will then use these preferences.
 
 ## Adding a New Page
 
@@ -241,12 +259,7 @@ export const rolesConfig: RolesConfig = {
         document.title = `My New Page Title | ${appName}`;
       }, [appName]);
       // ... rest of component
-      return (
-        <AuthenticatedPageLayout>
-          <PageTitleWithIcon title="My New Page Title" />
-          {/* ... */}
-        </AuthenticatedPageLayout>
-      );
+      return (/* JSX as in Step 1 */);
     };
     export default MyNewPage;
     ```
@@ -284,10 +297,10 @@ const { appVersion } = useTheme();
 
 ### 7. Add "Appearance" Dropdowns (Theme Switcher Style)
 
--   To replicate Theme Switcher dropdowns (mode, accent, radius, version):
+-   To replicate Theme Switcher dropdowns (mode, accent, radius, version, font size, scale):
     *   Use the `useTheme` hook for current values and setters.
     *   Adapt JSX from `components/layout/theme-switcher.tsx` or create a new reusable component.
-    *   Use `projectConfig.availableAccentColors`, `projectConfig.availableBorderRadii`, and `projectConfig.availableAppVersions` for dropdown options.
+    *   Use `projectConfig.availableAccentColors`, `projectConfig.availableBorderRadii`, `projectConfig.availableAppVersions`, `projectConfig.availableFontSizes`, and `projectConfig.availableScales` for dropdown options.
 
 ### 8. Create a New Application Version
 
@@ -317,25 +330,27 @@ Optimizing your Next.js application is key to a great user experience. Here are 
 1.  **Leverage Next.js Features**:
     *   **App Router**: Already in use, promoting server components and efficient routing.
     *   **Code Splitting**: Next.js automatically splits code by page. Ensure your components are well-modularized.
-    *   **`next/image`**: Use for all static images to get automatic optimization. For dynamic external images (like `picsum.photos`), `unoptimized={true}` is appropriate if they are already optimized or to avoid build errors.
+    *   **`next/image`**: Use for all static images to get automatic optimization. For dynamic external images (like `placehold.co`), `unoptimized={true}` is appropriate if they are already optimized or to avoid build errors.
     *   **`next/dynamic`**: Use for components that are not critical for the initial page load (e.g., complex charts, modals not shown by default). This is already used for Recharts in `DashboardBetaContent`.
 
 2.  **React Best Practices**:
     *   **`React.memo`**: Wrap components that re-render unnecessarily with `React.memo`. This is useful for components that receive the same props often. Several components in this template already use it.
     *   **`useCallback` and `useMemo`**: Memoize functions and values to prevent unnecessary re-renders of child components or expensive calculations. These are used in providers and data-heavy components.
     *   **Minimize Re-renders**:
-        *   Be mindful of context updates. The `ThemeProvider` and `AuthProvider` provide dynamic data. Components consuming these contexts will re-render when the context value changes.
+        *   Be mindful of context updates. The `ThemeProvider` and `AuthProvider` (or `MockAuthProvider`) provide dynamic data. Components consuming these contexts will re-render when the context value changes.
         *   Structure components to only subscribe to the parts of the context they need, if possible (though often context provides a single object).
         *   Use selectors with state management libraries if you introduce them (e.g., Zustand, Redux).
 
 3.  **Optimize Dynamic Features**:
-    *   **Theming (Accent, Radius, App Name, Icon)**:
+    *   **Theming (Accent, Radius, App Name, Icon, Font Size, Scale)**:
         *   The `ThemeProvider` updates can trigger re-renders across components using `useTheme`. Ensure components are memoized if they don't visually change with every theme update.
         *   The dynamic app icon uses SVG paths. Keep these paths reasonably simple.
+        *   Font size changes affect the root element, leading to a global reflow. Use sparingly if frequent changes are expected by the user.
+        *   App scaling (`zoom`) also causes a global reflow.
     *   **App Version Switching**:
         *   Conditional rendering (`{appVersion === 'v1.0.0' && <ComponentForV1 />}`) is efficient.
         *   Avoid overly complex logic directly within the render method based on `appVersion`. Abstract into separate, memoized components if necessary.
-    *   **Config Advisor**:
+    *   **Application Config (AI Analyzer)**:
         *   AI analysis calls (`analyzeConfig`) are asynchronous and can take time. The `useAiConfigAnalysis` hook handles loading states. Ensure UI remains responsive.
         *   Consider debouncing user input for the "Raw Configuration Files" if performance becomes an issue with rapid typing triggering analyses (though currently, analysis is manual via button click).
 
@@ -349,9 +364,8 @@ Optimizing your Next.js application is key to a great user experience. Here are 
     *   Fetch only the data needed for the current view.
 
 6.  **General Tips for New Pages/Components**:
-    *   **Keep Components Small and Focused**: Follow the Single Responsibility Principle.
+    *   **Keep Components Small and Focused**: Follow the Single Responsibility Principle. Break down complex pages into smaller, manageable components.
     *   **Profile Performance**: Use browser developer tools (Profiler tab) to identify performance bottlenecks in your components.
     *   **Test on Various Devices/Networks**: Performance can vary. Test on less powerful devices or slower network conditions to find areas for improvement.
 
 By keeping these tips in mind as you develop new features and pages, you can maintain a performant and responsive application.
-```
