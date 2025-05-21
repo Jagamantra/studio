@@ -8,6 +8,7 @@ export const projectConfig: ProjectConfig = {
     "M2 17l10 5 10-5",
     "M2 12l10 5 10-5"
   ],
+  appLogoUrl: null, // Default to no custom image logo
   availableAccentColors: [
     { name: 'Teal', hslValue: '180 100% 25%', hexValue: '#008080' },
     { name: 'Blue', hslValue: '221.2 83.2% 53.3%', hexValue: '#2563EB' },
@@ -29,7 +30,7 @@ export const projectConfig: ProjectConfig = {
     { name: 'Dev Build', id: 'dev' },
   ],
   defaultAppVersionId: 'v1.0.0',
-  enableApplicationConfig: true, // Renamed from enableConfigAdvisor
+  enableApplicationConfig: true,
   
   availableFontSizes: [
     { name: 'Small', value: '14px' },
@@ -46,4 +47,3 @@ export const projectConfig: ProjectConfig = {
   defaultScaleName: 'Default (100%)',
   mockApiMode: true,
 };
-

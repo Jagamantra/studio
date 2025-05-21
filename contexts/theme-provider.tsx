@@ -5,23 +5,8 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { projectConfig } from '@/config/project.config';
-import type { ThemeSettings, AccentColor, BorderRadiusOption, FontSizeOption, ScaleOption } from '@/types';
+import type { ThemeProviderState, AccentColor, BorderRadiusOption, FontSizeOption, ScaleOption, ThemeSettings } from '@/types';
 import { hexToHsl } from '@/lib/utils'; 
-
-interface ThemeProviderState extends ThemeSettings {
-  setTheme: (theme: 'light' | 'dark' | 'system') => void;
-  setAccentColor: (accentValue: string) => void; 
-  setBorderRadius: (radiusValue: string) => void;
-  setAppVersion: (versionId: string) => void;
-  setAppName: (appName: string) => void; 
-  setAppIconPaths: (paths: string[]) => void; 
-  setFontSize: (fontSizeValue: string) => void;
-  setAppScale: (scaleValue: string) => void;
-  availableAccentColors: AccentColor[];
-  availableBorderRadii: BorderRadiusOption[];
-  availableFontSizes: FontSizeOption[];
-  availableScales: ScaleOption[];
-}
 
 const getInitialAccentHsl = () => {
   return projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName)?.hslValue || projectConfig.availableAccentColors[0]?.hslValue || '180 100% 25%';
@@ -33,15 +18,19 @@ const getInitialBorderRadius = () => {
 
 const getInitialAppIconPaths = () => {
   return projectConfig.appIconPaths || [];
-}
+};
+
+const getInitialAppLogoUrl = () => {
+  return projectConfig.appLogoUrl || null;
+};
 
 const getInitialFontSize = () => {
   return projectConfig.availableFontSizes.find(f => f.name === projectConfig.defaultFontSizeName)?.value || projectConfig.availableFontSizes[1]?.value || '16px';
-}
+};
 
 const getInitialScale = () => {
   return projectConfig.availableScales.find(s => s.name === projectConfig.defaultScaleName)?.value || projectConfig.availableScales[1]?.value || '1.0';
-}
+};
 
 const initialState: ThemeProviderState = {
   theme: 'system',
@@ -49,7 +38,8 @@ const initialState: ThemeProviderState = {
   borderRadius: getInitialBorderRadius(),
   appVersion: projectConfig.defaultAppVersionId,
   appName: projectConfig.appName, 
-  appIconPaths: getInitialAppIconPaths(), 
+  appIconPaths: getInitialAppIconPaths(),
+  appLogoUrl: getInitialAppLogoUrl(),
   fontSize: getInitialFontSize(),
   appScale: getInitialScale(),
   setTheme: () => null,
@@ -57,7 +47,8 @@ const initialState: ThemeProviderState = {
   setBorderRadius: () => null,
   setAppVersion: () => null,
   setAppName: () => null, 
-  setAppIconPaths: () => null, 
+  setAppIconPaths: () => null,
+  setAppLogoUrl: () => null,
   setFontSize: () => null,
   setAppScale: () => null,
   availableAccentColors: projectConfig.availableAccentColors,
@@ -97,9 +88,13 @@ export function ThemeProvider({
     `${storageKey}-app-name`,
     initialState.appName
   );
-  const [appIconPaths, setAppIconPathsInternal] = useLocalStorage<string[]>(
+  const [appIconPaths, setAppIconPathsInternal] = useLocalStorage<string[] | undefined>(
     `${storageKey}-app-icon-paths`,
     initialState.appIconPaths
+  );
+  const [appLogoUrl, setAppLogoUrlInternal] = useLocalStorage<string | null>(
+    `${storageKey}-app-logo-url`,
+    initialState.appLogoUrl
   );
   const [fontSize, setFontSizeInternal] = useLocalStorage<string>(
     `${storageKey}-font-size`,
@@ -116,7 +111,8 @@ export function ThemeProvider({
   const setBorderRadius = useCallback((newBorderRadius: string) => setBorderRadiusInternal(newBorderRadius), [setBorderRadiusInternal]);
   const setAppVersion = useCallback((newAppVersion: string) => setAppVersionInternal(newAppVersion), [setAppVersionInternal]);
   const setAppName = useCallback((newAppName: string) => setAppNameInternal(newAppName), [setAppNameInternal]);
-  const setAppIconPaths = useCallback((newPaths: string[]) => setAppIconPathsInternal(newPaths), [setAppIconPathsInternal]);
+  const setAppIconPaths = useCallback((newPaths: string[] | undefined) => setAppIconPathsInternal(newPaths), [setAppIconPathsInternal]);
+  const setAppLogoUrl = useCallback((newUrl: string | null) => setAppLogoUrlInternal(newUrl), [setAppLogoUrlInternal]);
   const setFontSize = useCallback((newFontSize: string) => setFontSizeInternal(newFontSize), [setFontSizeInternal]);
   const setAppScale = useCallback((newScale: string) => setAppScaleInternal(newScale), [setAppScaleInternal]);
 
@@ -215,7 +211,8 @@ export function ThemeProvider({
 
   useEffect(() => {
     if (appName && typeof document !== 'undefined') {
-      document.title = appName; 
+      // Do not set document.title here directly as it conflicts with page-specific titles
+      // It's better to set it in individual pages or a global Head component
     }
   }, [appName]);
 
@@ -233,13 +230,48 @@ export function ThemeProvider({
     }
   }, [appScale]);
 
+  // Update favicon based on appIconPaths or appLogoUrl (simplified for now)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    let faviconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!faviconLink) {
+      faviconLink = document.createElement('link');
+      faviconLink.rel = 'icon';
+      document.head.appendChild(faviconLink);
+    }
+
+    if (appLogoUrl) {
+      // If it's a data URI, it can be used directly for some browsers.
+      // For production, a real URL to an optimized .ico or .png would be better.
+      // This is a simplified approach for client-side logo URL.
+      faviconLink.href = appLogoUrl;
+      faviconLink.type = appLogoUrl.startsWith('data:image/svg+xml') ? 'image/svg+xml' : (appLogoUrl.startsWith('data:image/png') ? 'image/png' : 'image/x-icon');
+    } else if (appIconPaths && appIconPaths.length > 0) {
+      // Create a dynamic SVG for favicon from paths
+      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary-h) var(--primary-s) var(--primary-l))" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${appIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
+      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+      faviconLink.href = url;
+      faviconLink.type = 'image/svg+xml';
+      // It's good practice to revoke the object URL when it's no longer needed,
+      // but for a favicon, it might be kept for the session.
+      // Consider revoking if the icon paths change frequently.
+    } else {
+      faviconLink.href = '/favicon.svg'; // Default static favicon
+      faviconLink.type = 'image/svg+xml';
+    }
+  }, [appIconPaths, appLogoUrl, accentColor, theme]); // Re-generate if paths, logo, or primary color changes
+
+
   const value = useMemo(() => ({
     theme,
     accentColor,
     borderRadius,
     appVersion,
     appName, 
-    appIconPaths, 
+    appIconPaths,
+    appLogoUrl,
     fontSize,
     appScale,
     setTheme,
@@ -247,15 +279,18 @@ export function ThemeProvider({
     setBorderRadius,
     setAppVersion,
     setAppName, 
-    setAppIconPaths, 
+    setAppIconPaths,
+    setAppLogoUrl,
     setFontSize,
     setAppScale,
     availableAccentColors: projectConfig.availableAccentColors,
     availableBorderRadii: projectConfig.availableBorderRadii,
     availableFontSizes: projectConfig.availableFontSizes,
     availableScales: projectConfig.availableScales,
-  }), [theme, accentColor, borderRadius, appVersion, appName, appIconPaths, fontSize, appScale,
-      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths, setFontSize, setAppScale]);
+  }), [
+      theme, accentColor, borderRadius, appVersion, appName, appIconPaths, appLogoUrl, fontSize, appScale,
+      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths, setAppLogoUrl, setFontSize, setAppScale
+    ]);
 
   return (
     <ThemeProviderContext.Provider value={value}>
@@ -264,7 +299,7 @@ export function ThemeProvider({
   );
 }
 
-export const useTheme = () => {
+export const useTheme = (): ThemeProviderState => {
   const context = useContext(ThemeProviderContext);
   if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider');

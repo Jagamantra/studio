@@ -30,17 +30,19 @@ export type ScaleOption = {
 export type ProjectConfig = {
   appName: string;
   appIconPaths?: string[]; // SVG path data for the application icon
+  appLogoUrl?: string | null; // URL or data URI for an image logo
   availableAccentColors: AccentColor[];
   defaultAccentColorName: string;
   availableBorderRadii: BorderRadiusOption[];
   defaultBorderRadiusName: string;
   availableAppVersions: AppVersion[];
   defaultAppVersionId: string;
-  enableConfigAdvisor?: boolean;
+  enableApplicationConfig: boolean; 
   availableFontSizes: FontSizeOption[];
   defaultFontSizeName: string;
   availableScales: ScaleOption[];
   defaultScaleName: string;
+  mockApiMode: boolean;
 };
 
 export type SidebarNavItem = {
@@ -72,7 +74,7 @@ export type UserProfile = {
   photoURL: string | null;
   phoneNumber: string | null;
   role: Role;
-  password?: string;
+  password?: string; // Only for mock/creation, not stored long-term as plain text
   receiveNotifications?: boolean;
   interfaceDensity?: 'compact' | 'comfortable' | 'spacious';
   // Theme preferences that could be stored per user in a real backend
@@ -82,6 +84,9 @@ export type UserProfile = {
   preferredAppVersion?: string;
   preferredFontSize?: string; // CSS value
   preferredScale?: string; // CSS value (e.g. "1.0")
+  preferredAppName?: string;
+  preferredAppIconPaths?: string[];
+  preferredAppLogoUrl?: string | null;
 };
 
 // For theme context
@@ -92,6 +97,23 @@ export type ThemeSettings = {
   appVersion: string;
   appName: string;
   appIconPaths?: string[];
+  appLogoUrl?: string | null;
   fontSize: string; // e.g. "16px"
   appScale: string; // e.g. "1.0"
 };
+
+export interface ThemeProviderState extends ThemeSettings {
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
+  setAccentColor: (accentValue: string) => void;
+  setBorderRadius: (radiusValue: string) => void;
+  setAppVersion: (versionId: string) => void;
+  setAppName: (appName: string) => void;
+  setAppIconPaths: (paths: string[] | undefined) => void;
+  setAppLogoUrl: (url: string | null) => void;
+  setFontSize: (fontSizeValue: string) => void;
+  setAppScale: (scaleValue: string) => void;
+  availableAccentColors: AccentColor[];
+  availableBorderRadii: BorderRadiusOption[];
+  availableFontSizes: FontSizeOption[];
+  availableScales: ScaleOption[];
+}

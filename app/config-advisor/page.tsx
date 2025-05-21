@@ -6,11 +6,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lightbulb, Info, Ban } from 'lucide-react';
+import { Loader2, Lightbulb, Info, Ban, FileText } from 'lucide-react';
 import type { AnalyzeConfigInput } from '@/ai/flows/config-advisor';
 import { useAuth } from '@/contexts/auth-provider';
 import Link from 'next/link';
-import { projectConfig as appProjectConfig } from '@/config/project.config';
+import { projectConfig as appProjectConfigFromModule } from '@/config/project.config';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/contexts/theme-provider';
 import { placeholderSidebarConfigData, placeholderRolesConfigData } from '@/data/dummy-data';
@@ -24,6 +24,7 @@ import { PageTitleWithIcon } from '@/components/layout/page-title-with-icon';
 
 const projectConfigFormSchema = z.object({
   appName: z.string().min(1, 'App name is required.').max(100, 'App name cannot exceed 100 characters.'),
+  appLogoUrl: z.string().url('Invalid URL for logo.').optional().nullable(),
   defaultAccentColorName: z.string({required_error: "Accent color is required."}),
   defaultBorderRadiusName: z.string({required_error: "Border radius is required."}),
   defaultAppVersionId: z.string({required_error: "App version is required."}),
@@ -43,10 +44,14 @@ export default function ConfigAdvisorPage() {
   const router = useRouter();
   const {
     appName: currentAppNameFromTheme, 
+    appLogoUrl: currentLogoUrlFromTheme,
+    appIconPaths: currentIconPathsFromTheme,
     accentColor: currentAccentColor,
     borderRadius: currentBorderRadius,
     appVersion: currentAppVersion,
     setAppName,
+    setAppLogoUrl,
+    setAppIconPaths, // Assuming you might want to clear SVG paths if a logo is set
     setAccentColor,
     setBorderRadius,
     setAppVersion,
@@ -58,7 +63,6 @@ export default function ConfigAdvisorPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   React.useEffect(() => {
-    // Set document title dynamically
     document.title = `Application Config | ${currentAppNameFromTheme}`;
   }, [currentAppNameFromTheme]);
 
@@ -66,8 +70,9 @@ export default function ConfigAdvisorPage() {
     resolver: zodResolver(projectConfigFormSchema),
     defaultValues: {
       appName: currentAppNameFromTheme,
-      defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
-      defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+      appLogoUrl: currentLogoUrlFromTheme,
+      defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName,
+      defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName,
       defaultAppVersionId: currentAppVersion,
     },
   });
@@ -81,21 +86,23 @@ export default function ConfigAdvisorPage() {
   const [showPlaceholders, setShowPlaceholders] = useState(true);
 
   useEffect(() => {
-    if (!appProjectConfig.enableApplicationConfig) { // Updated to use enableApplicationConfig
+    if (!appProjectConfigFromModule.enableApplicationConfig) {
       return;
     }
     if (!authLoading) {
       if (user && user.role === 'admin') {
         setIsAuthorized(true);
       } else if (user) { 
+        // Non-admin user, AuthProvider should handle redirection via useEffect
       } else { 
+        // No user, AuthProvider should handle redirection
       }
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, appProjectConfigFromModule.enableApplicationConfig]);
 
 
   useEffect(() => {
-    if (!appProjectConfig.enableApplicationConfig || !isAuthorized) return; // Updated to use enableApplicationConfig
+    if (!appProjectConfigFromModule.enableApplicationConfig || !isAuthorized) return;
 
     if (typeof window !== 'undefined') {
         const storedInputsJSON = localStorage.getItem('configAdvisorInputs');
@@ -109,8 +116,9 @@ export default function ConfigAdvisorPage() {
 
             const projectFormIsDefault = JSON.stringify(projectConfigForm.getValues()) === JSON.stringify({
               appName: currentAppNameFromTheme,
-              defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
-              defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+              appLogoUrl: currentLogoUrlFromTheme,
+              defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName,
+              defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName,
               defaultAppVersionId: currentAppVersion,
             });
             setShowPlaceholders(
@@ -121,30 +129,32 @@ export default function ConfigAdvisorPage() {
         } else {
           projectConfigForm.reset({
             appName: currentAppNameFromTheme,
-            defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
-            defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+            appLogoUrl: currentLogoUrlFromTheme,
+            defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName,
+            defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName,
             defaultAppVersionId: currentAppVersion,
           });
           setShowPlaceholders(true);
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appProjectConfig.enableApplicationConfig, isAuthorized, currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion]);
-
+  }, [appProjectConfigFromModule.enableApplicationConfig, isAuthorized, currentAppNameFromTheme, currentLogoUrlFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion]);
+  
   useEffect(() => {
-    if (!appProjectConfig.enableApplicationConfig || !isAuthorized) return; // Updated to use enableApplicationConfig
+    if (!appProjectConfigFromModule.enableApplicationConfig || !isAuthorized) return;
     projectConfigForm.reset({
       appName: currentAppNameFromTheme,
-      defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName,
-      defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName,
+      appLogoUrl: currentLogoUrlFromTheme,
+      defaultAccentColorName: availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName,
+      defaultBorderRadiusName: availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName,
       defaultAppVersionId: currentAppVersion,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableApplicationConfig, isAuthorized]);
+  }, [currentAppNameFromTheme, currentLogoUrlFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfigFromModule.enableApplicationConfig, isAuthorized]);
 
   const watchedProjectConfig = projectConfigForm.watch();
   useEffect(() => {
-    if (!appProjectConfig.enableApplicationConfig || !isAuthorized) return; // Updated to use enableApplicationConfig
+    if (!appProjectConfigFromModule.enableApplicationConfig || !isAuthorized) return;
     if (typeof window !== 'undefined') {
         const currentInputs: StoredConfigAdvisorInputs = {
             projectConfigFormData: watchedProjectConfig,
@@ -155,8 +165,9 @@ export default function ConfigAdvisorPage() {
 
         const isProjectFormUnchangedFromTheme =
              watchedProjectConfig.appName === currentAppNameFromTheme &&
-             watchedProjectConfig.defaultAccentColorName === (availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfig.defaultAccentColorName) &&
-             watchedProjectConfig.defaultBorderRadiusName === (availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfig.defaultBorderRadiusName) &&
+             watchedProjectConfig.appLogoUrl === currentLogoUrlFromTheme &&
+             watchedProjectConfig.defaultAccentColorName === (availableAccentColors.find(c => c.hslValue === currentAccentColor)?.name || appProjectConfigFromModule.defaultAccentColorName) &&
+             watchedProjectConfig.defaultBorderRadiusName === (availableBorderRadii.find(r => r.value === currentBorderRadius)?.name || appProjectConfigFromModule.defaultBorderRadiusName) &&
              watchedProjectConfig.defaultAppVersionId === currentAppVersion;
 
         if (!isProjectFormUnchangedFromTheme || sidebarConfigContent || rolesConfigContent) {
@@ -164,16 +175,17 @@ export default function ConfigAdvisorPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppNameFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfig.enableApplicationConfig, isAuthorized]);
+  }, [watchedProjectConfig, sidebarConfigContent, rolesConfigContent, currentAppNameFromTheme, currentLogoUrlFromTheme, currentAccentColor, currentBorderRadius, currentAppVersion, appProjectConfigFromModule.enableApplicationConfig, isAuthorized]);
 
   const loadExampleConfigs = async () => {
     setIsLoadingExamples(true);
     await new Promise(resolve => setTimeout(resolve, 300));
     projectConfigForm.reset({
       appName: "Example App",
-      defaultAccentColorName: appProjectConfig.availableAccentColors[1]?.name || appProjectConfig.defaultAccentColorName,
-      defaultBorderRadiusName: appProjectConfig.availableBorderRadii[1]?.name || appProjectConfig.defaultBorderRadiusName,
-      defaultAppVersionId: appProjectConfig.availableAppVersions[1]?.id || appProjectConfig.defaultAppVersionId,
+      appLogoUrl: null, // Example doesn't include a logo URL
+      defaultAccentColorName: appProjectConfigFromModule.availableAccentColors[1]?.name || appProjectConfigFromModule.defaultAccentColorName,
+      defaultBorderRadiusName: appProjectConfigFromModule.availableBorderRadii[1]?.name || appProjectConfigFromModule.defaultBorderRadiusName,
+      defaultAppVersionId: appProjectConfigFromModule.availableAppVersions[1]?.id || appProjectConfigFromModule.defaultAppVersionId,
     });
     setSidebarConfigContent(placeholderSidebarConfigData);
     setRolesConfigContent(placeholderRolesConfigData);
@@ -187,7 +199,7 @@ export default function ConfigAdvisorPage() {
     });
   };
 
-  const handleSaveProjectConfig = async () => {
+  const handleSaveProjectConfigCallback = async (logoDataUrl?: string | null) => {
     setIsSavingProjectConfig(true);
     const isValid = await projectConfigForm.trigger();
     if (isValid) {
@@ -195,13 +207,26 @@ export default function ConfigAdvisorPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setAppName(projectConfigValues.appName);
+      
+      if (logoDataUrl !== undefined) { // Check if logoDataUrl was passed (meaning it changed or was removed)
+        setAppLogoUrl(logoDataUrl);
+        if (logoDataUrl) {
+          setAppIconPaths(undefined); // Clear SVG paths if an image logo is set
+        } else if (!currentIconPathsFromTheme && appProjectConfigFromModule.appIconPaths){
+           setAppIconPaths(appProjectConfigFromModule.appIconPaths); // Restore default SVG paths if logo removed and no current paths
+        }
+      }
+
+
       const selectedAccent = availableAccentColors.find(c => c.name === projectConfigValues.defaultAccentColorName);
       if (selectedAccent) setAccentColor(selectedAccent.hslValue);
       const selectedRadius = availableBorderRadii.find(r => r.name === projectConfigValues.defaultBorderRadiusName);
       if (selectedRadius) setBorderRadius(selectedRadius.value);
       setAppVersion(projectConfigValues.defaultAppVersionId);
 
-      projectConfigForm.reset(projectConfigValues, { keepValues: true, keepDirty: false });
+      // Update form default values to reflect saved state, keep form clean
+      projectConfigForm.reset({ ...projectConfigValues, appLogoUrl: logoDataUrl !== undefined ? logoDataUrl : currentLogoUrlFromTheme }, { keepValues: false, keepDirty: false });
+
 
       toast({
         title: 'Project Configuration Applied',
@@ -218,26 +243,31 @@ export default function ConfigAdvisorPage() {
     setIsSavingProjectConfig(false);
   };
 
-  const handleResetProjectConfig = async () => {
+  const handleResetProjectConfigCallback = async () => {
     setIsResettingProjectConfig(true);
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const originalAppName = appProjectConfig.appName;
-    const originalAccentColorName = appProjectConfig.defaultAccentColorName;
+    const originalAppName = appProjectConfigFromModule.appName;
+    const originalLogoUrl = appProjectConfigFromModule.appLogoUrl;
+    const originalIconPaths = appProjectConfigFromModule.appIconPaths;
+    const originalAccentColorName = appProjectConfigFromModule.defaultAccentColorName;
     const originalAccentHsl = availableAccentColors.find(c => c.name === originalAccentColorName)?.hslValue ||
-                              (appProjectConfig.availableAccentColors.find(ac => ac.name === appProjectConfig.defaultAccentColorName)?.hslValue || appProjectConfig.availableAccentColors[0]?.hslValue);
-    const originalBorderRadiusName = appProjectConfig.defaultBorderRadiusName;
+                              (appProjectConfigFromModule.availableAccentColors.find(ac => ac.name === appProjectConfigFromModule.defaultAccentColorName)?.hslValue || appProjectConfigFromModule.availableAccentColors[0]?.hslValue);
+    const originalBorderRadiusName = appProjectConfigFromModule.defaultBorderRadiusName;
     const originalBorderRadiusValue = availableBorderRadii.find(r => r.name === originalBorderRadiusName)?.value ||
-                                      (appProjectConfig.availableBorderRadii.find(br => br.name === appProjectConfig.defaultBorderRadiusName)?.value || appProjectConfig.availableBorderRadii[0]?.value);
-    const originalAppVersionId = appProjectConfig.defaultAppVersionId;
+                                      (appProjectConfigFromModule.availableBorderRadii.find(br => br.name === appProjectConfigFromModule.defaultBorderRadiusName)?.value || appProjectConfigFromModule.availableBorderRadii[0]?.value);
+    const originalAppVersionId = appProjectConfigFromModule.defaultAppVersionId;
 
     setAppName(originalAppName);
+    setAppLogoUrl(originalLogoUrl || null);
+    setAppIconPaths(originalIconPaths);
     if(originalAccentHsl) setAccentColor(originalAccentHsl);
     if(originalBorderRadiusValue) setBorderRadius(originalBorderRadiusValue);
     setAppVersion(originalAppVersionId);
 
     projectConfigForm.reset({
       appName: originalAppName,
+      appLogoUrl: originalLogoUrl || null,
       defaultAccentColorName: originalAccentColorName,
       defaultBorderRadiusName: originalBorderRadiusName,
       defaultAppVersionId: originalAppVersionId,
@@ -256,14 +286,16 @@ export default function ConfigAdvisorPage() {
 // project.config.ts
 export const projectConfig = {
   appName: '${projectConfigData.appName}',
-  appIconPaths: ${JSON.stringify(appProjectConfig.appIconPaths, null, 2)},
-  availableAccentColors: ${JSON.stringify(appProjectConfig.availableAccentColors, null, 2)},
+  appIconPaths: ${JSON.stringify(currentIconPathsFromTheme || appProjectConfigFromModule.appIconPaths, null, 2)},
+  appLogoUrl: ${projectConfigData.appLogoUrl ? `'${projectConfigData.appLogoUrl}'` : null},
+  availableAccentColors: ${JSON.stringify(appProjectConfigFromModule.availableAccentColors, null, 2)},
   defaultAccentColorName: '${projectConfigData.defaultAccentColorName}',
-  availableBorderRadii: ${JSON.stringify(appProjectConfig.availableBorderRadii, null, 2)},
+  availableBorderRadii: ${JSON.stringify(appProjectConfigFromModule.availableBorderRadii, null, 2)},
   defaultBorderRadiusName: '${projectConfigData.defaultBorderRadiusName}',
-  availableAppVersions: ${JSON.stringify(appProjectConfig.availableAppVersions, null, 2)},
+  availableAppVersions: ${JSON.stringify(appProjectConfigFromModule.availableAppVersions, null, 2)},
   defaultAppVersionId: '${projectConfigData.defaultAppVersionId}',
-  enableApplicationConfig: ${appProjectConfig.enableApplicationConfig ?? true} // Updated key
+  enableApplicationConfig: ${appProjectConfigFromModule.enableApplicationConfig ?? true},
+  mockApiMode: ${appProjectConfigFromModule.mockApiMode ?? true}
 };`.trim();
 
     const input: AnalyzeConfigInput = {
@@ -275,11 +307,11 @@ export const projectConfig = {
     await performAnalysis(input);
   };
 
-  if (authLoading || (!isAuthorized && appProjectConfig.enableApplicationConfig && user && user.role !== 'admin')) { // Updated to use enableApplicationConfig
+  if (authLoading || (!isAuthorized && appProjectConfigFromModule.enableApplicationConfig && user && user.role !== 'admin')) {
     return <AuthenticatedPageLayout><div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></AuthenticatedPageLayout>;
   }
 
-  if (!appProjectConfig.enableApplicationConfig) { // Updated to use enableApplicationConfig
+  if (!appProjectConfigFromModule.enableApplicationConfig) {
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-col flex-1 items-center justify-center p-4 md:p-8 text-center">
@@ -295,8 +327,8 @@ export const projectConfig = {
       </AuthenticatedPageLayout>
     );
   }
-
-  if (!isAuthorized && appProjectConfig.enableApplicationConfig) {  // Updated to use enableApplicationConfig
+  
+  if (!isAuthorized && appProjectConfigFromModule.enableApplicationConfig) {
     return (
       <AuthenticatedPageLayout>
         <div className="flex flex-1 items-center justify-center p-4">
@@ -313,7 +345,7 @@ export const projectConfig = {
   return (
     <AuthenticatedPageLayout>
       <div className="space-y-4 md:space-y-6 min-w-0">
-        <PageTitleWithIcon title="Application Config"> {/* Changed title */}
+        <PageTitleWithIcon title="Application Config">
           <div className="flex gap-2">
             <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
               {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />}
@@ -333,11 +365,11 @@ export const projectConfig = {
           anyLoading={anyLoading}
           isSavingProjectConfig={isSavingProjectConfig}
           isResettingProjectConfig={isResettingProjectConfig}
-          handleSaveProjectConfig={handleSaveProjectConfig}
-          handleResetProjectConfig={handleResetProjectConfig}
+          handleSaveProjectConfig={handleSaveProjectConfigCallback}
+          handleResetProjectConfig={handleResetProjectConfigCallback}
           availableAccentColors={availableAccentColors}
           availableBorderRadii={availableBorderRadii}
-          appProjectConfigAvailableAppVersions={appProjectConfig.availableAppVersions}
+          appProjectConfigAvailableAppVersions={appProjectConfigFromModule.availableAppVersions}
         />
 
         <RawConfigInputCard
@@ -360,4 +392,3 @@ export const projectConfig = {
     </AuthenticatedPageLayout>
   );
 }
-

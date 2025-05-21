@@ -1,14 +1,16 @@
 
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ThemeSwitcher } from '@/components/layout/theme-switcher';
 import { UserNav } from '@/components/layout/user-nav';
 import { SidebarTrigger } from '@/components/ui/sidebar'; 
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/theme-provider'; 
+import { FileText } from 'lucide-react'; // Default icon
 
 export function Header({ className }: { className?: string }) {
-  const { appName, appIconPaths } = useTheme(); 
+  const { appName, appIconPaths, appLogoUrl } = useTheme(); 
 
   return (
     <header
@@ -23,7 +25,16 @@ export function Header({ className }: { className?: string }) {
              <SidebarTrigger />
           </div>
           <Link href="/dashboard" className="flex items-center space-x-2">
-            {appIconPaths && appIconPaths.length > 0 && (
+            {appLogoUrl ? (
+              <Image 
+                src={appLogoUrl} 
+                alt={`${appName} logo`} 
+                width={24} 
+                height={24} 
+                className="h-6 w-6 object-contain" 
+                data-ai-hint="application logo"
+              />
+            ) : appIconPaths && appIconPaths.length > 0 ? (
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 viewBox="0 0 24 24" 
@@ -38,6 +49,8 @@ export function Header({ className }: { className?: string }) {
                   <path key={index} d={d}></path>
                 ))}
               </svg>
+            ) : (
+              <FileText className="h-6 w-6 text-primary" /> 
             )}
             <span className="font-bold sm:inline-block text-lg">
               {appName}
