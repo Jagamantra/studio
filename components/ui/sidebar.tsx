@@ -19,10 +19,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useTheme } from "@/contexts/theme-provider" // Added useTheme
+import { useTheme } from "@/contexts/theme-provider" 
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 const SIDEBAR_WIDTH = "15rem"; 
 const SIDEBAR_WIDTH_MOBILE = "16rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
@@ -31,7 +31,7 @@ const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 type SidebarContext = {
   state: "expanded" | "collapsed"
   open: boolean
-  setOpen: (open: boolean) => void
+  setOpen: (value: boolean | ((prevOpen: boolean) => boolean)) => void
   openMobile: boolean
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
@@ -49,19 +49,44 @@ function useSidebar() {
   return context
 }
 
+const getInitialSidebarStateFromCookie = (defaultOpen: boolean): boolean => {
+  if (typeof window === 'undefined') {
+    // console.log('[Sidebar] SSR: Returning defaultOpen:', defaultOpen);
+    return defaultOpen;
+  }
+  const cookieValue = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
+    ?.split('=')[1];
+
+  // console.log('[Sidebar] Cookie value for', SIDEBAR_COOKIE_NAME, 'is', cookieValue);
+
+  if (cookieValue === 'true') {
+    // console.log('[Sidebar] Cookie says: true');
+    return true;
+  }
+  if (cookieValue === 'false') {
+    // console.log('[Sidebar] Cookie says: false');
+    return false;
+  }
+  // console.log('[Sidebar] Cookie not definitive, returning defaultOpen:', defaultOpen);
+  return defaultOpen;
+};
+
+
 const SidebarProvider = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
     defaultOpen?: boolean
-    open?: boolean
-    onOpenChange?: (open: boolean) => void
+    open?: boolean // Controlled prop
+    onOpenChange?: (open: boolean) => void // Controlled prop callback
   }
 >(
   (
     {
       defaultOpen = true,
-      open: openProp,
-      onOpenChange: setOpenProp,
+      open: openProp, // Controlled prop
+      onOpenChange: setOpenProp, // Controlled prop callback
       className,
       style,
       children,
@@ -72,33 +97,50 @@ const SidebarProvider = React.forwardRef<
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
-    const [_open, _setOpen] = React.useState(defaultOpen)
-    const open = openProp ?? _open
+    const [_open, _setOpen] = React.useState(() =>
+      getInitialSidebarStateFromCookie(defaultOpen)
+    );
+
+    const open = openProp !== undefined ? openProp : _open;
+
     const setOpen = React.useCallback(
-      (value: boolean | ((value: boolean) => boolean)) => {
-        const openState = typeof value === "function" ? value(open) : value
+      (value: boolean | ((prevOpen: boolean) => boolean)) => {
+        const newOpenState = typeof value === 'function' ? value(open) : value;
+        // console.log('[Sidebar] setOpen called. Current open:', open, 'New state:', newOpenState);
+
         if (setOpenProp) {
-          setOpenProp(openState)
+          setOpenProp(newOpenState);
         } else {
-          _setOpen(openState)
+          _setOpen(newOpenState);
         }
 
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        if (typeof window !== 'undefined') {
+          document.cookie = `${SIDEBAR_COOKIE_NAME}=${newOpenState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+          // console.log('[Sidebar] Cookie set to:', `${SIDEBAR_COOKIE_NAME}=${newOpenState}`);
+        }
       },
-      [setOpenProp, open]
-    )
+      [open, setOpenProp] 
+    );
 
-    // Helper to toggle the sidebar.
+    React.useEffect(() => {
+      if (openProp !== undefined && openProp !== _open) {
+        _setOpen(openProp);
+        if (typeof window !== 'undefined') {
+          document.cookie = `${SIDEBAR_COOKIE_NAME}=${openProp}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+        }
+      }
+    }, [openProp, _open]);
+
+
     const toggleSidebar = React.useCallback(() => {
-      return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile])
+      if (isMobile) {
+        setOpenMobile((current) => !current);
+      } else {
+        setOpen((current) => !current);
+      }
+    }, [isMobile, setOpen, setOpenMobile]);
 
-    // Adds a keyboard shortcut to toggle the sidebar.
+
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
         if (
@@ -114,8 +156,6 @@ const SidebarProvider = React.forwardRef<
       return () => window.removeEventListener("keydown", handleKeyDown)
     }, [toggleSidebar])
 
-    // We add a state so that we can do data-state="expanded" or "collapsed".
-    // This makes it easier to style the sidebar with Tailwind classes.
     const state = open ? "expanded" : "collapsed"
 
     const contextValue = React.useMemo<SidebarContext>(
@@ -523,10 +563,10 @@ const sidebarMenuButtonVariants = cva(
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
-      size: { // This size variant is more about overall button height/text size, not density-specific padding
-        default: "h-8 text-sm", // Default was text-sm
+      size: { 
+        default: "h-8 text-sm", 
         sm: "h-7 text-xs",
-        lg: "h-12 text-base group-data-[collapsible=icon]:!p-0", // was text-sm
+        lg: "h-12 text-base group-data-[collapsible=icon]:!p-0", 
       },
     },
     defaultVariants: {
@@ -552,23 +592,23 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
-      children, // Added children prop
+      children, 
       ...props
     },
     ref
   ) => {
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
-    const { interfaceDensity } = useTheme(); // Get interfaceDensity
+    const { interfaceDensity } = useTheme(); 
 
     const getDensityClasses = () => {
       switch (interfaceDensity) {
         case 'compact':
-          return 'p-1.5 text-xs'; // Smaller padding and text for compact
+          return 'p-1.5 text-xs'; 
         case 'comfortable':
-          return 'p-2 text-sm';   // Default padding and text
+          return 'p-2 text-sm';   
         case 'spacious':
-          return 'p-3 text-base'; // Larger padding and text for spacious
+          return 'p-3 text-base'; 
         default:
           return 'p-2 text-sm';
       }
@@ -581,8 +621,8 @@ const SidebarMenuButton = React.forwardRef<
         data-size={size}
         data-active={isActive}
         className={cn(
-          sidebarMenuButtonVariants({ variant, size }), // Base variants
-          getDensityClasses(), // Density-specific padding and text size
+          sidebarMenuButtonVariants({ variant, size }), 
+          getDensityClasses(), 
           className
         )}
         {...props}
@@ -631,7 +671,6 @@ const SidebarMenuAction = React.forwardRef<
       data-sidebar="menu-action"
       className={cn(
         "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
-        // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
         "peer-data-[size=default]/menu-button:top-1.5",
@@ -674,7 +713,6 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
   const width = React.useMemo(() => {
     return `${Math.floor(Math.random() * 40) + 50}%`
   }, [])
@@ -733,7 +771,7 @@ const SidebarMenuSubButton = React.forwardRef<
   HTMLAnchorElement,
   React.ComponentProps<"a"> & {
     asChild?: boolean
-    size?: "sm" | "md" // Renamed from 'default' to avoid conflict with HTMLAnchorElement's 'size'
+    size?: "sm" | "md" 
     isActive?: boolean
   }
 >(({ asChild = false, size: subButtonSize = "md", isActive, className, ...props }, ref) => {
