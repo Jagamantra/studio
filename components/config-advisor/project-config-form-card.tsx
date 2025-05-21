@@ -3,16 +3,17 @@
 
 import React, { useState, useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription as ShadcnCardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, RotateCcw, UploadCloud, Trash2, Image as ImageIcon } from 'lucide-react';
 import type { ProjectConfigFormValues } from '@/app/config-advisor/page';
 import type { AccentColor, BorderRadiusOption, AppVersion } from '@/types';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/theme-provider';
+import { projectConfig } from '@/config/project.config';
 
 interface ProjectConfigFormCardProps {
   projectConfigForm: UseFormReturn<ProjectConfigFormValues>;
@@ -105,9 +106,9 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
     <Card>
       <CardHeader>
         <CardTitle className="text-xl md:text-2xl">Project Configuration (project.config.ts)</CardTitle>
-        <CardDescription className="text-xs sm:text-sm">
+        <ShadcnCardDescription className="text-xs sm:text-sm">
           Modify your project settings. Changes saved here will apply globally. The AI will analyze the generated file content.
-        </CardDescription>
+        </ShadcnCardDescription>
       </CardHeader>
       <CardContent>
         <Form {...projectConfigForm}>
