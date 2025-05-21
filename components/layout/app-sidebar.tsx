@@ -50,28 +50,16 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" variant="sidebar" side="left">
       <SidebarHeader className="p-2">
         {/* This div controls the layout of header items */}
-        <div className="flex items-center justify-between group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-stretch group-data-[collapsible=icon]:gap-2">
+        <div className="flex items-center justify-between w-full">
           
-          {/* Desktop sidebar toggle button */}
-          {/* When collapsed, this will be ordered first (top) */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="hidden md:flex text-sidebar-foreground group-data-[collapsible=icon]:order-first group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-8" 
-            onClick={toggleSidebar} 
-            aria-label="Toggle sidebar"
-          >
-            {sidebarState === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
-          </Button>
-
           {/* Version Switcher Dropdown */}
-          {/* When collapsed, this will be ordered last (bottom) */}
-          <div className="group-data-[collapsible=icon]:order-last"> {/* Wrapper for ordering */}
+          {/* When collapsed, this will be ordered last (right) */}
+          <div className="group-data-[collapsible=icon]:order-last">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button 
                         variant="outline" 
-                        className="w-40 justify-start group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
+                        className="w-40 justify-start group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
                         disabled={!isClient}
                       >
                         <GitBranch className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
@@ -83,8 +71,7 @@ export function AppSidebar() {
                     className="w-[var(--sidebar-width)] group-data-[collapsible=icon]:w-auto" 
                     side="bottom" 
                     align="start"
-                    sideOffset={sidebarState === 'collapsed' ? 4 : 5} // Adjust offset slightly for collapsed
-                    // alignOffset={sidebarState === 'collapsed' ? -10 : 0} // Align to center of icon better
+                    sideOffset={sidebarState === 'collapsed' ? 4 : 5} 
                   >
                        <DropdownMenuRadioGroup value={appVersion} onValueChange={handleAppVersionChange}>
                           {projectConfig.availableAppVersions.map(version => (
@@ -97,6 +84,18 @@ export function AppSidebar() {
                 )}
             </DropdownMenu>
           </div>
+
+          {/* Desktop sidebar toggle button */}
+          {/* When collapsed, this will be ordered first (left) */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hidden md:flex text-sidebar-foreground group-data-[collapsible=icon]:order-first group-data-[collapsible=icon]:size-8" 
+            onClick={toggleSidebar} 
+            aria-label="Toggle sidebar"
+          >
+            {sidebarState === 'expanded' ? <PanelLeftClose /> : <PanelLeftOpen />}
+          </Button>
         </div>
       </SidebarHeader>
 
@@ -105,8 +104,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-2 border-t border-sidebar-border">
-        {/* User profile section was removed as per previous request */}
+        {/* User profile section removed */}
       </SidebarFooter>
     </Sidebar>
   );
 }
+
