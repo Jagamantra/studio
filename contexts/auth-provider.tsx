@@ -11,7 +11,7 @@ import * as Api from '@/services/api';
 import Cookies from 'js-cookie'; 
 import { useToast } from '@/hooks/use-toast';
 
-const JWT_COOKIE_NAME = 'genesis_session_token'; // Example cookie name if backend sets it
+const JWT_COOKIE_NAME = 'genesis_token'; 
 
 // Helper to decode JWT payload (client-side, no verification)
 function decodeJwtPayload(token: string): { sub?: string; email?: string; role?: string; [key: string]: any } | null {
@@ -37,8 +37,8 @@ function decodeJwtPayload(token: string): { sub?: string; email?: string; role?:
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [sessionToken, setSessionToken] = useState<string | null>(null); // In-memory token
-  const [loading, setLoading] = useState(true);
+  const [sessionToken, setSessionToken] = useState<string | null>(null); 
+  const [loading, setLoading] = useState(true); // Start as true for initial auth check
   const [error, setError] = useState<Error | null>(null);
   const [isMfaVerified, setIsMfaVerifiedState] = useState(false);
   const [authEmailForMfa, setAuthEmailForMfa] = useState<string | null>(null);
@@ -51,42 +51,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchCurrentUserInfo = useCallback(async (uid: string, email?: string, role?: UserProfile['role']): Promise<UserProfile | null> => {
-    setLoading(true);
+    setLoading(true); // Ensure loading is true during fetch
     setError(null);
     try {
-      // In real API mode, this would fetch from backend. For now, uses dummy data.
-      const fetchedProfileFromDummy = await Api.fetchUserProfile(uid); 
+      const fetchedProfile = await Api.fetchUserProfile(uid, email, role); 
       
-      if (fetchedProfileFromDummy) {
-        // Ensure email and role from token/MFA response are authoritative if dummy data is sparse
-        const finalProfile: UserProfile = {
-            ...fetchedProfileFromDummy, // Base from dummy
-            uid, // Ensure UID from token is used
-            email: email || fetchedProfileFromDummy.email, // Prioritize email from auth flow
-            role: role || fetchedProfileFromDummy.role,   // Prioritize role from auth flow
-        };
-        setUser(finalProfile);
-        return finalProfile;
-      } else if (email && role) {
-        // If dummy data doesn't have this user, create a partial profile
-        const partialUser: UserProfile = { 
-          uid, 
-          email, 
-          role, 
-          displayName: email, 
-          photoURL: null, 
-          phoneNumber: null,
-          preferences: {}
-        };
-        setUser(partialUser);
-        return partialUser;
+      if (fetchedProfile) {
+        setUser(fetchedProfile);
+        return fetchedProfile;
       }
-      throw new Error(`User profile not found for UID: ${uid} (checked dummy data)`);
+      // If fetchUserProfile returns null (e.g., user not found in dummy data and couldn't be created),
+      // it means we can't establish a full user session.
+      throw new Error(`User profile could not be established for UID: ${uid}`);
     } catch (err: any) {
-      console.error("Error fetching current user info:", err);
+      console.error("Error fetching/establishing current user info:", err);
       setError(err);
+      // Clear all session-related state if user info cannot be fetched
       setUser(null);
-      setSessionToken(null); // Clear token if profile fetch fails
+      setSessionToken(null);
       Cookies.remove(JWT_COOKIE_NAME); 
       setIsMfaVerified(false);
       return null;
@@ -95,29 +77,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [setIsMfaVerified]);
 
-  // Initial auth check - simplified as backend HttpOnly cookie would be main driver
+  // Initial auth check from cookie
   useEffect(() => {
-    const tokenFromCookie = Cookies.get(JWT_COOKIE_NAME); // Check if backend set a session cookie
-    if (tokenFromCookie) {
-      // If a session cookie exists, we might assume a session is active.
-      // The actual user object will be set after successful MFA or if state is restored.
-      // This part is tricky without a /me endpoint to verify the cookie and get user details.
-      // For now, we'll rely on the MFA flow to establish the user and sessionToken state.
-      console.log("Session token cookie found on initial load. User state will be determined by subsequent actions or MFA.");
-      setSessionToken(tokenFromCookie); // Potentially store it if needed for direct use, though HttpOnly means JS can't read its value for API headers.
-    }
-    setLoading(false);
-  }, []);
+    const attemptAutoLogin = async () => {
+      setLoading(true);
+      const tokenFromCookie = Cookies.get(JWT_COOKIE_NAME);
+      if (tokenFromCookie) {
+        const decoded = decodeJwtPayload(tokenFromCookie);
+        if (decoded && decoded.sub && decoded.email && decoded.role) {
+          setSessionToken(tokenFromCookie); // Set token from cookie
+          const profile = await fetchCurrentUserInfo(decoded.sub, decoded.email, decoded.role as UserProfile['role']);
+          if (profile) {
+            setIsMfaVerified(true); // Assume MFA was verified if token exists and profile fetched
+          } else {
+            // Failed to fetch profile even with token, clear session
+            Cookies.remove(JWT_COOKIE_NAME);
+            setSessionToken(null);
+            setIsMfaVerified(false);
+          }
+        } else {
+          // Invalid or incomplete token, clear it
+          Cookies.remove(JWT_COOKIE_NAME);
+        }
+      }
+      setLoading(false);
+    };
+    attemptAutoLogin();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Runs once on mount
 
 
-  // Navigation logic
+  // Navigation logic based on auth state
   useEffect(() => {
-    if (loading) return;
+    if (loading) return; // Don't run navigation logic while initial auth check is happening
 
     const isAuthRoute = pathname.startsWith('/auth/');
     const isMfaPage = pathname === '/auth/mfa';
 
-    if (user && isMfaVerified && sessionToken) { 
+    if (user && isMfaVerified && sessionToken) { // Fully authenticated
       if (isAuthRoute) {
         router.replace('/dashboard');
       } else {
@@ -126,17 +123,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                               rolesConfig.routePermissions[baseRoute as keyof typeof rolesConfig.routePermissions];
         if (requiredRoles && !requiredRoles.includes(user.role)) {
           toast({ title: 'Access Denied', message: 'You do not have permission for the requested page.', variant: 'destructive' });
-          router.replace('/dashboard'); // Redirect to dashboard instead of adding toast_message to URL
+          router.replace('/dashboard'); 
         }
       }
-    } else if (authEmailForMfa && !isMfaVerified) { 
+    } else if (authEmailForMfa && !isMfaVerified) { // Needs MFA
         if (!isMfaPage) {
             router.replace('/auth/mfa');
         }
-    } else if (!user && !isAuthRoute && pathname !== '/') { 
-        router.replace('/auth/login');
-    } else if (pathname === '/' && !isAuthRoute && !user) { 
-        router.replace('/auth/login');
+    } else { // Not authenticated or MFA pending from a previous uncompleted session
+        if (!isAuthRoute && pathname !== '/') { 
+            router.replace('/auth/login');
+        } else if (pathname === '/' && !isAuthRoute ) { 
+            router.replace('/auth/login');
+        }
     }
   }, [user, isMfaVerified, loading, pathname, router, authEmailForMfa, sessionToken, toast]);
 
@@ -149,15 +148,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.codeSent) {
         setAuthEmailForMfa(email); 
         router.push('/auth/mfa');
-        // No error message if codeSent is true
         return response;
       } else {
-        // This case should ideally not happen if API adheres to spec (either codeSent or error)
         throw new Error(response.message || "MFA code not sent and no error provided by API.");
       }
     } catch (err: any) {
       console.error("Login API error:", err);
-      setError(err); // This error will be picked up by the login form
+      setError(err); 
       return null;
     } finally {
       setLoading(false);
@@ -176,8 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         throw new Error(response.message || "MFA code not sent during registration and no error provided by API.");
       }
-    } catch (err: any)
-     {
+    } catch (err: any) {
       console.error("Register API error:", err);
       setError(err);
       return null;
@@ -190,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     if (!authEmailForMfa) {
-        const mfaError = new Error("Email for MFA verification is missing. Please log in again.");
+        const mfaError = new Error("Session context lost. Please log in again.");
         setError(mfaError);
         setLoading(false);
         router.push('/auth/login');
@@ -201,21 +197,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await Api.verifyMfa(authEmailForMfa, mfaCode);
       // Response: { accessToken, email, role, expiresIn }
       
-      setSessionToken(response.accessToken);
-      // Backend might set an HttpOnly cookie, client stores token in memory if needed for other things or if not HttpOnly.
-      // If your backend sets an HttpOnly cookie named JWT_COOKIE_NAME, this line can be conditional or for other types of tokens.
-      // Cookies.set(JWT_COOKIE_NAME, response.accessToken, { expires: response.expiresIn / (24 * 60 * 60) });
-
-
       const decodedPayload = decodeJwtPayload(response.accessToken);
       const uidFromToken = decodedPayload?.sub;
 
       if (!uidFromToken) {
         throw new Error("Could not extract UID (sub) from access token.");
       }
+      
+      setSessionToken(response.accessToken);
+      Cookies.set(JWT_COOKIE_NAME, response.accessToken, { expires: response.expiresIn / (24 * 60 * 60), path: '/' });
 
-      // Use email and role from API response, UID from token.
-      // Then fetch full profile details.
       await fetchCurrentUserInfo(uidFromToken, response.email, response.role);
       
       setIsMfaVerified(true);
@@ -226,14 +217,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           message: 'You have been successfully verified. Welcome!',
           variant: 'success',
       });
-      router.push('/dashboard');
-      return {...response, uid: uidFromToken }; // Add uid to the response for consistency if needed elsewhere
+      router.push('/dashboard'); // Redirect after all state updates
+      return {...response, uid: uidFromToken }; 
     } catch (err: any) {
       console.error("Verify MFA API error or processing error:", err);
       setError(err);
-      setIsMfaVerified(false); 
+      // Clear potentially partially set states on error
+      setUser(null);
       setSessionToken(null);
-      // Cookies.remove(JWT_COOKIE_NAME);
+      Cookies.remove(JWT_COOKIE_NAME);
+      setIsMfaVerified(false); 
       return null;
     } finally {
       setLoading(false);
@@ -246,14 +239,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await Api.logoutUser(); 
     } catch (e) {
-      console.warn("Error during backend logout:", e); 
+      console.warn("Error during backend logout (this may be expected if no specific endpoint):", e); 
     }
+    // Clear all client-side session information
     Cookies.remove(JWT_COOKIE_NAME); 
     setSessionToken(null);
     setUser(null);
     setIsMfaVerified(false);
     setAuthEmailForMfa(null);
-    router.push('/auth/login');
+    router.push('/auth/login'); // Ensure redirect after state clear
     setLoading(false);
   }, [router, setIsMfaVerified]);
 

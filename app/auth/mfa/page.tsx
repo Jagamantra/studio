@@ -28,8 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { KeyRound, Info, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { KeyRound, Info, Loader2, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-provider';
 import { projectConfig } from '@/config/project.config';
@@ -45,11 +44,9 @@ type MfaFormValues = z.infer<typeof mfaFormSchema>;
 
 export default function MfaPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const { verifyMfa, logout, loading: authLoading, error: authContextError, authEmailForMfa } = useAuth();
   const { appName } = useTheme();
   const [mockOtp, setMockOtp] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false); // Form-specific loading
   const [isClient, setIsClient] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -57,7 +54,6 @@ export default function MfaPage() {
   useEffect(() => {
     setIsClient(true);
     if (projectConfig.mockApiMode) {
-      // For mock mode, generate and display an OTP
       const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setMockOtp(generatedOtp);
     }
@@ -68,7 +64,6 @@ export default function MfaPage() {
   }, [appName]);
 
   useEffect(() => {
-    // Display global errors from AuthContext if they occur during MFA process
     if (authContextError) {
       setFormError(authContextError.message);
     }
@@ -83,41 +78,32 @@ export default function MfaPage() {
   });
 
   const onSubmit = async (data: MfaFormValues) => {
-    setIsLoading(true);
-    setFormError(null);
-
+    setFormError(null); // Clear previous form errors before new submission
+    
     if (!authEmailForMfa && !projectConfig.mockApiMode) {
         setFormError("Session context lost. Please log in again.");
-        setIsLoading(false);
-        await logout();
+        await logout(); // Consider if logout is needed or just redirect
         return;
     }
     
     if (projectConfig.mockApiMode && data.otp !== mockOtp) {
         setFormError('Invalid OTP for mock mode.');
         form.setError('otp', { type: 'manual', message: 'Invalid OTP for mock mode.' });
-        setIsLoading(false);
         return;
     }
 
     try {
-        // verifyMfa now takes only the OTP. Email is sourced from context.
         const response = await verifyMfa(data.otp); 
         if (response && response.accessToken) { 
-            // Toast for success is now handled within verifyMfa in AuthProvider
-            // AuthProvider handles redirection to dashboard
+            // Success: AuthProvider handles redirection and success toast
         } else {
-            // If response is null or no accessToken, it means verifyMfa itself failed
-            // or the AuthProvider's verifyMfa logic determined a failure.
-            // Use error from AuthContext if available, or provide a generic message.
+            // Failure from verifyMfa or API
             const errMsg = authContextError?.message || (response as any)?.message || 'The OTP entered is incorrect or an error occurred.';
             setFormError(errMsg);
             form.setError('otp', { type: 'manual', message: 'Invalid OTP.' });
         }
-    } catch (err: any) { // Catch errors from verifyMfa itself
+    } catch (err: any) { 
         setFormError(err.message || "An unexpected error occurred during MFA verification.");
-    } finally {
-        setIsLoading(false);
     }
   };
 
@@ -125,8 +111,7 @@ export default function MfaPage() {
     await logout(); 
   };
 
-  // Show loading spinner if auth context is loading or if it's mock mode and no email for MFA yet (initial load flicker)
-  if (!isClient || (authLoading && (!authEmailForMfa && projectConfig.mockApiMode))) {
+  if (!isClient || (authLoading && !formError && !authContextError)) { // Show loader if auth is loading and no errors yet shown
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -134,8 +119,8 @@ export default function MfaPage() {
     );
   }
   
-  if (!authEmailForMfa && !projectConfig.mockApiMode && !authLoading) {
-     // Should be redirected by AuthProvider, but as a fallback:
+  // Show session expired if no email for MFA and not currently loading (implies something went wrong before MFA attempt)
+  if (!authEmailForMfa && !authLoading && !projectConfig.mockApiMode) {
     return (
       <Card className="w-full max-w-md">
         <CardHeader>
@@ -164,7 +149,7 @@ export default function MfaPage() {
           </AlertDescription>
         </Alert>
       )}
-      {!projectConfig.mockApiMode && (
+      {!projectConfig.mockApiMode && authEmailForMfa && (
          <Alert variant="default" className="mb-6 sm:mb-8 p-2 sm:p-3">
           <Info className="h-4 w-4" />
           <AlertTitle className="text-xs font-semibold">Check Your Authentication Device</AlertTitle>
@@ -205,7 +190,7 @@ export default function MfaPage() {
                         maxLength={6}
                         {...field}
                         className="h-9 sm:h-10 text-center text-sm sm:text-base tracking-[0.15em] sm:tracking-[0.2em]"
-                        disabled={isLoading || authLoading}
+                        disabled={authLoading}
                         autoComplete="one-time-code"
                         inputMode="numeric"
                       />
@@ -217,9 +202,9 @@ export default function MfaPage() {
               <Button
                 type="submit"
                 className="w-full h-9 sm:h-10 text-sm"
-                disabled={isLoading || authLoading}
+                disabled={authLoading}
               >
-                {(isLoading || authLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {authLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Verify Code
               </Button>
             </form>
@@ -230,7 +215,7 @@ export default function MfaPage() {
                 This is a mock MFA screen.
                 </p>
              )}
-            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm" onClick={handleBackToLogin} disabled={isLoading || authLoading}>
+            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm" onClick={handleBackToLogin} disabled={authLoading}>
               Back to Login
             </Button>
           </div>
