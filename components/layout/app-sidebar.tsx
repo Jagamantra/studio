@@ -22,6 +22,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 
 export function AppSidebar() {
@@ -33,7 +34,6 @@ export function AppSidebar() {
 
   useEffect(() => {
     setIsClient(true);
-    // Initialize appVersion from theme context, fallback to projectConfig default
     setAppVersion(themeAppVersion || projectConfig.defaultAppVersionId); 
   }, [themeAppVersion]);
 
@@ -50,16 +50,19 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" variant="sidebar" side="left">
       <SidebarHeader className="p-2">
         {/* This div controls the layout of header items */}
-        <div className="flex items-center justify-between w-full">
+        <div className={cn(
+          "flex items-center justify-between w-full", // Base styles for expanded
+          "group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-stretch group-data-[collapsible=icon]:gap-2" // Styles for collapsed state
+        )}>
           
           {/* Version Switcher Dropdown */}
-          {/* When collapsed, this will be ordered last (right) */}
+          {/* When expanded, it's first in DOM, so on the left. When collapsed, it's ordered last (bottom). */}
           <div className="group-data-[collapsible=icon]:order-last">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button 
                         variant="outline" 
-                        className="w-40 justify-start group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
+                        className="w-40 justify-start group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
                         disabled={!isClient}
                       >
                         <GitBranch className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
@@ -70,7 +73,7 @@ export function AppSidebar() {
                   <DropdownMenuContent 
                     className="w-[var(--sidebar-width)] group-data-[collapsible=icon]:w-auto" 
                     side="bottom" 
-                    align="start"
+                    align={sidebarState === 'collapsed' ? 'center' : 'start'} // Align center for collapsed icon
                     sideOffset={sidebarState === 'collapsed' ? 4 : 5} 
                   >
                        <DropdownMenuRadioGroup value={appVersion} onValueChange={handleAppVersionChange}>
@@ -86,11 +89,11 @@ export function AppSidebar() {
           </div>
 
           {/* Desktop sidebar toggle button */}
-          {/* When collapsed, this will be ordered first (left) */}
+          {/* When expanded, it's second in DOM, so on the right. When collapsed, it's ordered first (top). */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="hidden md:flex text-sidebar-foreground group-data-[collapsible=icon]:order-first group-data-[collapsible=icon]:size-8" 
+            className="hidden md:flex text-sidebar-foreground group-data-[collapsible=icon]:order-first group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-8" 
             onClick={toggleSidebar} 
             aria-label="Toggle sidebar"
           >
