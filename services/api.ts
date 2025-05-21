@@ -1,200 +1,304 @@
-
 'use client';
-import type { UserProfile, LoginSuccessResponse, MfaSentResponse, ThemeSettings } from '@/types';
-import apiClient from './apiClient'; 
-import { initialDummyUsersForAuth, previewAdminUserProfile } from '@/data/dummy-data'; 
+import type { UserProfile, AuthResponse, MfaSentResponse, LoginSuccessResponse, ThemeSettings, Role } from '@/types';
+import apiClient from './apiClient';
+import { projectConfig } from '@/config/project.config';
+import {
+    initialDummyUsersForAuth,
+    DUMMY_USERS_STORAGE_KEY,
+    CURRENT_DUMMY_USER_STORAGE_KEY,
+    MFA_VERIFIED_STORAGE_KEY,
+    previewAdminUserProfile,
+} from '@/data/dummy-data';
+import { rolesConfig } from '@/config/roles.config';
 
 // In-memory store for dummy users, initialized from localStorage or defaults
-let DUMMY_USERS_DB: UserProfile[] = [];
+let DUMMY_USERS_DB_INSTANCE: UserProfile[] = [];
 
-if (typeof window !== 'undefined') {
-    const storedUsers = localStorage.getItem('genesis_dummy_users_db_for_api_ts');
-    if (storedUsers) {
-        try {
-            DUMMY_USERS_DB = JSON.parse(storedUsers);
-        } catch (e) {
-            console.error("Error parsing dummy users from localStorage:", e);
-            DUMMY_USERS_DB = [...initialDummyUsersForAuth]; // Fallback to initial
-        }
-    } else {
-        DUMMY_USERS_DB = [...initialDummyUsersForAuth];
+const getMockUsersFromStorage = (): UserProfile[] => {
+    if (typeof window === 'undefined') { // Handle SSR case or non-browser environment
+        // Return a fresh copy for SSR to avoid cross-request contamination if this code ever ran server-side.
+        // For client-side, this ensures initialDummyUsersForAuth is the base if nothing in localStorage.
+        return [...initialDummyUsersForAuth];
     }
-    // Ensure the storage is updated if it was just initialized
-    localStorage.setItem('genesis_dummy_users_db_for_api_ts', JSON.stringify(DUMMY_USERS_DB));
-}
+    const usersJson = localStorage.getItem(DUMMY_USERS_STORAGE_KEY);
+    try {
+        const parsedUsers = usersJson ? JSON.parse(usersJson) : [...initialDummyUsersForAuth];
+        DUMMY_USERS_DB_INSTANCE = Array.isArray(parsedUsers) ? parsedUsers : [...initialDummyUsersForAuth];
+    } catch (e) {
+        console.error("Error parsing dummy users from localStorage:", e);
+        DUMMY_USERS_DB_INSTANCE = [...initialDummyUsersForAuth];
+    }
+    // Ensure DB is not empty if initial data exists
+    if (DUMMY_USERS_DB_INSTANCE.length === 0 && initialDummyUsersForAuth.length > 0) {
+        DUMMY_USERS_DB_INSTANCE = [...initialDummyUsersForAuth];
+        saveMockUsersToStorage(); // Save initial state if it was empty
+    }
+    return DUMMY_USERS_DB_INSTANCE;
+};
 
-const saveDummyUsers = () => {
+const saveMockUsersToStorage = () => {
     if (typeof window !== 'undefined') {
-        localStorage.setItem('genesis_dummy_users_db_for_api_ts', JSON.stringify(DUMMY_USERS_DB));
+        localStorage.setItem(DUMMY_USERS_STORAGE_KEY, JSON.stringify(DUMMY_USERS_DB_INSTANCE));
     }
 };
 
+// Initialize on load for client-side
+if (typeof window !== 'undefined') {
+    getMockUsersFromStorage(); // This will populate DUMMY_USERS_DB_INSTANCE
+}
 
-// --- Authentication (Real API Calls) ---
-export const registerUser = async (details: { email: string, password?: string, displayName?: string }): Promise<MfaSentResponse> => {
-  console.log("API: Attempting real API registration for:", details.email);
-  const response = await apiClient.post<MfaSentResponse>('/auth/register', details);
-  return response.data;
+// --- Authentication ---
+export const registerUser = async (details: { email: string, password?: string, displayName?: string, role?: Role }): Promise<MfaSentResponse> => {
+    if (projectConfig.mockApiMode) {
+        console.log("API (Mock): registerUser for", details.email);
+        getMockUsersFromStorage(); // Ensure DB is fresh
+        if (DUMMY_USERS_DB_INSTANCE.some(u => u.email === details.email)) {
+            return Promise.reject(new Error('Mock: Email already exists'));
+        }
+        const newUser: UserProfile = {
+            uid: `mock-user-${Date.now()}`,
+            email: details.email,
+            displayName: details.displayName || details.email.split('@')[0],
+            role: details.role || rolesConfig.defaultRole,
+            photoURL: null,
+            phoneNumber: null,
+            password: details.password,
+            preferences: {},
+        };
+        DUMMY_USERS_DB_INSTANCE.push(newUser);
+        saveMockUsersToStorage();
+        return Promise.resolve({ codeSent: true, message: "Mock registration successful. MFA code will be shown." });
+    } else {
+        // Real API call
+        console.log("API (Real): registerUser for", details.email);
+        const response = await apiClient.post<MfaSentResponse>('/auth/register', details);
+        return response.data;
+    }
 };
 
 export const loginUser = async (email: string, password?: string): Promise<MfaSentResponse> => {
-  console.log("API: Attempting real API login for:", email);
-  const response = await apiClient.post<MfaSentResponse>('/auth/login', { email, password });
-  return response.data;
+    if (projectConfig.mockApiMode) {
+        console.log("API (Mock): loginUser for", email);
+        getMockUsersFromStorage();
+        const user = DUMMY_USERS_DB_INSTANCE.find(u => u.email === email && u.password === password);
+        if (user) {
+            return Promise.resolve({ codeSent: true, message: "Mock login successful. MFA code will be shown." });
+        }
+        return Promise.reject(new Error('Invalid mock credentials.'));
+    } else {
+        // Real API call
+        console.log("API (Real): loginUser for", email);
+        const response = await apiClient.post<MfaSentResponse>('/auth/login', { email, password });
+        return response.data;
+    }
 };
 
 export const verifyMfa = async (email: string, mfaCode: string): Promise<LoginSuccessResponse> => {
-  console.log("API: Attempting real API MFA verification for:", email);
-  const response = await apiClient.post<LoginSuccessResponse>('/auth/verify-mfa', { email, mfaCode });
-  return response.data; 
+    if (projectConfig.mockApiMode) {
+        console.log("API (Mock): verifyMfa for", email);
+        getMockUsersFromStorage();
+        const user = DUMMY_USERS_DB_INSTANCE.find(u => u.email === email);
+        if (user && mfaCode.length === 6 && /^\d+$/.test(mfaCode)) { // Simple mock MFA check
+            if (typeof window !== 'undefined') {
+                localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(user));
+                localStorage.setItem(MFA_VERIFIED_STORAGE_KEY, 'true');
+            }
+            return Promise.resolve({
+                accessToken: `mock-token-for-${user.uid}-${Date.now()}`,
+                email: user.email!,
+                role: user.role,
+                expiresIn: 3600,
+                uid: user.uid,
+                preferences: user.preferences || {},
+            });
+        }
+        return Promise.reject(new Error('Mock: Invalid MFA code or user not found.'));
+    } else {
+        // Real API call
+        console.log("API (Real): verifyMfa for", email);
+        const response = await apiClient.post<LoginSuccessResponse>('/auth/verify-mfa', { email, mfaCode });
+        return response.data;
+    }
 };
 
 export const logoutUser = async (): Promise<void> => {
-  try {
-    await apiClient.post('/auth/logout');
-    console.log("API: Logout successful on backend.");
-  } catch (error) {
-    console.warn("API: Logout API call failed or not implemented, proceeding with client-side clear.", error);
-  }
+    if (projectConfig.mockApiMode) {
+        console.log("API (Mock): logoutUser");
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(CURRENT_DUMMY_USER_STORAGE_KEY);
+            localStorage.removeItem(MFA_VERIFIED_STORAGE_KEY);
+        }
+        return Promise.resolve();
+    } else {
+        // Real API call
+        console.log("API (Real): logoutUser");
+        try {
+            await apiClient.post('/auth/logout');
+        } catch (error) {
+            console.warn("Logout API call failed (this might be expected if no backend logout endpoint):", error);
+        }
+        // Client-side session clearing (cookies, state) is handled by AuthProvider
+        return Promise.resolve();
+    }
 };
 
-// --- User Profile & Preferences (Dummy Data for now post-auth) ---
-export const fetchUserProfile = async (uid: string, email?: string, role?: UserProfile['role']): Promise<UserProfile | null> => {
-  console.log(`API (Dummy): fetchUserProfile for UID ${uid}`);
-  let user = DUMMY_USERS_DB.find(u => u.uid === uid);
+// --- User Profile & Preferences ---
+// These functions currently use DUMMY_USERS_DB_INSTANCE for data storage/retrieval
+// regardless of mockApiMode, as real endpoints for these are not yet implemented.
+export const fetchUserProfile = async (uid: string, email?: string, role?: Role): Promise<UserProfile | null> => {
+    console.log(`API (Dummy Data Source): fetchUserProfile for UID ${uid}`);
+    getMockUsersFromStorage(); // Ensure DUMMY_USERS_DB_INSTANCE is up-to-date
+    let user = DUMMY_USERS_DB_INSTANCE.find(u => u.uid === uid);
 
-  if (!user && uid && email && role) {
-    // If user not found by UID but we have details (e.g. from token after real auth), create a placeholder
-    console.log(`API (Dummy): User ${uid} not found. Creating placeholder with email ${email} and role ${role}.`);
-    user = {
-      uid,
-      email,
-      role,
-      displayName: email, // Default display name
-      photoURL: null,
-      phoneNumber: null,
-      preferences: {}, // Default empty preferences
-      password: 'someDefaultPasswordIfNotSetByAuth', // Placeholder, real password handled by auth
-    };
-    DUMMY_USERS_DB.push(user);
-    saveDummyUsers();
-  } else if (!user && uid === previewAdminUserProfile.uid) { // Special case for preview admin
-    user = { ...previewAdminUserProfile };
-    // Optionally add/update previewAdminUserProfile in DUMMY_USERS_DB if not present
-    const existingPreviewAdmin = DUMMY_USERS_DB.find(u => u.uid === previewAdminUserProfile.uid);
-    if (!existingPreviewAdmin) {
-        DUMMY_USERS_DB.push(user);
-        saveDummyUsers();
+    if (!user && uid && email && role) {
+        // If user not found by UID but we have details (e.g. from token after real auth, or during mock registration),
+        // create a placeholder in the dummy DB.
+        console.log(`API (Dummy Data Source): User ${uid} not found. Creating placeholder with email ${email} and role ${role}.`);
+        user = {
+            uid, email, role,
+            displayName: email.split('@')[0], // Default display name
+            photoURL: null,
+            phoneNumber: null,
+            preferences: {}, // Default empty preferences
+            // Password field might be relevant if this creation happens during mock registration
+            // For real auth, password is not stored client-side.
+            password: projectConfig.mockApiMode ? 'mockGeneratedPassword' : undefined,
+        };
+        DUMMY_USERS_DB_INSTANCE.push(user);
+        saveMockUsersToStorage();
+    } else if (!user && uid === previewAdminUserProfile.uid) { // Special case for preview admin during development
+        user = { ...previewAdminUserProfile };
+        if (!DUMMY_USERS_DB_INSTANCE.find(u=> u.uid === previewAdminUserProfile.uid)) {
+            DUMMY_USERS_DB_INSTANCE.push(user);
+            saveMockUsersToStorage();
+        }
     }
-  }
-  
-  return Promise.resolve(user ? { ...user } : null);
+    return Promise.resolve(user ? { ...user } : null);
 };
 
 export const updateUserProfile = async (uid: string, profileData: Partial<Omit<UserProfile, 'uid' | 'email' | 'role' | 'preferences' | 'password'>>): Promise<UserProfile> => {
-  console.log(`API (Dummy): updateUserProfile for UID ${uid}`);
-  const userIndex = DUMMY_USERS_DB.findIndex(u => u.uid === uid);
-  if (userIndex > -1) {
-    DUMMY_USERS_DB[userIndex] = { ...DUMMY_USERS_DB[userIndex], ...profileData };
-    saveDummyUsers();
-    return Promise.resolve({ ...DUMMY_USERS_DB[userIndex] });
-  }
-  console.warn(`API (Dummy): User not found for profile update (UID: ${uid}). No update performed.`);
-  return Promise.reject(new Error('User not found for profile update (dummy data).'));
+    console.log(`API (Dummy Data Source): updateUserProfile for UID ${uid}`);
+    getMockUsersFromStorage();
+    const userIndex = DUMMY_USERS_DB_INSTANCE.findIndex(u => u.uid === uid);
+    if (userIndex > -1) {
+        DUMMY_USERS_DB_INSTANCE[userIndex] = { ...DUMMY_USERS_DB_INSTANCE[userIndex], ...profileData };
+        saveMockUsersToStorage();
+        return Promise.resolve({ ...DUMMY_USERS_DB_INSTANCE[userIndex] });
+    }
+    console.warn(`API (Dummy Data Source - Profile Update): User not found for UID: ${uid}. No update performed.`);
+    return Promise.reject(new Error('User not found for profile update (using dummy data store).'));
 };
 
 export const updateUserPreferences = async (uid: string, preferences: Partial<ThemeSettings>): Promise<UserProfile> => {
-  console.log(`API (Dummy): updateUserPreferences for UID ${uid}`);
-  let userIndex = DUMMY_USERS_DB.findIndex(u => u.uid === uid);
+    console.log(`API (Dummy Data Source): updateUserPreferences for UID ${uid}`);
+    getMockUsersFromStorage();
+    let userIndex = DUMMY_USERS_DB_INSTANCE.findIndex(u => u.uid === uid);
 
-  if (userIndex === -1) {
-    // If user not found, attempt to find by email if it's the preview admin (special case during dev)
-    // Or, more generally, if a UID from a real token doesn't exist in dummy DB, create a placeholder
-    // This part is tricky if the UID is completely new and we don't have email/role context here.
-    // For now, we'll log a warning. The robust creation should happen in fetchUserProfile.
-    console.warn(`API (Dummy): User with UID ${uid} not found when trying to update preferences. Attempting to ensure user exists or create placeholder.`);
-    // Try to fetch/create based on current user context if possible, but this function doesn't have it.
-    // This indicates a potential sync issue or that `fetchUserProfile` didn't create the placeholder.
-    // For now, let's try to create a basic shell if not found, assuming `uid` is valid.
-    const placeholderUser: UserProfile = {
-        uid,
-        email: `${uid}@placeholder.com`, // Dummy email
-        role: 'user', // Default role
-        displayName: `User ${uid}`,
-        photoURL: null,
-        phoneNumber: null,
-        preferences: {},
-    };
-    DUMMY_USERS_DB.push(placeholderUser);
-    saveDummyUsers();
-    userIndex = DUMMY_USERS_DB.length -1; // Point to the newly added user
-  }
+    if (userIndex === -1) {
+        // This should ideally not happen if fetchUserProfile correctly creates placeholders.
+        console.warn(`API (Dummy Data Source - Preferences Update): User with UID ${uid} not found. Profile might not have been initialized in dummy store.`);
+        return Promise.reject(new Error(`User with UID ${uid} not found in dummy store. Cannot update preferences.`));
+    }
 
-  const currentUser = DUMMY_USERS_DB[userIndex];
-  currentUser.preferences = { ...(currentUser.preferences || {}), ...preferences };
-  saveDummyUsers();
-  return Promise.resolve({ ...currentUser });
+    const currentUser = DUMMY_USERS_DB_INSTANCE[userIndex];
+    currentUser.preferences = { ...(currentUser.preferences || {}), ...preferences };
+    saveMockUsersToStorage();
+    return Promise.resolve({ ...currentUser });
 };
 
 
-// --- User Management (Admin - Dummy Data) ---
+// --- User Management (Admin) ---
+// These functions use DUMMY_USERS_DB_INSTANCE for data.
 export const fetchUsers = async (): Promise<UserProfile[]> => {
-  console.log("API (Dummy): fetchUsers");
-  return Promise.resolve([...DUMMY_USERS_DB]);
+    console.log("API (Dummy Data Source): fetchUsers");
+    getMockUsersFromStorage();
+    return Promise.resolve([...DUMMY_USERS_DB_INSTANCE]);
 };
 
 export const addUser = async (userData: Omit<UserProfile, 'uid' | 'photoURL' | 'preferences'> & { password?: string }): Promise<UserProfile> => {
-  console.log("API (Dummy): addUser");
-  const newUser: UserProfile = {
-    uid: `dummy-admin-added-${Date.now()}`,
-    ...userData,
-    photoURL: null,
-    preferences: {},
-  };
-  DUMMY_USERS_DB.unshift(newUser);
-  saveDummyUsers();
-  return Promise.resolve(newUser);
+    console.log("API (Dummy Data Source): addUser", userData.email);
+    getMockUsersFromStorage();
+    if (DUMMY_USERS_DB_INSTANCE.some(u => u.email === userData.email)) {
+        return Promise.reject(new Error('Dummy DB: Email already exists for new user.'));
+    }
+    const newUser: UserProfile = {
+        uid: `dummy-admin-added-${Date.now()}`,
+        email: userData.email,
+        displayName: userData.displayName,
+        role: userData.role,
+        photoURL: null,
+        password: userData.password, // Store password for mock login capability
+        preferences: {},
+        phoneNumber: userData.phoneNumber || null,
+    };
+    DUMMY_USERS_DB_INSTANCE.unshift(newUser); // Add to the start for easy visibility in mock scenarios
+    saveMockUsersToStorage();
+    return Promise.resolve(newUser);
 };
 
 export const updateUser = async (uid: string, userData: Partial<Omit<UserProfile, 'uid' | 'email' | 'password'>>): Promise<UserProfile> => {
-  console.log(`API (Dummy): updateUser for UID ${uid}`);
-  const userIndex = DUMMY_USERS_DB.findIndex(u => u.uid === uid);
-  if (userIndex > -1) {
-    DUMMY_USERS_DB[userIndex] = { ...DUMMY_USERS_DB[userIndex], ...userData };
-    saveDummyUsers();
-    return Promise.resolve({ ...DUMMY_USERS_DB[userIndex] });
-  }
-  return Promise.reject(new Error('User not found for update (dummy data).'));
+    console.log(`API (Dummy Data Source): updateUser for UID ${uid}`);
+    getMockUsersFromStorage();
+    const userIndex = DUMMY_USERS_DB_INSTANCE.findIndex(u => u.uid === uid);
+    if (userIndex > -1) {
+        DUMMY_USERS_DB_INSTANCE[userIndex] = { ...DUMMY_USERS_DB_INSTANCE[userIndex], ...userData };
+        saveMockUsersToStorage();
+        return Promise.resolve({ ...DUMMY_USERS_DB_INSTANCE[userIndex] });
+    }
+    return Promise.reject(new Error('Dummy DB: User not found for update by admin.'));
 };
 
 export const deleteUser = async (uid: string): Promise<void> => {
-  console.log(`API (Dummy): deleteUser for UID ${uid}`);
-  const initialLength = DUMMY_USERS_DB.length;
-  DUMMY_USERS_DB = DUMMY_USERS_DB.filter(u => u.uid !== uid);
-  if (DUMMY_USERS_DB.length < initialLength) {
-    saveDummyUsers();
-    return Promise.resolve();
-  }
-  return Promise.reject(new Error('User not found for deletion (dummy data).'));
+    console.log(`API (Dummy Data Source): deleteUser for UID ${uid}`);
+    getMockUsersFromStorage();
+    const initialLength = DUMMY_USERS_DB_INSTANCE.length;
+    DUMMY_USERS_DB_INSTANCE = DUMMY_USERS_DB_INSTANCE.filter(u => u.uid !== uid);
+    if (DUMMY_USERS_DB_INSTANCE.length < initialLength) {
+        saveMockUsersToStorage();
+        return Promise.resolve();
+    }
+    return Promise.reject(new Error('Dummy DB: User not found for deletion by admin.'));
 };
 
-// --- Other API functions (Dummy Data) ---
+
+// --- Other API functions ---
 export const forgotPassword = async (email: string): Promise<void> => {
-  console.log(`API (Dummy): Mock forgot password for ${email}.`);
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return Promise.resolve();
+    if (projectConfig.mockApiMode) {
+        getMockUsersFromStorage();
+        const userExists = DUMMY_USERS_DB_INSTANCE.some(u => u.email === email);
+        console.log(`API (Mock): forgotPassword for ${email}. User exists: ${userExists}`);
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return Promise.resolve();
+    } else {
+        // Real API call
+        console.log(`API (Real): forgotPassword for ${email}`);
+        await apiClient.post('/auth/forgot-password', { email });
+        return Promise.resolve();
+    }
 };
 
 export const changeUserPassword = async (uid: string, currentPassword?: string, newPassword?: string): Promise<void> => {
-  console.log(`API (Dummy): Mock change password for UID ${uid}.`);
-  const user = DUMMY_USERS_DB.find(u => u.uid === uid);
-  if (user && user.password === currentPassword) {
-      user.password = newPassword;
-      saveDummyUsers();
-      return Promise.resolve();
-  }
-  return Promise.reject(new Error("Password change failed (dummy data logic)."));
+     if (projectConfig.mockApiMode) {
+        console.log(`API (Mock): changeUserPassword for UID ${uid}`);
+        getMockUsersFromStorage();
+        const user = DUMMY_USERS_DB_INSTANCE.find(u => u.uid === uid);
+        if (user && user.password === currentPassword && newPassword) {
+            user.password = newPassword;
+            saveMockUsersToStorage();
+            return Promise.resolve();
+        }
+        return Promise.reject(new Error("Mock password change failed (user not found, current password mismatch, or new password missing)."));
+    } else {
+        // Real API call
+        // The backend should handle validating the currentPassword if necessary.
+        console.log(`API (Real): changeUserPassword for UID ${uid}`);
+        await apiClient.post(`/users/${uid}/change-password`, { currentPassword, newPassword });
+        return Promise.resolve();
+    }
 };
 
-
-export { apiClient };
+// apiClient is not typically exported if all interactions go through this service layer.
+// However, if direct apiClient access is needed elsewhere (e.g., very specific one-off calls), it can be.
+// For this project's structure, it's better to keep it internal to services/api.ts.
+// export { apiClient };

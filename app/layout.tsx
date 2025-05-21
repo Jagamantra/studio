@@ -1,4 +1,3 @@
-
 'use client'; 
 
 import type { ReactNode } from 'react'; 
@@ -17,20 +16,18 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-
-  // Document title is now set per page using dynamic metadata or useEffect
   
   const AuthProviderComponent = projectConfig.mockApiMode ? MockAuthProvider : RealAuthProvider;
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Favicon link is now dynamically managed by ThemeProvider */}
+        {/* Favicon link is now dynamically managed by ThemeProvider based on appLogoUrl or appIconPaths */}
       </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
-        <AuthProviderComponent>
+        <AuthProviderComponent> {/* This needs to wrap ThemeProvider if ThemeProvider uses useAuth */}
           <ThemeProvider
-            storageKey="genesis-theme" // Keep local storage keys consistent if needed
+            storageKey="genesis-theme"
             defaultTheme="system"
           >
             {children}
