@@ -1,4 +1,3 @@
-
 'use client';
 import type { UserProfile, AuthResponse, MfaVerificationResponse, ThemeSettings } from '@/types';
 import { 
@@ -6,6 +5,7 @@ import {
     initialDummyUsersForAuth, // Renamed from initialMockUsersData to avoid confusion
 } from '@/data/dummy-data';
 import { rolesConfig } from '@/config/roles.config';
+import { mockCustomers } from '@/data/mock-customers';
 
 let mockUsers: UserProfile[] = [];
 
@@ -195,6 +195,18 @@ export const _mockDeleteUser = async (uid: string): Promise<void> => {
     return Promise.resolve();
   }
   return Promise.reject(new Error('Mock: User not found for deletion by admin'));
+};
+
+export const getCustomers = async () => {
+  await mockDelay();
+  return mockCustomers;
+};
+
+export const getCustomerById = async (id: string) => {
+  await mockDelay();
+  const customer = mockCustomers.find(c => c.id === id);
+  if (!customer) throw new Error('Customer not found');
+  return customer;
 };
 
 // Utility to reset mock users to initial state (e.g., for testing)
