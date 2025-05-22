@@ -16,7 +16,7 @@ export const projectConfig: ProjectConfig = {
     { name: 'Green', hslValue: '142.1 70.6% 45.3%', hexValue: '#22C55E' },
     { name: 'Orange', hslValue: '24.6 95% 53.1%', hexValue: '#F97316' },
   ],
-  defaultAccentColorName: 'Teal',
+  defaultAccentColorName: 'Orange',
   availableBorderRadii: [
     { name: 'None', value: '0rem' },
     { name: 'Small', value: '0.3rem' },
