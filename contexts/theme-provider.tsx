@@ -202,49 +202,49 @@ export function ThemeProvider({
   useEffect(() => { if (appScale) window.document.body.style.zoom = appScale; }, [appScale]);
   useEffect(() => { if (interfaceDensity) window.document.documentElement.dataset.density = interfaceDensity; else delete window.document.documentElement.dataset.density; }, [interfaceDensity]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let faviconLink = document.querySelector<HTMLLinkElement>('link#app-favicon');
-    if (!faviconLink) {
-      faviconLink = document.createElement('link'); 
-      faviconLink.rel = 'icon'; 
-      faviconLink.id = 'app-favicon';
-      document.head.appendChild(faviconLink);
-    }
+  // useEffect(() => {
+  //   if (typeof window === 'undefined') return;
+  //   let faviconLink = document.querySelector<HTMLLinkElement>('link#app-favicon');
+  //   if (!faviconLink) {
+  //     faviconLink = document.createElement('link'); 
+  //     faviconLink.rel = 'icon'; 
+  //     faviconLink.id = 'app-favicon';
+  //     document.head.appendChild(faviconLink);
+  //   }
 
-    const currentAccentColorForFavicon = accentColor || getInitialAccentHsl();
-    const oldObjectUrl = (faviconLink as any)._objectUrl; // Store to revoke later
+  //   const currentAccentColorForFavicon = accentColor || getInitialAccentHsl();
+  //   const oldObjectUrl = (faviconLink as any)._objectUrl; // Store to revoke later
 
-    if (appLogoUrl) { // Prioritize user-uploaded/configured logo URL
-      faviconLink.href = appLogoUrl;
-      if (appLogoUrl.startsWith('data:image/svg+xml')) {
-        faviconLink.type = 'image/svg+xml';
-      } else if (appLogoUrl.startsWith('data:image/png')) {
-        faviconLink.type = 'image/png';
-      } else if (appLogoUrl.endsWith('.ico')) {
-        faviconLink.type = 'image/x-icon';
-      } else {
-        faviconLink.type = appLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png';
-      }
-    } else if (appIconPaths && appIconPaths.length > 0) { // Then theme's appIconPaths
-      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(${currentAccentColorForFavicon})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${appIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
-      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' }); 
-      const newObjectUrl = URL.createObjectURL(svgBlob);
-      faviconLink.href = newObjectUrl; 
-      faviconLink.type = 'image/svg+xml';
-      (faviconLink as any)._objectUrl = newObjectUrl;
-    } else { // Fallback to static default
-      faviconLink.href = '/favicon.svg'; 
-      faviconLink.type = 'image/svg+xml';
-    }
+  //   if (appLogoUrl) { // Prioritize user-uploaded/configured logo URL
+  //     faviconLink.href = appLogoUrl;
+  //     if (appLogoUrl.startsWith('data:image/svg+xml')) {
+  //       faviconLink.type = 'image/svg+xml';
+  //     } else if (appLogoUrl.startsWith('data:image/png')) {
+  //       faviconLink.type = 'image/png';
+  //     } else if (appLogoUrl.endsWith('.ico')) {
+  //       faviconLink.type = 'image/x-icon';
+  //     } else {
+  //       faviconLink.type = appLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png';
+  //     }
+  //   } else if (appIconPaths && appIconPaths.length > 0) { // Then theme's appIconPaths
+  //     const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(${currentAccentColorForFavicon})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${appIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
+  //     const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' }); 
+  //     const newObjectUrl = URL.createObjectURL(svgBlob);
+  //     faviconLink.href = newObjectUrl; 
+  //     faviconLink.type = 'image/svg+xml';
+  //     (faviconLink as any)._objectUrl = newObjectUrl;
+  //   } else { // Fallback to static default
+  //     faviconLink.href = '/favicon.ico'; 
+  //     faviconLink.type = 'image/x-icon';
+  //   }
 
-    if (oldObjectUrl && oldObjectUrl !== faviconLink.href) { // Revoke old only if it's different and was an object URL
-       URL.revokeObjectURL(oldObjectUrl);
-       if (faviconLink.href !== (faviconLink as any)._objectUrl) { // If new href is not the new object URL (e.g. it's a static path or data URI)
-         delete (faviconLink as any)._objectUrl;
-       }
-    }
-  }, [appLogoUrl, appIconPaths, accentColor, theme]);
+  //   if (oldObjectUrl && oldObjectUrl !== faviconLink.href) { // Revoke old only if it's different and was an object URL
+  //      URL.revokeObjectURL(oldObjectUrl);
+  //      if (faviconLink.href !== (faviconLink as any)._objectUrl) { // If new href is not the new object URL (e.g. it's a static path or data URI)
+  //        delete (faviconLink as any)._objectUrl;
+  //      }
+  //   }
+  // }, [appLogoUrl, appIconPaths, accentColor, theme]);
 
 
   const value = useMemo(() => ({
