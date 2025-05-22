@@ -2,7 +2,7 @@
 import type { ProjectConfig } from '@/types';
 
 export const projectConfig: ProjectConfig = {
-  appName: 'Genesis Template',
+  appName: 'Risk Profiler',
   appIconPaths: [
     "M12 2L2 7l10 5 10-5-10-5z",
     "M2 17l10 5 10-5",
