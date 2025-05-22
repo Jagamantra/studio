@@ -93,9 +93,6 @@ export const getCustomerColumns = (options?: GetCustomerColumnsOptions): ColumnD
                 Delete Customer
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                Continue with Assessment
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
