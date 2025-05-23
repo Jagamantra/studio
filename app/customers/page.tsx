@@ -63,6 +63,7 @@ export default function CustomersPage() {
       router.push(`/customers/form?mode=edit&id=${customer.id}`);
     },
     onDelete: handleDeleteCustomer,
+    isAdmin: isAdmin,
   });
 
   const handleOpenCreateDialog = () => {
