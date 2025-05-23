@@ -1,4 +1,6 @@
 // components/customers/customer-table-columns.tsx
+'use client';
+
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Customer, CustomerStatus } from "@/types";
