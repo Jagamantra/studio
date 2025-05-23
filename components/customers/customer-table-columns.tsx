@@ -1,12 +1,13 @@
-
+// components/customers/customer-table-columns.tsx
 'use client';
 
-import type React from "react";
-import type { ColumnDef } from "@tanstack/react-table";
-import type { Customer, CustomerStatus } from "@/types";
+import React from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import { Customer, CustomerStatus } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,83 +16,154 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface GetCustomerColumnsOptions {
   onEdit?: (customer: Customer) => void;
   onDelete?: (customerId: string) => void;
-  isAdmin: boolean;
 }
 
 const StatusBadgeMap: Record<
   CustomerStatus,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  { label: string; variant: "default" | "secondary" | "destructive" }
 > = {
   "in-progress": { label: "In Progress", variant: "default" },
   "on-hold": { label: "On Hold", variant: "secondary" },
-  "completed": { label: "Completed", variant: "outline" }, // Changed to outline for better contrast with destructive
+  "completed": { label: "Completed", variant: "destructive" },
 };
 
-export const getCustomerColumns = ({
-  onEdit,
-  onDelete,
-  isAdmin,
-}: GetCustomerColumnsOptions): ColumnDef<Customer>[] => {
+export const getCustomerColumns = (
+  options?: GetCustomerColumnsOptions
+): ColumnDef<Customer>[] => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   const columns: ColumnDef<Customer>[] = [
     {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "companyName",
+      id: "companyName",
       header: "Company Name",
-      cell: ({ row }) => <div className="font-medium">{row.getValue("companyName")}</div>,
+      accessorFn: (row) => row.companyName,
     },
     {
-      accessorKey: "email",
+      id: "address",
+      header: "Address",
+      accessorFn: (row) => row.address,
+    },
+    {
+      id: "phoneNumber",
+      header: "Phone Number",
+      accessorFn: (row) => row.phoneNumber,
+    },
+    {
+      id: "email",
       header: "Email",
+      accessorFn: (row) => row.email,
     },
+    // {
+    //   id: "website",
+    //   header: "Website",
+    //   accessorFn: (row) => row.website,
+    // },
+    // {
+    //   id: "kvkNumber",
+    //   header: "KVK Number",
+    //   accessorFn: (row) => row.kvkNumber,
+    // },
+    // {
+    //   id: "legalForm",
+    //   header: "Legal Form",
+    //   accessorFn: (row) => row.legalForm,
+    // },
+    // {
+    //   id: "mainActivity",
+    //   header: "Main Activity",
+    //   accessorFn: (row) => row.mainActivity,
+    // },
+    // {
+    //   id: "sideActivities",
+    //   header: "Side Activities",
+    //   accessorFn: (row) => row.sideActivities,
+    // },
+    // {
+    //   id: "dga",
+    //   header: "DGA",
+    //   accessorFn: (row) => row.dga,
+    // },
+    // {
+    //   id: "staffFTE",
+    //   header: "Staff (FTE)",
+    //   accessorFn: (row) => row.staffFTE,
+    // },
+    // {
+    //   id: "annualTurnover",
+    //   header: "Annual Turnover",
+    //   accessorFn: (row) => row.annualTurnover,
+    // },
+    // {
+    //   id: "grossProfit",
+    //   header: "Gross Profit",
+    //   accessorFn: (row) => row.grossProfit,
+    // },
+    // {
+    //   id: "payrollYear",
+    //   header: "Payroll Year",
+    //   accessorFn: (row) => row.payrollYear,
+    // },
+    // {
+    //   id: "description",
+    //   header: "Description",
+    //   accessorFn: (row) => row.description,
+    // },
+    // {
+    //   id: "visitDate",
+    //   header: "Visit Date",
+    //   accessorFn: (row) => row.visitDate,
+    //   cell: ({ getValue }) => {
+    //     const date = new Date(getValue() as string);
+    //     return date.toLocaleDateString();
+    //   },
+    // },
     {
-      accessorKey: "phoneNumber",
-      header: "Phone",
-    },
-    {
-      accessorKey: "advisor",
+      id: "advisor",
       header: "Advisor",
+      accessorFn: (row) => row.advisor,
     },
+    // {
+    //   id: "visitLocation",
+    //   header: "Visit Location",
+    //   accessorFn: (row) => row.visitLocation,
+    // },
+    // {
+    //   id: "visitFrequency",
+    //   header: "Visit Frequency",
+    //   accessorFn: (row) => row.visitFrequency,
+    // },
+    // {
+    //   id: "conversationPartner",
+    //   header: "Conversation Partner",
+    //   accessorFn: (row) => row.conversationPartner,
+    // },
     {
-      accessorKey: "status",
+      id: "comments",
+      header: "Comments",
+      accessorFn: (row) => row.comments,
+    },
+    // {
+    //   id: "lastModified",
+    //   header: "Last Modified",
+    //   accessorFn: (row) => row.lastModified,
+    //   cell: ({ getValue }) => {
+    //     const date = new Date(getValue() as string);
+    //     return date.toLocaleDateString();
+    //   },
+    // },
+    {
+      id: "status",
       header: "Status",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as CustomerStatus;
-        const statusInfo = StatusBadgeMap[status] || { label: status, variant: "outline" };
-        return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
-      },
-    },
-    {
-      accessorKey: "lastModified",
-      header: "Last Modified",
-      cell: ({ row }) => {
-        const date = new Date(row.getValue("lastModified") as string);
-        return date.toLocaleDateString();
+      accessorFn: (row) => row.status,
+      cell: ({ getValue }) => {
+        const status = getValue() as CustomerStatus;
+        const { label, variant } = StatusBadgeMap[status];
+        return <Badge variant={variant}>{label}</Badge>;
       },
     },
   ];
@@ -99,35 +171,49 @@ export const getCustomerColumns = ({
   if (isAdmin) {
     columns.push({
       id: "actions",
-      header: () => <div className="text-right">Actions</div>,
       cell: ({ row }) => {
         const customer = row.original;
         return (
-          <div className="text-right">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => onEdit?.(customer)}>
-                  <Edit className="mr-2 h-4 w-4" /> Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onDelete?.(customer.id)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(customer.id)}
+              >
+                Copy Customer ID
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => options?.onEdit?.(customer)}>
+                Edit Customer
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => options?.onDelete?.(customer.id)}
+                className="text-red-600"
+              >
+                Delete Customer
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* <DropdownMenuItem>Continue with Assessment</DropdownMenuItem> */}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     });
+  } else {
+    // columns.push({
+    //   id: "actions",
+    //   cell: () => (
+    //     <Button variant="outline" size="sm">
+    //       Continue with Assessment
+    //     </Button>
+    //   ),
+    // });
   }
 
   return columns;

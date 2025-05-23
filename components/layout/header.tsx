@@ -9,14 +9,14 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/theme-provider'; 
 import { FileText } from 'lucide-react'; // Default icon
 import { PageTitleWithIcon } from './page-title-with-icon';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const routeMap: Record<string, string> = {
   dashboard: 'Dashboard',
   users: 'User Management',
   customers: 'Customer Management',
   profile: 'profile',
-  'customer/form': 'Customer Management',
+  'customers/form?mode=create': 'Add Customer',
   'config-advisor': 'Application Settings',
   // Add more as needed
 };
@@ -24,9 +24,20 @@ const routeMap: Record<string, string> = {
 export function Header({ className }: { className?: string }) {
   const { appName, appIconPaths, appLogoUrl } = useTheme(); 
    const pathname = usePathname();
+    const searchParams = useSearchParams();
+  const mode = searchParams.get('mode');
+
   const cleanPath = pathname.startsWith('/') ? pathname.slice(1) : pathname;
 
-  const title = routeMap[cleanPath] || '';
+  let title = routeMap[cleanPath] || "";
+
+  // Optional: customize title further based on query params
+  if (cleanPath === 'customers/form' && mode === 'create') {
+    title = 'Add Customer';
+  } else if (cleanPath === 'customers/form' && mode === 'edit') {
+    title = 'Edit Customer'
+  }
+
   return (
     <header
       className={cn(

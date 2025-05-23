@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import type { ControllerRenderProps } from 'react-hook-form';
+import { DatePicker } from '@/components/ui/date-picker'; // Import the DatePicker
 
 interface FieldConfig {
   name: string;
@@ -15,14 +16,13 @@ interface FieldConfig {
   placeholder?: string;
 }
 
-// Make sure field can be any to satisfy ControllerRenderProps from different field types
 export function renderCustomerInput(fieldConfig: FieldConfig, field: ControllerRenderProps<any, any>, disabled: boolean = false) {
   switch (fieldConfig.type) {
     case 'textarea':
       return <Textarea {...field} placeholder={fieldConfig.placeholder || `Enter ${fieldConfig.label.toLowerCase()}...`} disabled={disabled} rows={3} />;
     case 'select':
       return (
-        <Select onValueChange={field.onChange} value={field.value} disabled={disabled}> {/* Removed || '' */}
+        <Select onValueChange={field.onChange} value={field.value} disabled={disabled}>
           <SelectTrigger>
             <SelectValue placeholder={fieldConfig.placeholder || `Select ${fieldConfig.label.toLowerCase()}`} />
           </SelectTrigger>
@@ -40,7 +40,7 @@ export function renderCustomerInput(fieldConfig: FieldConfig, field: ControllerR
         <Input
           type="number"
           {...field}
-          value={field.value === undefined || field.value === null ? '' : String(field.value)} // Handle undefined/null for number inputs
+          value={field.value === undefined || field.value === null ? '' : String(field.value)}
           onChange={(e) => {
             const numValue = e.target.value === '' ? undefined : parseFloat(e.target.value);
             field.onChange(numValue);
@@ -49,8 +49,14 @@ export function renderCustomerInput(fieldConfig: FieldConfig, field: ControllerR
           disabled={disabled}
         />
       );
-    case 'date':
-      return <Input type="date" {...field} disabled={disabled} />;
+    case 'date': // Handle date type
+      return (
+        <DatePicker
+          date={field.value ? new Date(field.value) : undefined} // Ensure field.value is a Date object
+          setDate={(date) => field.onChange(date)} // Pass the Date object directly
+          disabled={disabled}
+        />
+      );
     case 'email':
       return <Input type="email" {...field} placeholder={fieldConfig.placeholder || 'name@example.com'} disabled={disabled} />;
     case 'url':
@@ -61,4 +67,3 @@ export function renderCustomerInput(fieldConfig: FieldConfig, field: ControllerR
       return <Input type="text" {...field} placeholder={fieldConfig.placeholder || `Enter ${fieldConfig.label.toLowerCase()}`} disabled={disabled} />;
   }
 }
-

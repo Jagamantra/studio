@@ -32,7 +32,7 @@ type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
 interface CustomerAccordionFormProps {
   onSubmit: (data: CustomerFormValues) => Promise<void>;
-  customer: CustomerFormValues; // Expecting this to be pre-sanitized or a stable default
+  customer: CustomerFormValues;
   mode?: 'create' | 'edit';
   isSubmitting: boolean;
 }
@@ -84,7 +84,7 @@ const cleanDefaultsForCreate: CustomerFormValues = {
     grossProfit: undefined,
     payrollYear: undefined,
     description: "",
-    visitDate: "",
+    visitDate: undefined,
     advisor: undefined,
     visitLocation: "",
     visitFrequency: undefined,
@@ -94,7 +94,7 @@ const cleanDefaultsForCreate: CustomerFormValues = {
 };
 
 const sanitizeLoadedDraft = (data: any): CustomerFormValues => {
-  const sanitized = { ...cleanDefaultsForCreate, ...data };
+  const sanitized: Partial<CustomerFormValues> = { ...cleanDefaultsForCreate, ...data };
   if (sanitized.legalForm === "") sanitized.legalForm = undefined;
   if (sanitized.advisor === "") sanitized.advisor = undefined;
   if (sanitized.visitFrequency === "") sanitized.visitFrequency = undefined;
@@ -102,13 +102,25 @@ const sanitizeLoadedDraft = (data: any): CustomerFormValues => {
   if (sanitized.annualTurnover === null || sanitized.annualTurnover === "" as any) sanitized.annualTurnover = undefined;
   if (sanitized.grossProfit === null || sanitized.grossProfit === "" as any) sanitized.grossProfit = undefined;
   if (sanitized.payrollYear === null || sanitized.payrollYear === "" as any) sanitized.payrollYear = undefined;
+  
+  if (typeof sanitized.visitDate === 'string' && sanitized.visitDate) {
+    const parsedDate = new Date(sanitized.visitDate);
+    if (!isNaN(parsedDate.getTime())) {
+      sanitized.visitDate = parsedDate;
+    } else {
+      sanitized.visitDate = undefined; // Invalid date string
+    }
+  } else if (!(sanitized.visitDate instanceof Date)) {
+    sanitized.visitDate = undefined;
+  }
+
   return sanitized as CustomerFormValues;
 };
 
 
 export function CustomerAccordionForm({
   onSubmit,
-  customer, // Expecting this `customer` prop to be pre-sanitized or the stable default
+  customer,
   mode,
   isSubmitting,
 }: CustomerAccordionFormProps) {
@@ -117,15 +129,12 @@ export function CustomerAccordionForm({
   
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerFormSchema),
-    defaultValues: customer, // Directly use the pre-sanitized/default customer prop
+    defaultValues: customer,
   });
   
   useEffect(() => {
-    // The `customer` prop is now expected to be stable and correctly initialized by CustomerFormClient.
-    // form.reset is called when the `customer` prop reference changes (e.g., new customer loaded for edit).
-    // The key on CustomerAccordionForm in CustomerFormClient also helps ensure re-mount for major changes.
     form.reset(customer);
-  }, [customer, form]); // form is stable, so only customer matters here.
+  }, [customer, form]);
 
   const draftKey = customer?.id && mode === 'edit' ? `customerDraft_${customer.id}` : 'customerDraft_addNew';
 
@@ -140,7 +149,6 @@ export function CustomerAccordionForm({
   };
   
   useEffect(() => {
-    // Only load draft in create mode and if the `customer` prop is still the initial default.
     if (mode === 'create' && customer && JSON.stringify(customer) === JSON.stringify(cleanDefaultsForCreate)) {
       const draft = localStorage.getItem(draftKey);
       if (draft) {
@@ -153,18 +161,14 @@ export function CustomerAccordionForm({
         }
       }
     }
-  // The dependencies here are critical. `customer` is specifically included to ensure this runs
-  // only when `customer` is the initial default. If `customer` gets updated by `fetchCustomer` in parent,
-  // this effect should ideally not re-run and try to load draft over fetched data.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftKey, form, mode, customer]);
 
 
   const handleFormSubmit = async (data: CustomerFormValues) => {
     await onSubmit(data);
-    // Clear draft only for new customer creation after successful submission
     if (mode === 'create') { 
-        localStorage.removeItem('customerDraft_addNew'); // Use the specific key for new drafts
+        localStorage.removeItem('customerDraft_addNew');
     }
   };
 
@@ -180,8 +184,6 @@ export function CustomerAccordionForm({
   };
   
   const handleResetForm = () => {
-      // If editing, reset to the initial 'customer' prop values (which are pre-sanitized)
-      // If creating, reset to 'cleanDefaultsForCreate'
       const valuesToReset = mode === 'edit' ? customer : cleanDefaultsForCreate;
       form.reset(valuesToReset);
       toast({ title: 'Form Reset', message: 'Form fields have been reset to their original values.', variant: 'info' });
@@ -192,21 +194,24 @@ export function CustomerAccordionForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)}>
           <CardContent className="p-4 sm:p-6">
-            <Accordion type="multiple" className="w-full space-y-4" defaultValue={[]}>
+            <Accordion type="multiple" className="w-full space-y-4" defaultValue={['companyDetails', 'statusAndComments']}>
               {Object.entries(formSections).map(([sectionKey, fields]) => (
                 <AccordionItem value={sectionKey} key={sectionKey}>
                   <AccordionTrigger className="text-base sm:text-lg font-semibold">
                     {sectionKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                   </AccordionTrigger>
                   <AccordionContent className="pt-2">
-                    <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:gap-x-6 md:gap-y-4">
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-x-6 md:gap-y-5">
                       {fields.map((fieldConfig) => (
                         <FormField
                           key={fieldConfig.name}
                           control={form.control}
                           name={fieldConfig.name as keyof CustomerFormValues}
                           render={({ field }) => (
-                            <FormItem className={fieldConfig.type === 'textarea' ? 'sm:col-span-2' : ''}>
+                            <FormItem className={
+                              fieldConfig.type === 'textarea' ? 
+                              'sm:col-span-2 md:col-span-3 lg:col-span-4 xl:col-span-5' : ''
+                            }>
                               <FormLabel>{fieldConfig.label}</FormLabel>
                               <FormControl>
                                 {renderCustomerInput(fieldConfig, field, isSubmitting)}
@@ -235,7 +240,7 @@ export function CustomerAccordionForm({
                     <DraftingCompass className="mr-2 h-4 w-4"/> Save Draft
                 </Button>
             )}
-            <Button type="submit" disabled={isSubmitting || !form.formState.isDirty && mode === 'edit'} size="sm">
+            <Button type="submit" disabled={isSubmitting || (!form.formState.isDirty && mode === 'edit')} size="sm">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {mode === 'create' ? 'Create Customer' : 'Save Changes'}
             </Button>
