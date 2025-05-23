@@ -12,7 +12,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   const { appName, appIconPaths, appLogoUrl } = useTheme();
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col">
+    <div className="relative flex min-h-screen w-full flex-col justify-end">
       <div className="absolute top-2 right-2 z-50 sm:top-4 sm:right-4 md:top-6 md:right-6">
         <ThemeSwitcher />
       </div>
