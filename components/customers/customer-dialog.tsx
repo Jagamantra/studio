@@ -127,6 +127,8 @@ export function CustomerAccordionForm({
   const router = useRouter();
   const { toast } = useToast();
   
+  const [activeSection, setActiveSection] = React.useState<string | undefined>(undefined);
+
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerFormSchema),
     defaultValues: customer,
@@ -194,7 +196,7 @@ export function CustomerAccordionForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)}>
           <CardContent className="p-4 sm:p-6">
-            <Accordion type="multiple" className="w-full space-y-4" defaultValue={['companyDetails', 'statusAndComments']}>
+            <Accordion type="single"  collapsible value={activeSection}  onValueChange={setActiveSection} className="w-full space-y-4">
               {Object.entries(formSections).map(([sectionKey, fields]) => (
                 <AccordionItem value={sectionKey} key={sectionKey}>
                   <AccordionTrigger className="text-base sm:text-lg font-semibold">
