@@ -137,10 +137,10 @@ export function CustomerAccordionForm({
   if (!formKey) return <div>Loading form…</div>;
 
   return (
-    <div className="w-[900px] mx-auto p-4 rounded-md shadow-md">
+    <div className="w-[500px] mx-auto p-4 rounded-md shadow-md">
       <Form {...form} key={formKey}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          <Accordion type="multiple" className="w-full space-y-4" defaultValue={['companyDetails']}>
+          <Accordion type="multiple" className="w-full space-y-4" defaultValue={[]}>
             <AccordionItem value="companyDetails">
               <AccordionTrigger>Company Details</AccordionTrigger>
               <AccordionContent>

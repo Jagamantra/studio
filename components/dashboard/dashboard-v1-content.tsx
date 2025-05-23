@@ -1,14 +1,15 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { UserProfile } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Users, ShieldQuestion, BarChart3 } from 'lucide-react'; 
+import { Users, ShieldQuestion, BarChart3, Loader2 } from 'lucide-react'; 
 import Image from 'next/image';
 import { projectConfig } from '@/config/project.config'; 
+import * as Api from '@/services/api';
 
 interface DashboardV1ContentProps {
   userToRenderOnDashboard: UserProfile;
@@ -16,6 +17,28 @@ interface DashboardV1ContentProps {
 
 export const DashboardV1Content = React.memo(function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1ContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
+  const [userCount, setUserCount] = useState<number | null>(null);
+  const [isLoadingUserCount, setIsLoadingUserCount] = useState(true);
+
+  useEffect(() => {
+    if (isAdmin) {
+      const fetchUserCount = async () => {
+        setIsLoadingUserCount(true);
+        try {
+          const users = await Api.fetchUsers(); // Fetches from dummy data via services/api.ts
+          setUserCount(users.length);
+        } catch (error) {
+          console.error("Failed to fetch user count for dashboard:", error);
+          setUserCount(0); // Fallback or indicate error
+        } finally {
+          setIsLoadingUserCount(false);
+        }
+      };
+      fetchUserCount();
+    } else {
+      setIsLoadingUserCount(false); // Not admin, no need to load
+    }
+  }, [isAdmin]);
 
   return (
     <>
@@ -43,7 +66,15 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
                 <Users className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-lg md:text-xl font-bold">Manage Users</div>
+                <div className="text-lg md:text-xl font-bold">Manage Users
+                   {isLoadingUserCount ? (
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    userCount !== null && (
+                      <span className="ml-2 text-base font-medium text-muted-foreground">({userCount})</span>
+                    )
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground mb-2">
                   View, add, edit, or remove users.
                 </p>
