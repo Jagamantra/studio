@@ -7,7 +7,7 @@ export const CURRENT_DUMMY_USER_STORAGE_KEY = 'genesis_current_dummy_user';
 export const MFA_VERIFIED_STORAGE_KEY = 'genesis_mfa_verified';
 
 export const initialDummyUsersForAuth: UserProfile[] = [
-  { uid: 'dummy-admin-001', email: 'admin@dummy.com', displayName: 'Dummy Admin', role: 'admin', photoURL: 'https://picsum.photos/seed/initialadmin1/40/40', phoneNumber: null, password: 'password123' },
+  { uid: 'dummy-admin-001', email: 'admin@dummy.com', displayName: 'Dummy Admin', role: 'admin', photoURL: 'https://fastly.picsum.photos/id/825/40/40', phoneNumber: null, password: 'password123' },
   { uid: 'dummy-user-002', email: 'user@dummy.com', displayName: 'Dummy User', role: 'user', photoURL: 'https://picsum.photos/seed/user002/40/40', phoneNumber: null, password: 'password123' },
 ];
 
@@ -16,7 +16,7 @@ export const previewAdminUserProfile: UserProfile = {
     email: 'preview@admin.genesis',
     displayName: 'Preview Admin',
     role: 'admin',
-    photoURL: 'https://picsum.photos/seed/previewadmin/40/40',
+    photoURL: 'https://fastly.picsum.photos/id/825/40/40',
     phoneNumber: null,
 };
 
@@ -42,7 +42,7 @@ export const betaDashboardChartData = [
 
 // For Users Page (Used by api.ts as initial mock data)
 export const initialMockUsersData: UserProfile[] = [
-  { uid: 'initial-admin-1', email: 'initial.admin@example.com', displayName: 'Initial Admin', photoURL: 'https://picsum.photos/seed/initialadmin1/40/40', phoneNumber: '111-222-3333', role: 'admin', password: 'password123' },
+  { uid: 'initial-admin-1', email: 'initial.admin@example.com', displayName: 'Initial Admin', photoURL: 'https://fastly.picsum.photos/id/825/40/40', phoneNumber: '111-222-3333', role: 'admin', password: 'password123' },
   { uid: 'initial-user-1', email: 'initial.user1@example.com', displayName: 'Initial User One', photoURL: 'https://picsum.photos/seed/initialuser1/40/40', phoneNumber: '444-555-6666', role: 'user', password: 'password123' },
   { uid: 'initial-user-2', email: 'initial.user2@example.com', displayName: 'Initial User Two', photoURL: null, phoneNumber: null, role: 'user', password: 'password123' },
 ];
