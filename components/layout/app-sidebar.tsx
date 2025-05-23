@@ -59,7 +59,7 @@ export function AppSidebar() {
           
           {/* Version Switcher Dropdown */}
           {/* When expanded, it's first in DOM, so on the left. When collapsed, it's ordered last (bottom). */}
-          <div className="group-data-[collapsible=icon]:order-last">
+          {/* <div className="group-data-[collapsible=icon]:order-last">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button 
@@ -88,8 +88,8 @@ export function AppSidebar() {
                   </DropdownMenuContent>
                 )}
             </DropdownMenu>
-          </div>
-          {/* <div className="group-data-[collapsible=icon]:order-last">
+          </div> */}
+          <div className="group-data-[collapsible=icon]:order-last">
             <Link href="/dashboard" className="flex items-center space-x-2">
             {appLogoUrl ? (
               <Image
@@ -124,7 +124,7 @@ export function AppSidebar() {
             </>
 : <></>}
           </Link>
-</div> */}
+</div>
           {/* Desktop sidebar toggle button */}
           {/* When expanded, it's second in DOM, so on the right. When collapsed, it's ordered first (top). */}
           <Button 

@@ -13,10 +13,10 @@ import { usePathname } from 'next/navigation';
 
 const routeMap: Record<string, string> = {
   dashboard: 'Dashboard',
-  users: '👤 User Management',
-  customers: '💼 Customer Management',
-  profile: 'profile ⚙️',
-  'customer/forms': 'Customer Management',
+  users: 'User Management',
+  customers: 'Customer Management',
+  profile: 'profile',
+  'customer/form': 'Customer Management',
   'config-advisor': 'Application Settings',
   // Add more as needed
 };
@@ -26,7 +26,7 @@ export function Header({ className }: { className?: string }) {
    const pathname = usePathname();
   const cleanPath = pathname.startsWith('/') ? pathname.slice(1) : pathname;
 
-  const title = routeMap[cleanPath] || 'Unknown Page 🤷‍♂️';
+  const title = routeMap[cleanPath] || '';
   return (
     <header
       className={cn(
@@ -39,10 +39,10 @@ export function Header({ className }: { className?: string }) {
           <div className="mr-2 md:hidden"> 
              <SidebarTrigger />
           </div>
-          {/* <div  className="flex items-center space-x-2 justify-center mt-6">
+          <div  className="flex items-center space-x-2 justify-center mt-6">
           <PageTitleWithIcon title={title}/>
-          </div> */}
-          <Link href="/dashboard" className="flex items-center space-x-2">
+          </div>
+          {/* <Link href="/dashboard" className="flex items-center space-x-2">
             {appLogoUrl ? (
               <Image 
                 src={appLogoUrl} 
@@ -73,7 +73,7 @@ export function Header({ className }: { className?: string }) {
             <span className="font-bold sm:inline-block text-lg">
               {appName}
             </span>
-          </Link>
+          </Link> */}
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-4">

@@ -94,7 +94,7 @@ export default function DashboardPage() {
       </Suspense>
       <TooltipProvider>
         <div className="space-y-4 md:space-y-6">
-           <PageTitleWithIcon title="Dashboard">
+           {/* <PageTitleWithIcon title="Dashboard"> */}
             <div className="flex items-center gap-2">
                 {versionDetails && (
                 <Tooltip>
@@ -119,7 +119,7 @@ export default function DashboardPage() {
                 Welcome back, {userToRenderOnDashboard.displayName || 'User'}!
               </p>
             </div>
-          </PageTitleWithIcon>
+          {/* </PageTitleWithIcon> */}
           {/* Removed the mock mode warning card here, as requested. */}
           {renderDashboardContent()}
         </div>

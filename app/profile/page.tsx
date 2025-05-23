@@ -48,7 +48,7 @@ export default function ProfilePage() {
   return (
     <AuthenticatedPageLayout>
       <div className="space-y-6 md:space-y-8 min-w-0"> 
-        <PageTitleWithIcon title="My Profile" />
+        {/* <PageTitleWithIcon title="My Profile" /> */}
 
         <PersonalInformationForm
           user={pageUser}

@@ -384,7 +384,7 @@ export const projectConfig = {
   return (
     <AuthenticatedPageLayout>
       <div className="space-y-4 md:space-y-6 min-w-0">
-        <PageTitleWithIcon title="Application Config">
+        {/* <PageTitleWithIcon title="Application Config"> */}
           <div className="flex gap-2">
             <Button onClick={loadExampleConfigs} disabled={anyLoading} variant="outline" size="sm">
               {isLoadingExamples ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />}
@@ -397,7 +397,7 @@ export const projectConfig = {
               <span className="sm:hidden">Setup</span>
             </Button>
           </div>
-        </PageTitleWithIcon>
+        {/* </PageTitleWithIcon> */}
 
         <ProjectConfigFormCard
           projectConfigForm={projectConfigForm}

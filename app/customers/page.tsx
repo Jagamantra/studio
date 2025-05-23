@@ -71,8 +71,8 @@ export default function CustomersPage() {
 
   return (
     <AuthenticatedPageLayout>
-      <div className="flex items-center justify-between space-y-2">
-        <PageTitleWithIcon title="Customers" />
+      <div className="flex items-center justify-end space-y-2">
+        {/* <PageTitleWithIcon title="Customers" /> */}
         {isAdmin && (
           <Button onClick={handleOpenCreateDialog}>
             <Plus className="mr-2 h-4 w-4" /> Add Customer

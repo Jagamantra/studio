@@ -1,5 +1,5 @@
 import type { SidebarConfig, SidebarNavItem } from '@/types';
-import { LayoutDashboard, Users, UserCircle, Cog, ShieldQuestion, FileText, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users, UserCircle, Cog, ShieldQuestion, FileText, BarChart3, BookPlus } from 'lucide-react';
 import { projectConfig } from './project.config';
 import { BookUser } from 'lucide-react';
 
@@ -24,6 +24,13 @@ const sidebarItems: SidebarNavItem[] = [
     href: '/customers',
     icon: BookUser,
     roles: ['admin', 'user'],
+  },
+  {
+    id: 'customer-Addition',
+    label: 'Add Customer',
+    href: '/customers?mode=create',
+    icon: BookPlus,
+    roles: ['admin'],
   },
   {
     id: 'profile',

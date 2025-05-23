@@ -59,73 +59,70 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
       <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
     {isAdmin && (
       <>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-sm font-medium">User Management</CardTitle>
-            <Users className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-lg md:text-xl font-bold">Manage Users
-               {isLoadingUserCount ? (
-                <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                userCount !== null && (
-                  <span className="ml-2 text-base font-medium text-muted-foreground">({userCount})</span>
-                )
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mb-2">
-              View, add, edit, or remove users.
-            </p>
-            <Button asChild size="sm">
-              <Link href="/users">Go to Users</Link>
-            </Button>
-          </CardContent>
-        </Card>
+ <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                <CardTitle className="text-sm font-medium">User Management</CardTitle>
+                <Users className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent className="p-4 pt-2 flex flex-col">
+                <div className="text-2xl font-bold text-primary">
+                  {isLoadingUserCount ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    userCount !== null ? userCount : '-'
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">
+                  {isLoadingUserCount ? 'Loading count...' : 'Total registered users'}
+                </p>
+                <Button asChild size="sm" className="mt-4 w-full sm:w-auto">
+                  <Link href="/users">View & Manage Users</Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-            <CardTitle className="text-sm font-medium">
-              Customer Management
-            </CardTitle>
-            <Users className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="text-lg md:text-xl font-bold">Manage Customers
-               {isLoadingUserCount ? (
-                <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                userCount !== null && (
-                  <span className="ml-2 text-base font-medium text-muted-foreground">({customerCount})</span>
-                )
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mb-2">
-              View, add, edit, or remove Customers.
-            </p>
-            <Button asChild size="sm">
-              <Link href="/customers">Go to Customer Management</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
+             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                <CardTitle className="text-sm font-medium">Customer Management</CardTitle>
+                <Users className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent className="p-4 pt-2 flex flex-col">
+                <div className="text-2xl font-bold text-primary">
+                  {isLoadingUserCount ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    customerCount !== null ? customerCount : '-'
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">
+                  {isLoadingUserCount ? 'Loading count...' : 'Total registered users'}
+                </p>
+                <Button asChild size="sm" className="mt-4 w-full sm:w-auto">
+                  <Link href="/users">Go to Customer Management</Link>
+                </Button>
+              </CardContent>
+            </Card>
   
         {projectConfig.enableApplicationConfig && (  // Updated to use enableApplicationConfig
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-              <CardTitle className="text-sm font-medium">Application Config</CardTitle> {/* Changed title */}
-              <ShieldQuestion className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-lg md:text-xl font-bold">Applicaiton settings</div>
-               <p className="text-xs text-muted-foreground mb-2">
-                Get insights on your app configurations.
-              </p>
-              <Button asChild size="sm">
-                <Link href="/config-advisor">Config Setup</Link>
-              </Button>
-            </CardContent>
-          </Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                  <CardTitle className="text-sm font-medium">Application Config</CardTitle>
+                  <ShieldQuestion className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent className="p-4 pt-2 flex flex-col space-y-2">
+                  <div className="text-lg md:text-xl font-bold">Customize App</div>
+                   <p className="text-xs text-muted-foreground leading-snug pb-2">
+                    Modify settings and analyze configurations.
+                  </p>
+                  {/* Changed to programmatic navigation */}
+                  <Button 
+                    size="sm" 
+                    className="mt-auto w-full sm:w-auto self-start"
+                  >
+                      <Link href="/config-advisor">Config Setup</Link>
+                  </Button>
+                </CardContent>
+              </Card>
         )}
       </>
     )}

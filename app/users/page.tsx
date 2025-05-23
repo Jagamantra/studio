@@ -149,8 +149,8 @@ export default function UsersPage() {
   return (
     <AuthenticatedPageLayout>
       <div className="space-y-4 md:space-y-6 min-w-0">
-        <PageTitleWithIcon title="User Management">
-        </PageTitleWithIcon>
+        {/* <PageTitleWithIcon title="User Management">
+        </PageTitleWithIcon> */}
         
         <DataTable columns={columns} data={users} searchColumnId="email" onAdd={openAddUserModal} isLoading={tableLoading}/>
 
