@@ -60,12 +60,12 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
                   <ShieldQuestion className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                  <div className="text-lg md:text-xl font-bold">AI Analyzer</div>
+                  <div className="text-lg md:text-xl font-bold">Applicaiton settings</div>
                    <p className="text-xs text-muted-foreground mb-2">
                     Get insights on your app configurations.
                   </p>
                   <Button asChild size="sm">
-                    <Link href="/config-advisor">Analyze Configs</Link>
+                    <Link href="/config-advisor">Config Setup</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -89,7 +89,7 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
         )}
       </div>
 
-      <Card className="mt-4 md:mt-6">
+      {/* <Card className="mt-4 md:mt-6">
         <CardHeader className="p-4">
           <CardTitle className="text-lg md:text-xl">Getting Started</CardTitle>
           <CardDescription className="text-xs sm:text-sm">
@@ -131,7 +131,7 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
                 <p className="text-xs md:text-sm text-muted-foreground mb-2 sm:mb-3">Adjust themes, colors, and more via the palette icon in the header.</p>
             </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </>
   );
 });
