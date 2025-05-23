@@ -1,5 +1,5 @@
 'use client';
-import type { UserProfile, AuthResponse, MfaVerificationResponse, ThemeSettings } from '@/types';
+import type { UserProfile, ThemeSettings } from '@/types';
 import { 
     DUMMY_USERS_STORAGE_KEY,
     initialDummyUsersForAuth, // Renamed from initialMockUsersData to avoid confusion
@@ -37,56 +37,56 @@ if (typeof window !== 'undefined') {
 
 
 // --- Authentication ---
-export const _mockLoginUser = async (email: string, password?: string): Promise<AuthResponse> => {
-  mockUsers = getMockUsersFromStorage();
-  const user = mockUsers.find(u => u.email === email && u.password === password);
-  if (user) {
-    // Simulate token generation and basic user info for AuthResponse
-    return Promise.resolve({ 
-        token: `mock-jwt-token-${user.uid}`, 
-        user: { uid: user.uid, email: user.email, role: user.role, preferences: user.preferences || {} } 
-    });
-  }
-  return Promise.reject(new Error('Invalid mock credentials.'));
-};
+// export const _mockLoginUser = async (email: string, password?: string): Promise<AuthResponse> => {
+//   mockUsers = getMockUsersFromStorage();
+//   const user = mockUsers.find(u => u.email === email && u.password === password);
+//   if (user) {
+//     // Simulate token generation and basic user info for AuthResponse
+//     return Promise.resolve({ 
+//         token: `mock-jwt-token-${user.uid}`, 
+//         user: { uid: user.uid, email: user.email, role: user.role, preferences: user.preferences || {} } 
+//     });
+//   }
+//   return Promise.reject(new Error('Invalid mock credentials.'));
+// };
 
-export const _mockRegisterUser = async (details: Omit<UserProfile, 'uid' | 'photoURL'> & { password?: string }): Promise<AuthResponse> => {
-  mockUsers = getMockUsersFromStorage();
-  if (mockUsers.some(u => u.email === details.email)) {
-    return Promise.reject(new Error('Mock: Email already exists'));
-  }
-  const newUser: UserProfile = {
-    uid: `mock-user-${Date.now()}`,
-    email: details.email,
-    displayName: details.displayName,
-    role: details.role || rolesConfig.defaultRole,
-    photoURL: null,
-    phoneNumber: details.phoneNumber || null,
-    password: details.password,
-    preferences: {}, // Default empty preferences
-  };
-  mockUsers.push(newUser);
-  saveMockUsersToStorage(mockUsers);
-  return Promise.resolve({
-    token: `mock-jwt-token-${newUser.uid}`,
-    user: { uid: newUser.uid, email: newUser.email, role: newUser.role, preferences: newUser.preferences }
-  });
-};
+// export const _mockRegisterUser = async (details: Omit<UserProfile, 'uid' | 'photoURL'> & { password?: string }): Promise<AuthResponse> => {
+//   mockUsers = getMockUsersFromStorage();
+//   if (mockUsers.some(u => u.email === details.email)) {
+//     return Promise.reject(new Error('Mock: Email already exists'));
+//   }
+//   const newUser: UserProfile = {
+//     uid: `mock-user-${Date.now()}`,
+//     email: details.email,
+//     displayName: details.displayName,
+//     role: details.role || rolesConfig.defaultRole,
+//     photoURL: null,
+//     phoneNumber: details.phoneNumber || null,
+//     password: details.password,
+//     preferences: {}, // Default empty preferences
+//   };
+//   mockUsers.push(newUser);
+//   saveMockUsersToStorage(mockUsers);
+//   return Promise.resolve({
+//     token: `mock-jwt-token-${newUser.uid}`,
+//     user: { uid: newUser.uid, email: newUser.email, role: newUser.role, preferences: newUser.preferences }
+//   });
+// };
 
-export const _mockVerifyMfa = async (uid: string, otp: string): Promise<MfaVerificationResponse> => {
-  // In a real scenario, OTP would be validated. Here, we just check if it's the mock OTP.
-  // The mock OTP is generated and shown on the MFA page itself for testing.
-  // This function assumes the calling context (MFA page) handles mock OTP comparison.
-  // For this mock, we'll just return success if a user exists.
-  mockUsers = getMockUsersFromStorage();
-  const user = mockUsers.find(u => u.uid === uid);
-  if (user) {
-      // A more complete mock might check otp against a stored/generated value
-      console.log(`Mock MFA verification for UID: ${uid} with OTP: ${otp} (assuming valid for mock)`);
-      return Promise.resolve({ success: true, user });
-  }
-  return Promise.resolve({ success: false, message: "Mock: User not found for MFA." });
-};
+// export const _mockVerifyMfa = async (uid: string, otp: string): Promise<MfaVerificationResponse> => {
+//   // In a real scenario, OTP would be validated. Here, we just check if it's the mock OTP.
+//   // The mock OTP is generated and shown on the MFA page itself for testing.
+//   // This function assumes the calling context (MFA page) handles mock OTP comparison.
+//   // For this mock, we'll just return success if a user exists.
+//   mockUsers = getMockUsersFromStorage();
+//   const user = mockUsers.find(u => u.uid === uid);
+//   if (user) {
+//       // A more complete mock might check otp against a stored/generated value
+//       console.log(`Mock MFA verification for UID: ${uid} with OTP: ${otp} (assuming valid for mock)`);
+//       return Promise.resolve({ success: true, user });
+//   }
+//   return Promise.resolve({ success: false, message: "Mock: User not found for MFA." });
+// };
 
 export const _mockForgotPassword = async (email: string): Promise<void> => {
   mockUsers = getMockUsersFromStorage();
@@ -197,17 +197,17 @@ export const _mockDeleteUser = async (uid: string): Promise<void> => {
   return Promise.reject(new Error('Mock: User not found for deletion by admin'));
 };
 
-export const getCustomers = async () => {
-  await mockDelay();
-  return mockCustomers;
-};
+// export const getCustomers = async () => {
+//   await mockDelay();
+//   return mockCustomers;
+// };
 
-export const getCustomerById = async (id: string) => {
-  await mockDelay();
-  const customer = mockCustomers.find(c => c.id === id);
-  if (!customer) throw new Error('Customer not found');
-  return customer;
-};
+// export const getCustomerById = async (id: string) => {
+//   await mockDelay();
+//   const customer = mockCustomers.find(c => c.id === id);
+//   if (!customer) throw new Error('Customer not found');
+//   return customer;
+// };
 
 // Utility to reset mock users to initial state (e.g., for testing)
 export const resetMockUserStorage = () => {

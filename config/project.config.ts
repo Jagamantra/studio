@@ -50,8 +50,9 @@ export const projectConfig: ProjectConfig = {
     { name: 'Compact', value: 'compact' },
     { name: 'Comfortable', value: 'comfortable' },
     { name: 'Spacious', value: 'spacious' },
-  ],
-  defaultInterfaceDensity: 'comfortable',
+  ],  defaultInterfaceDensity: 'comfortable',
 
-  mockApiMode: true, // Default to false to use real API
+  // API configuration
+  mockCustomerApi: true, // Use mock API for customers endpoint during development
+  mockApiMode: false,    // Use real API for other endpoints
 };

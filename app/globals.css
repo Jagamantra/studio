@@ -97,6 +97,16 @@
     --sidebar-accent-foreground: var(--accent-foreground);
     --sidebar-border: hsl(var(--sidebar-border-raw));
     --sidebar-ring: var(--ring);
+    
+  }
+  
+  /* Tailwind plugin or global CSS */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   .dark {

@@ -261,10 +261,11 @@ export const deleteUser = async (uid: string): Promise<void> => {
 };
 
 // --- Customer Management ---
+// Then your functions remain exactly the same:
+
 export const getCustomers = async (): Promise<Customer[]> => {
   try {
-    if (projectConfig.mockApiMode) {
-      // Use mock data
+    if (projectConfig.mockCustomerApi) {
       const { mockCustomers } = await import('@/data/mock-customers');
       return mockCustomers;
     } else {
@@ -279,7 +280,7 @@ export const getCustomers = async (): Promise<Customer[]> => {
 
 export const getCustomerById = async (id: string): Promise<Customer> => {
   try {
-    if (projectConfig.mockApiMode) {
+    if (projectConfig.mockCustomerApi) {
       const { mockCustomers } = await import('@/data/mock-customers');
       const customer = mockCustomers.find(c => c.id === id);
       if (!customer) throw new Error('Customer not found');
@@ -296,7 +297,7 @@ export const getCustomerById = async (id: string): Promise<Customer> => {
 
 export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<Customer> => {
   try {
-    if (projectConfig.mockApiMode) {
+    if (projectConfig.mockCustomerApi) {
       const { mockCustomers } = await import('@/data/mock-customers');
       const newCustomer = {
         ...customer,
@@ -316,7 +317,7 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<Cu
 
 export const updateCustomer = async (id: string, customer: Partial<Customer>): Promise<Customer> => {
   try {
-    if (projectConfig.mockApiMode) {
+    if (projectConfig.mockCustomerApi) {
       const { mockCustomers } = await import('@/data/mock-customers');
       const index = mockCustomers.findIndex(c => c.id === id);
       if (index === -1) throw new Error('Customer not found');
@@ -334,7 +335,7 @@ export const updateCustomer = async (id: string, customer: Partial<Customer>): P
 
 export const deleteCustomer = async (id: string): Promise<void> => {
   try {
-    if (projectConfig.mockApiMode) {
+    if (projectConfig.mockCustomerApi) {
       const { mockCustomers } = await import('@/data/mock-customers');
       const index = mockCustomers.findIndex(c => c.id === id);
       if (index === -1) throw new Error('Customer not found');
@@ -347,6 +348,7 @@ export const deleteCustomer = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
 
 // --- Other API functions ---
 export const forgotPassword = async (email: string): Promise<void> => {
