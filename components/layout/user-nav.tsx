@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut, User, Settings, LogIn, ShieldQuestion, Briefcase } from 'lucide-react'; // Added Briefcase for role
+import { LogOut, User, Settings, LogIn, ShieldQuestion, Briefcase, UserCog } from 'lucide-react'; // Added Briefcase for role
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,8 +48,12 @@ export function UserNav() {
                   height={32}
                   className="rounded-full object-cover"
                   data-ai-hint="user avatar"
-                  unoptimized={true}
+                  unoptimized={true} // Good for external URLs or data URIs
                 />
+              ) : user.role === 'admin' ? (
+                <AvatarFallback>
+                  <UserCog className="h-5 w-5" />
+                </AvatarFallback>
               ) : (
                 <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
               )}
