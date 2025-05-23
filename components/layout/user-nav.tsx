@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut, User, Settings, LogIn, ShieldQuestion } from 'lucide-react';
+import { LogOut, User, Settings, LogIn, ShieldQuestion, Briefcase } from 'lucide-react'; // Added Briefcase for role
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,10 +14,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/auth-context'; // Corrected import path
+import { useAuth } from '@/contexts/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { projectConfig } from '@/config/project.config';
+import { Badge } from '@/components/ui/badge'; // Added Badge for role display
 
 export function UserNav() {
   const { user, logout, loading } = useAuth();
@@ -40,12 +41,12 @@ export function UserNav() {
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
               {user.photoURL ? (
-                <Image 
-                  src={user.photoURL} 
-                  alt={user.displayName || 'User avatar'} 
-                  width={32} 
-                  height={32} 
-                  className="rounded-full object-cover" 
+                <Image
+                  src={user.photoURL}
+                  alt={user.displayName || 'User avatar'}
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover"
                   data-ai-hint="user avatar"
                   unoptimized={true}
                 />
@@ -64,6 +65,15 @@ export function UserNav() {
               <p className="text-xs leading-none text-muted-foreground truncate">
                 {user.email || 'No email'}
               </p>
+              <div className="flex items-center pt-1">
+                <Briefcase className="mr-1.5 h-3 w-3 text-muted-foreground" />
+                <Badge
+                  variant={user.role === 'admin' ? 'default' : 'secondary'}
+                  className="text-[10px] px-1.5 py-0 leading-snug"
+                >
+                  {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                </Badge>
+              </div>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -86,7 +96,7 @@ export function UserNav() {
                 <Link href="/config-advisor" passHref>
                     <DropdownMenuItem>
                         <ShieldQuestion className="mr-2 h-4 w-4" />
-                        <span>Application Config</span> 
+                        <span>Application Config</span>
                     </DropdownMenuItem>
                 </Link>
             )}
