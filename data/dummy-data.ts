@@ -7,8 +7,8 @@ export const CURRENT_DUMMY_USER_STORAGE_KEY = 'genesis_current_dummy_user';
 export const MFA_VERIFIED_STORAGE_KEY = 'genesis_mfa_verified';
 
 export const initialDummyUsersForAuth: UserProfile[] = [
-  { uid: 'dummy-admin-001', email: 'admin@dummy.com', displayName: 'Dummy Admin', role: 'admin', photoURL: 'https://cdn-icons-png.flaticon.com/512/9703/9703596.png', phoneNumber: null, password: 'password123' },
-  { uid: 'dummy-user-002', email: 'user@dummy.com', displayName: 'Dummy User', role: 'user', photoURL: 'https://picsum.photos/seed/user002/40/40', phoneNumber: null, password: 'password123' },
+  { uid: 'dummy-admin-001', email: 'admin@dummy.com', displayName: 'Dummy Admin', role: 'admin', photoURL: null, phoneNumber: null, password: 'password123' },
+  { uid: 'dummy-user-002', email: 'user@dummy.com', displayName: 'Dummy User', role: 'user', photoURL: null, phoneNumber: null, password: 'password123' },
 ];
 
 export const previewAdminUserProfile: UserProfile = {
@@ -16,7 +16,7 @@ export const previewAdminUserProfile: UserProfile = {
     email: 'preview@admin.genesis',
     displayName: 'Preview Admin',
     role: 'admin',
-    photoURL: 'https://cdn-icons-png.flaticon.com/512/9703/9703596.png',
+    photoURL: null,
     phoneNumber: null,
 };
 
@@ -26,7 +26,7 @@ export const dummyUserForDashboardView: UserProfile = {
   uid: 'dummy-dashboard-viewer-001',
   email: 'viewer@example.com',
   displayName: 'Demo User (Admin View)',
-  photoURL: 'https://cdn-icons-png.flaticon.com/512/9703/9703596.png',
+  photoURL: null,
   phoneNumber: null,
   role: 'admin',
 };
@@ -42,11 +42,10 @@ export const betaDashboardChartData = [
 
 // For Users Page (Used by api.ts as initial mock data)
 export const initialMockUsersData: UserProfile[] = [
-  { uid: 'initial-admin-1', email: 'initial.admin@example.com', displayName: 'Initial Admin', photoURL: 'https://cdn-icons-png.flaticon.com/512/9703/9703596.png', phoneNumber: '111-222-3333', role: 'admin', password: 'password123' },
-  { uid: 'initial-user-1', email: 'initial.user1@example.com', displayName: 'Initial User One', photoURL: 'https://picsum.photos/seed/initialuser1/40/40', phoneNumber: '444-555-6666', role: 'user', password: 'password123' },
+  { uid: 'initial-admin-1', email: 'initial.admin@example.com', displayName: 'Initial Admin', photoURL: null, phoneNumber: '111-222-3333', role: 'admin', password: 'password123' },
+  { uid: 'initial-user-1', email: 'initial.user1@example.com', displayName: 'Initial User One', photoURL: null, phoneNumber: '444-555-6666', role: 'user', password: 'password123' },
   { uid: 'initial-user-2', email: 'initial.user2@example.com', displayName: 'Initial User Two', photoURL: null, phoneNumber: null, role: 'user', password: 'password123' },
 ];
-
 
 // For Config Advisor Page
 export const placeholderSidebarConfigData = `
