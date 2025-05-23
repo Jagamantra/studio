@@ -40,7 +40,12 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              {user.photoURL ? (
+              {user.role === 'admin' ? (
+                <AvatarFallback>
+                  <UserCog className="h-5 w-5" />
+                </AvatarFallback>
+              ) : (
+                user.photoURL ? (
                 <Image
                   src={user.photoURL}
                   alt={user.displayName || 'User avatar'}
@@ -50,11 +55,7 @@ export function UserNav() {
                   data-ai-hint="user avatar"
                   unoptimized={true} // Good for external URLs or data URIs
                 />
-              ) : user.role === 'admin' ? (
-                <AvatarFallback>
-                  <UserCog className="h-5 w-5" />
-                </AvatarFallback>
-              ) : (
+              ) : 
                 <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
               )}
             </Avatar>
