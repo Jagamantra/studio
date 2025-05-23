@@ -393,8 +393,8 @@ export const projectConfig = {
             </Button>
             <Button onClick={handleAnalyzeSubmit} disabled={anyLoading} size="sm">
               {isLoadingAi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
-              <span className="hidden sm:inline">Analyze Configurations</span>
-              <span className="sm:hidden">Analyze</span>
+              <span className="hidden sm:inline">Setup Configurations</span>
+              <span className="sm:hidden">Setup</span>
             </Button>
           </div>
         </PageTitleWithIcon>

@@ -65,7 +65,7 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
                     Get insights on your app configurations.
                   </p>
                   <Button asChild size="sm">
-                    <Link href="/config-advisor">Analyze Configs</Link>
+                    <Link href="/config-advisor">Config Setup</Link>
                   </Button>
                 </CardContent>
               </Card>
