@@ -150,11 +150,6 @@ export default function UsersPage() {
     <AuthenticatedPageLayout>
       <div className="space-y-4 md:space-y-6 min-w-0">
         <PageTitleWithIcon title="User Management">
-          <Button onClick={openAddUserModal} disabled={tableLoading || !isAuthorized} size="sm">
-            {tableLoading && isUserModalOpen && !editingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-            <span className="hidden sm:inline">Add User</span>
-            <span className="sm:hidden">Add</span>
-          </Button>
         </PageTitleWithIcon>
         
         <DataTable columns={columns} data={users} searchColumnId="email" onAdd={openAddUserModal} isLoading={tableLoading}/>

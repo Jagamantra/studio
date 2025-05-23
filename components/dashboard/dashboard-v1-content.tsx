@@ -18,6 +18,7 @@ interface DashboardV1ContentProps {
 export const DashboardV1Content = React.memo(function DashboardV1Content({ userToRenderOnDashboard }: DashboardV1ContentProps) {
   const isAdmin = userToRenderOnDashboard.role === 'admin';
   const [userCount, setUserCount] = useState<number | null>(null);
+  const [customerCount, setCustomerCount] = useState<number | null>(null);
   const [isLoadingUserCount, setIsLoadingUserCount] = useState(true);
 
   useEffect(() => {
@@ -35,74 +36,100 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({ userT
         }
       };
       fetchUserCount();
+      const fetchCustomerCount = async () => {
+        setIsLoadingUserCount(true);
+        try {
+          const customers = await Api.getCustomers(); // Fetches from dummy data via services/api.ts
+          setCustomerCount(customers.length);
+        } catch (error) {
+          console.error("Failed to fetch user count for dashboard:", error);
+          setCustomerCount(0); // Fallback or indicate error
+        } finally {
+          setIsLoadingUserCount(false);
+        }
+      };
+      fetchCustomerCount();
     } else {
       setIsLoadingUserCount(false); // Not admin, no need to load
     }
   }, [isAdmin]);
-
+  
   return (
     <>
       <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {isAdmin && (
+      <>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+            <CardTitle className="text-sm font-medium">User Management</CardTitle>
+            <Users className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-lg md:text-xl font-bold">Manage Users
+               {isLoadingUserCount ? (
+                <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                userCount !== null && (
+                  <span className="ml-2 text-base font-medium text-muted-foreground">({userCount})</span>
+                )
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              View, add, edit, or remove users.
+            </p>
+            <Button asChild size="sm">
+              <Link href="/users">Go to Users</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
             <CardTitle className="text-sm font-medium">
-              Your Role
+              Customer Management
             </CardTitle>
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <div className="text-lg md:text-xl font-bold capitalize">{userToRenderOnDashboard.role}</div>
-            <p className="text-xs text-muted-foreground">
-              {isAdmin ? 'Full access to all features.' : 'Standard user access.'}
+            <div className="text-lg md:text-xl font-bold">Manage Customers
+               {isLoadingUserCount ? (
+                <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                userCount !== null && (
+                  <span className="ml-2 text-base font-medium text-muted-foreground">({customerCount})</span>
+                )
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              View, add, edit, or remove Customers.
             </p>
+            <Button asChild size="sm">
+              <Link href="/customers">Go to Customer Management</Link>
+            </Button>
           </CardContent>
         </Card>
 
-        {isAdmin && (
-          <>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                <CardTitle className="text-sm font-medium">User Management</CardTitle>
-                <Users className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="text-lg md:text-xl font-bold">Manage Users
-                   {isLoadingUserCount ? (
-                    <Loader2 className="ml-2 h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    userCount !== null && (
-                      <span className="ml-2 text-base font-medium text-muted-foreground">({userCount})</span>
-                    )
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mb-2">
-                  View, add, edit, or remove users.
-                </p>
-                <Button asChild size="sm">
-                  <Link href="/users">Go to Users</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            {projectConfig.enableApplicationConfig && (  // Updated to use enableApplicationConfig
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                  <CardTitle className="text-sm font-medium">Application Config</CardTitle> {/* Changed title */}
-                  <ShieldQuestion className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="text-lg md:text-xl font-bold">Applicaiton settings</div>
-                   <p className="text-xs text-muted-foreground mb-2">
-                    Get insights on your app configurations.
-                  </p>
-                  <Button asChild size="sm">
-                    <Link href="/config-advisor">Config Setup</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </>
+  
+        {projectConfig.enableApplicationConfig && (  // Updated to use enableApplicationConfig
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+              <CardTitle className="text-sm font-medium">Application Config</CardTitle> {/* Changed title */}
+              <ShieldQuestion className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="text-lg md:text-xl font-bold">Applicaiton settings</div>
+               <p className="text-xs text-muted-foreground mb-2">
+                Get insights on your app configurations.
+              </p>
+              <Button asChild size="sm">
+                <Link href="/config-advisor">Config Setup</Link>
+              </Button>
+            </CardContent>
+          </Card>
         )}
+      </>
+    )}
+        
 
         {!isAdmin && (
            <Card>
