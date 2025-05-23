@@ -10,6 +10,7 @@ import { AuthProvider as RealAuthProvider } from '@/contexts/auth-provider';
 import { MockAuthProvider } from '@/contexts/mock-auth-provider';
 import { ThemedSonnerToaster } from '@/components/ui/themed-sonner-toaster';
 import { projectConfig } from '@/config/project.config'; // Import projectConfig
+import { Loader2 } from 'lucide-react';
 
 export default function RootLayout({
   children,
@@ -52,7 +53,9 @@ export default function RootLayout({
             storageKey="genesis-theme"
             defaultTheme="system"
           >
+            <React.Suspense fallback={<div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
             {children}
+            </React.Suspense>
             <ThemedSonnerToaster />
           </ThemeProvider>
         </AuthProviderComponent>
