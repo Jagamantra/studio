@@ -7,7 +7,7 @@ export const CURRENT_DUMMY_USER_STORAGE_KEY = 'genesis_current_dummy_user';
 export const MFA_VERIFIED_STORAGE_KEY = 'genesis_mfa_verified';
 
 export const initialDummyUsersForAuth: UserProfile[] = [
-  { uid: 'dummy-admin-001', email: 'admin@dummy.com', displayName: 'Dummy Admin', role: 'admin', photoURL: 'https://picsum.photos/seed/admin001/40/40', phoneNumber: null, password: 'password123' },
+  { uid: 'dummy-admin-001', email: 'admin@dummy.com', displayName: 'Dummy Admin', role: 'admin', photoURL: 'https://picsum.photos/seed/initialadmin1/40/40', phoneNumber: null, password: 'password123' },
   { uid: 'dummy-user-002', email: 'user@dummy.com', displayName: 'Dummy User', role: 'user', photoURL: 'https://picsum.photos/seed/user002/40/40', phoneNumber: null, password: 'password123' },
 ];
 
