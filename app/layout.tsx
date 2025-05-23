@@ -20,8 +20,8 @@ export default function RootLayout({
 
   // Determine initial favicon href based on projectConfig for SSR
   // This provides a server-rendered default. ThemeProvider will update it client-side.
-  let initialFaviconHref = '/favicon.ico'; // Default to the static SVG in /public
-  let initialFaviconType = 'image/x-icon';
+  let initialFaviconHref = '/favicon.svg'; // Default to the static SVG in /public
+  let initialFaviconType = 'image/svg+xml';
 
   if (projectConfig.appLogoUrl) { // Check projectConfig for a globally set logo URL first
     initialFaviconHref = projectConfig.appLogoUrl;
@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" id="app-favicon" />
+        <link rel="icon" href={initialFaviconHref} type={initialFaviconType} id="app-favicon" />
         {/* ThemeProvider will find and update this link with id="app-favicon" client-side */}
       </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>

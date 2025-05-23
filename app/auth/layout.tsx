@@ -24,8 +24,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                  <Image 
                     src={appLogoUrl} 
                     alt={`${appName} logo`} 
-                    width={36} 
-                    height={36} 
+                    width={32} 
+                    height={32} 
                     className="h-6 w-6 sm:h-8 sm:w-8 object-contain"
                     data-ai-hint="application logo"
                   />
