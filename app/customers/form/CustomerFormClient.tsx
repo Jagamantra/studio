@@ -8,6 +8,7 @@ import { customerFormSchema } from "@/lib/schemas/customer";
 import * as Api from "@/services/api";
 import type { z } from "zod";
 import { CustomerStatus } from "@/types";
+import { AuthenticatedPageLayout } from "@/components/layout/authenticated-page-layout";
 
 export default function CustomerFormPage() {
   const router = useRouter();
@@ -90,6 +91,7 @@ export default function CustomerFormPage() {
   };
 
   return (
+    <AuthenticatedPageLayout>
     <div className="max-w-3xl mx-auto p-4 rounded-md shadow-md">
       <h1 className="text-3xl font-bold mb-6 text-center">Customer</h1>
       <CustomerAccordionForm
@@ -98,5 +100,6 @@ export default function CustomerFormPage() {
         onSubmit={handleSubmit}
       />
     </div>
+    </AuthenticatedPageLayout>
   );
 }
