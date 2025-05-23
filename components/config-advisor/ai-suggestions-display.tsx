@@ -71,7 +71,7 @@ export const AISuggestionsDisplay = React.memo(function AISuggestionsDisplay({ s
        <Alert className="mt-4">
           <Lightbulb className="h-4 w-4" />
           <AlertTitle>No Specific Suggestions</AlertTitle>
-          <AlertDescription className="text-xs sm:text-sm">The AI analyzer did not find any specific critical issues or suggestions for the provided configurations. They appear to be well-structured based on the analysis criteria. You can try providing more detailed or different configurations for further analysis.</AlertDescription>
+          <AlertDescription className="text-xs sm:text-sm">The Application config did not find any specific critical issues or suggestions for the provided configurations. They appear to be well-structured based on the analysis criteria. You can try providing more detailed or different configurations for further analysis.</AlertDescription>
       </Alert>
     );
   }

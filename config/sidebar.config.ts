@@ -34,15 +34,15 @@ const sidebarItems: SidebarNavItem[] = [
   },
 ];
 
-if (projectConfig.enableApplicationConfig) { // Updated to use enableApplicationConfig
-  sidebarItems.push({
-    id: 'application-config', // Changed ID for consistency
-    label: 'Application Config', // Changed label
-    href: '/config-advisor', // Route remains the same unless page itself is renamed
-    icon: ShieldQuestion,
-    roles: ['admin'],
-  });
-}
+// if (projectConfig.enableApplicationConfig) { // Updated to use enableApplicationConfig
+//   sidebarItems.push({
+//     id: 'application-config', // Changed ID for consistency
+//     label: 'Application Config', // Changed label
+//     href: '/config-advisor', // Route remains the same unless page itself is renamed
+//     icon: ShieldQuestion,
+//     roles: ['admin'],
+//   });
+// }
 
 // Example of a section with sub-items
 // sidebarItems.push(
