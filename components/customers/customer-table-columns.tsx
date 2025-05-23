@@ -93,20 +93,23 @@ export const getCustomerColumns = (options?: GetCustomerColumnsOptions): ColumnD
                 Delete Customer
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                Continue with Assessment
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
       },
     });
   } else {
-    // columns.push({
-    //   id: "actions",
-    //   cell: () => (
-    //     <Button variant="outline" size="sm">
-    //       Continue with Assessment
-    //     </Button>
-    //   ),
-    // });
+    columns.push({
+      id: "actions",
+      cell: () => (
+        <Button variant="outline" size="sm">
+          Continue with Assessment
+        </Button>
+      ),
+    });
   }
 
   return columns;

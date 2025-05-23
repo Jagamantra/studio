@@ -7,7 +7,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { getCustomerColumns } from "@/components/customers/customer-table-columns";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { CustomerDialog } from "@/components/customers/customer-dialog";
+import { CustomerAccordionForm } from "@/components/customers/customer-dialog";
 import { useToast } from "@/hooks/use-toast";
 import * as Api from "@/services/api";
 import { PageTitleWithIcon } from "@/components/layout/page-title-with-icon";
@@ -136,12 +136,9 @@ export default function CustomersPage() {
           isLoading={loading}
         />
       </div>
-      <CustomerDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSubmit={dialogMode === "create" ? handleCreateCustomer : handleEditCustomer}
-        customer={selectedCustomer}
-        mode={dialogMode}
+      <CustomerAccordionForm
+      onSubmit={console.log("hello")
+      }
       />
     </AuthenticatedPageLayout>
   );

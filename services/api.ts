@@ -263,7 +263,7 @@ export const deleteUser = async (uid: string): Promise<void> => {
 // --- Customer Management ---
 export const getCustomers = async (): Promise<Customer[]> => {
   try {
-    if (projectConfig.mockCustomerApi) {
+    if (projectConfig.mockApiMode) {
       // Use mock data
       const { mockCustomers } = await import('@/data/mock-customers');
       return mockCustomers;
@@ -279,7 +279,7 @@ export const getCustomers = async (): Promise<Customer[]> => {
 
 export const getCustomerById = async (id: string): Promise<Customer> => {
   try {
-    if (projectConfig.mockCustomerApi) {
+    if (projectConfig.mockApiMode) {
       const { mockCustomers } = await import('@/data/mock-customers');
       const customer = mockCustomers.find(c => c.id === id);
       if (!customer) throw new Error('Customer not found');
@@ -296,7 +296,7 @@ export const getCustomerById = async (id: string): Promise<Customer> => {
 
 export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<Customer> => {
   try {
-    if (projectConfig.mockCustomerApi) {
+    if (projectConfig.mockApiMode) {
       const { mockCustomers } = await import('@/data/mock-customers');
       const newCustomer = {
         ...customer,
@@ -316,7 +316,7 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<Cu
 
 export const updateCustomer = async (id: string, customer: Partial<Customer>): Promise<Customer> => {
   try {
-    if (projectConfig.mockCustomerApi) {
+    if (projectConfig.mockApiMode) {
       const { mockCustomers } = await import('@/data/mock-customers');
       const index = mockCustomers.findIndex(c => c.id === id);
       if (index === -1) throw new Error('Customer not found');
@@ -334,7 +334,7 @@ export const updateCustomer = async (id: string, customer: Partial<Customer>): P
 
 export const deleteCustomer = async (id: string): Promise<void> => {
   try {
-    if (projectConfig.mockCustomerApi) {
+    if (projectConfig.mockApiMode) {
       const { mockCustomers } = await import('@/data/mock-customers');
       const index = mockCustomers.findIndex(c => c.id === id);
       if (index === -1) throw new Error('Customer not found');

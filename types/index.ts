@@ -49,7 +49,6 @@ export type ProjectConfig = {
   availableInterfaceDensities: InterfaceDensityOption[];
   defaultInterfaceDensity: 'compact' | 'comfortable' | 'spacious';
   mockApiMode: boolean; 
-  mockCustomerApi: boolean; // Use mock API for customers endpoint during development
 };
 
 export type SidebarNavItem = {
