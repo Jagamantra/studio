@@ -1,4 +1,3 @@
-
 import type { LucideIcon } from 'lucide-react';
 
 export type AccentColor = {
@@ -50,6 +49,7 @@ export type ProjectConfig = {
   availableInterfaceDensities: InterfaceDensityOption[];
   defaultInterfaceDensity: 'compact' | 'comfortable' | 'spacious';
   mockApiMode: boolean; 
+  mockCustomerApi: boolean; // Use mock API for customers endpoint during development
 };
 
 export type SidebarNavItem = {
@@ -134,3 +134,63 @@ export type LoginSuccessResponse = {
   // uid will be derived from token's 'sub' claim
   // preferences will be fetched separately or included if backend supports
 };
+
+export type CustomerStatus = 'in-progress' | 'on-hold' | 'completed';
+
+export interface Customer {
+  id: string;
+
+  // Company Details
+  companyName: string;
+  address: string;
+  phoneNumber: string;
+  email: string;
+  website: string;
+  kvkNumber: string;
+  legalForm: string;
+  mainActivity: string;
+  sideActivities: string;
+  dga: string;
+  staffFTE: number;
+  annualTurnover: number;
+  grossProfit: number;
+  payrollYear: number;
+  description: string;
+
+  // Visit Data
+  visitDate: string; // ISO format
+  advisor: string;
+  visitLocation: string;
+  visitFrequency: string;
+  conversationPartner: string;
+
+  // Comments
+  comments: string;
+
+  // System Metadata
+  lastModified: string;
+  status: CustomerStatus;
+}
+
+
+export interface AuthResponse {
+  token: string;
+  user: {
+    uid: string;
+    email: string;
+    role: string;
+    preferences: Record<string, any>;
+  };
+}
+
+// export interface MfaSentResponse {
+//   uid: string;
+//   message?: string;
+// }
+
+// export interface LoginSuccessResponse {
+//   uid: string;
+//   email: string;
+//   role: string;
+//   preferences: Record<string, any>;
+// }

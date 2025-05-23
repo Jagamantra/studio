@@ -1,5 +1,5 @@
 'use client';
-import type { UserProfile, AuthResponse, MfaSentResponse, LoginSuccessResponse, ThemeSettings, Role } from '@/types';
+import type { UserProfile, AuthResponse, MfaSentResponse, LoginSuccessResponse, ThemeSettings, Role, Customer } from '@/types';
 import apiClient from './apiClient';
 import { projectConfig } from '@/config/project.config';
 import {
@@ -258,6 +258,95 @@ export const deleteUser = async (uid: string): Promise<void> => {
         return Promise.resolve();
     }
     return Promise.reject(new Error('Dummy DB: User not found for deletion by admin.'));
+};
+
+// --- Customer Management ---
+// Then your functions remain exactly the same:
+
+export const getCustomers = async (): Promise<Customer[]> => {
+  try {
+    if (projectConfig.mockCustomerApi) {
+      const { mockCustomers } = await import('@/data/mock-customers');
+      return mockCustomers;
+    } else {
+      const response = await apiClient.get('/customers');
+      return response.data;
+    }
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    throw error;
+  }
+};
+
+export const getCustomerById = async (id: string): Promise<Customer> => {
+  try {
+    if (projectConfig.mockCustomerApi) {
+      const { mockCustomers } = await import('@/data/mock-customers');
+      const customer = mockCustomers.find(c => c.id === id);
+      if (!customer) throw new Error('Customer not found');
+      return customer;
+    } else {
+      const response = await apiClient.get(`/customers/${id}`);
+      return response.data;
+    }
+  } catch (error) {
+    console.error('Error fetching customer:', error);
+    throw error;
+  }
+};
+
+export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<Customer> => {
+  try {
+    if (projectConfig.mockCustomerApi) {
+      const { mockCustomers } = await import('@/data/mock-customers');
+      const newCustomer = {
+        ...customer,
+        id: Math.random().toString(36).slice(2),
+      };
+      mockCustomers.push(newCustomer);
+      return newCustomer;
+    } else {
+      const response = await apiClient.post('/customers', customer);
+      return response.data;
+    }
+  } catch (error) {
+    console.error('Error creating customer:', error);
+    throw error;
+  }
+};
+
+export const updateCustomer = async (id: string, customer: Partial<Customer>): Promise<Customer> => {
+  try {
+    if (projectConfig.mockCustomerApi) {
+      const { mockCustomers } = await import('@/data/mock-customers');
+      const index = mockCustomers.findIndex(c => c.id === id);
+      if (index === -1) throw new Error('Customer not found');
+      mockCustomers[index] = { ...mockCustomers[index], ...customer };
+      return mockCustomers[index];
+    } else {
+      const response = await apiClient.patch(`/customers/${id}`, customer);
+      return response.data;
+    }
+  } catch (error) {
+    console.error('Error updating customer:', error);
+    throw error;
+  }
+};
+
+export const deleteCustomer = async (id: string): Promise<void> => {
+  try {
+    if (projectConfig.mockCustomerApi) {
+      const { mockCustomers } = await import('@/data/mock-customers');
+      const index = mockCustomers.findIndex(c => c.id === id);
+      if (index === -1) throw new Error('Customer not found');
+      mockCustomers.splice(index, 1);
+    } else {
+      await apiClient.delete(`/customers/${id}`);
+    }
+  } catch (error) {
+    console.error('Error deleting customer:', error);
+    throw error;
+  }
 };
 
 

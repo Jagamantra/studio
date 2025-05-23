@@ -2,13 +2,13 @@
 import type { ProjectConfig } from '@/types';
 
 export const projectConfig: ProjectConfig = {
-  appName: 'Genesis Template',
+  appName: 'Risk Profiler',
   appIconPaths: [
     "M12 2L2 7l10 5 10-5-10-5z",
     "M2 17l10 5 10-5",
     "M2 12l10 5 10-5"
   ],
-  appLogoUrl: null,
+  appLogoUrl: "/mantra_collab_logo.ico", // Set to null to use default favicon
   availableAccentColors: [
     { name: 'Teal', hslValue: '180 100% 25%', hexValue: '#008080' },
     { name: 'Blue', hslValue: '221.2 83.2% 53.3%', hexValue: '#2563EB' },
@@ -16,7 +16,7 @@ export const projectConfig: ProjectConfig = {
     { name: 'Green', hslValue: '142.1 70.6% 45.3%', hexValue: '#22C55E' },
     { name: 'Orange', hslValue: '24.6 95% 53.1%', hexValue: '#F97316' },
   ],
-  defaultAccentColorName: 'Teal',
+  defaultAccentColorName: 'Orange',
   availableBorderRadii: [
     { name: 'None', value: '0rem' },
     { name: 'Small', value: '0.3rem' },
@@ -50,8 +50,9 @@ export const projectConfig: ProjectConfig = {
     { name: 'Compact', value: 'compact' },
     { name: 'Comfortable', value: 'comfortable' },
     { name: 'Spacious', value: 'spacious' },
-  ],
-  defaultInterfaceDensity: 'comfortable',
+  ],  defaultInterfaceDensity: 'comfortable',
 
-  mockApiMode: false, // Default to false to use real API
+  // API configuration
+  mockCustomerApi: true, // Use mock API for customers endpoint during development
+  mockApiMode: false,    // Use real API for other endpoints
 };
