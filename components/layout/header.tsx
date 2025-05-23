@@ -8,10 +8,25 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/theme-provider'; 
 import { FileText } from 'lucide-react'; // Default icon
+import { PageTitleWithIcon } from './page-title-with-icon';
+import { usePathname } from 'next/navigation';
+
+const routeMap: Record<string, string> = {
+  dashboard: 'Dashboard',
+  users: '👤 User Management',
+  customers: '💼 Customer Management',
+  profile: 'profile ⚙️',
+  'customer/forms': 'Customer Management',
+  'config-advisor': 'Application Settings',
+  // Add more as needed
+};
 
 export function Header({ className }: { className?: string }) {
   const { appName, appIconPaths, appLogoUrl } = useTheme(); 
+   const pathname = usePathname();
+  const cleanPath = pathname.startsWith('/') ? pathname.slice(1) : pathname;
 
+  const title = routeMap[cleanPath] || 'Unknown Page 🤷‍♂️';
   return (
     <header
       className={cn(
@@ -24,6 +39,9 @@ export function Header({ className }: { className?: string }) {
           <div className="mr-2 md:hidden"> 
              <SidebarTrigger />
           </div>
+          {/* <div  className="flex items-center space-x-2 justify-center mt-6">
+          <PageTitleWithIcon title={title}/>
+          </div> */}
           <Link href="/dashboard" className="flex items-center space-x-2">
             {appLogoUrl ? (
               <Image 

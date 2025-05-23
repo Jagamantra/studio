@@ -14,7 +14,7 @@ import { sidebarConfig } from '@/config/sidebar.config';
 import { projectConfig } from '@/config/project.config';
 import { useTheme } from '@/contexts/theme-provider';
 import { Button } from '@/components/ui/button';
-import { PanelLeftOpen, PanelLeftClose, GitBranch } from 'lucide-react';
+import { PanelLeftOpen, PanelLeftClose, GitBranch, FileText } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import Image from 'next/image';
 
 
 export function AppSidebar() {
@@ -44,7 +46,7 @@ export function AppSidebar() {
   
   const currentVersionDetails = projectConfig.availableAppVersions.find(v => v.id === appVersion);
   const currentVersionName = isClient && currentVersionDetails ? currentVersionDetails.name : (projectConfig.availableAppVersions.find(v=>v.id === projectConfig.defaultAppVersionId)?.name || 'Loading...');
-
+  const { appName, appIconPaths, appLogoUrl } = useTheme(); 
 
   return (
     <Sidebar collapsible="icon" variant="sidebar" side="left">
@@ -87,7 +89,42 @@ export function AppSidebar() {
                 )}
             </DropdownMenu>
           </div>
-
+          {/* <div className="group-data-[collapsible=icon]:order-last">
+            <Link href="/dashboard" className="flex items-center space-x-2">
+            {appLogoUrl ? (
+              <Image
+                src={appLogoUrl} 
+                alt={`${appName} logo`} 
+                width={24} 
+                height={24} 
+                className="h-6 w-6 object-contain" 
+                data-ai-hint="application logo"
+              />
+            ) : appIconPaths && appIconPaths.length > 0 ? (
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className="h-6 w-6 text-primary"
+              >
+                {appIconPaths.map((d, index) => (
+                  <path key={index} d={d}></path>
+                ))}
+              </svg>
+            ) : (
+              <FileText className="h-6 w-6 text-primary" /> 
+            )}
+            {sidebarState === 'expanded' ? <> <span className="font-bold sm:inline-block text-lg">
+              {appName}
+            </span>
+            </>
+: <></>}
+          </Link>
+</div> */}
           {/* Desktop sidebar toggle button */}
           {/* When expanded, it's second in DOM, so on the right. When collapsed, it's ordered first (top). */}
           <Button 
