@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 
 export type AccentColor = {
@@ -133,36 +134,3 @@ export type LoginSuccessResponse = {
   // uid will be derived from token's 'sub' claim
   // preferences will be fetched separately or included if backend supports
 };
-
-export type CustomerStatus = 'in-progress' | 'on-hold' | 'completed';
-
-export interface Customer {
-  id: string;
-  customerName: string;
-  contactName: string;
-  advisorName: string;
-  lastModified: string;
-  status: CustomerStatus;
-}
-
-export interface AuthResponse {
-  token: string;
-  user: {
-    uid: string;
-    email: string;
-    role: string;
-    preferences: Record<string, any>;
-  };
-}
-
-export interface MfaSentResponse {
-  uid: string;
-  message?: string;
-}
-
-export interface LoginSuccessResponse {
-  uid: string;
-  email: string;
-  role: string;
-  preferences: Record<string, any>;
-}
