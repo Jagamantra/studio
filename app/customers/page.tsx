@@ -57,17 +57,15 @@ export default function CustomersPage() {
       });
     }
   };
-
   const columns = getCustomerColumns({
     onEdit: (customer: Customer) => {
-      router.push(`/customers/form?mode=edit&id=${customer.id}`);
+      router.push(`/customers/${customer.id}/edit`);
     },
     onDelete: handleDeleteCustomer,
     isAdmin: isAdmin,
   });
-
   const handleOpenCreateDialog = () => {
-    router.push('/customers/form?mode=create');
+    router.push('/customers/create');
   };
 
   return (

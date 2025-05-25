@@ -80,43 +80,59 @@ export const loginUser = async (email: string, password?: string): Promise<MfaSe
     if (projectConfig.mockApiMode) {
         console.log("API (Mock): loginUser for", email);
         getMockUsersFromStorage();
-        const user = DUMMY_USERS_DB_INSTANCE.find(u => u.email === email && u.password === password);
+        const user = DUMMY_USERS_DB_INSTANCE.find(u => u.email === email && (!password || u.password === password));
         if (user) {
-            return Promise.resolve({ codeSent: true, message: "Mock login successful. MFA code will be shown." });
+            // Store email for MFA verification
+            sessionStorage.setItem('current_auth_email', email);
+            return { codeSent: true, message: "Mock login successful. MFA code will be shown." };
         }
-        return Promise.reject(new Error('Invalid mock credentials.'));
+        throw new Error('Invalid credentials.');
     } else {
         // Real API call
         console.log("API (Real): loginUser for", email);
         const response = await apiClient.post<MfaSentResponse>('/auth/login', { email, password });
+        if (response.data.codeSent) {
+            sessionStorage.setItem('current_auth_email', email);
+        }
         return response.data;
     }
 };
 
-export const verifyMfa = async (email: string, mfaCode: string): Promise<LoginSuccessResponse> => {
+export const verifyMfa = async (mfaCode: string): Promise<LoginSuccessResponse> => {
     if (projectConfig.mockApiMode) {
-        console.log("API (Mock): verifyMfa for", email);
+        console.log("API (Mock): verifyMfa code:", mfaCode);
         getMockUsersFromStorage();
-        const user = DUMMY_USERS_DB_INSTANCE.find(u => u.email === email);
-        if (user && mfaCode.length === 6 && /^\d+$/.test(mfaCode)) { // Simple mock MFA check
-            if (typeof window !== 'undefined') {
-                localStorage.setItem(CURRENT_DUMMY_USER_STORAGE_KEY, JSON.stringify(user));
-                localStorage.setItem(MFA_VERIFIED_STORAGE_KEY, 'true');
-            }
-            return Promise.resolve({
-                accessToken: `mock-token-for-${user.uid}-${Date.now()}`,
-                email: user.email!,
-                role: user.role,
-                expiresIn: 3600,
-                uid: user.uid,
-                preferences: user.preferences || {},
-            });
+        
+        const currentUserEmail = sessionStorage.getItem('current_auth_email');
+        if (!currentUserEmail) {
+            throw new Error('No active authentication session found.');
         }
-        return Promise.reject(new Error('Mock: Invalid MFA code or user not found.'));
+        
+        const user = DUMMY_USERS_DB_INSTANCE.find(u => u.email === currentUserEmail);
+        if (!user) {
+            throw new Error('User not found.');
+        }
+
+        // In mock mode, any 6-digit code works if the session is valid
+        if (mfaCode.length === 6 && /^\d+$/.test(mfaCode)) {
+            const mockToken = `mock-jwt-${Date.now()}`;
+            sessionStorage.removeItem('current_auth_email'); // Clear the email after successful verification
+            return {
+                accessToken: mockToken,
+                email: currentUserEmail,
+                role: user.role,
+                expiresIn: 3600 // 1 hour
+            };
+        }
+        
+        throw new Error('Invalid MFA code.');
     } else {
         // Real API call
-        console.log("API (Real): verifyMfa for", email);
-        const response = await apiClient.post<LoginSuccessResponse>('/auth/verify-mfa', { email, mfaCode });
+        console.log("API (Real): verifyMfa");
+        const response = await apiClient.post<LoginSuccessResponse>('/auth/verify-mfa', { 
+            email: sessionStorage.getItem('current_auth_email'),
+            mfaCode
+        });
         return response.data;
     }
 };
@@ -138,7 +154,6 @@ export const logoutUser = async (): Promise<void> => {
             console.warn("Logout API call failed (this might be expected if no backend logout endpoint):", error);
         }
         // Client-side session clearing (cookies, state) is handled by AuthProvider
-        return Promise.resolve();
     }
 };
 

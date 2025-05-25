@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -96,29 +95,27 @@ export function RegisterForm() {
     }
   }
   
-  // Removed the "System Mode" Alert as per user request
-
   return (
-    <div className="grid gap-3 sm:gap-4">
+    <div className="grid gap-2">
        {formError && (
-        <Alert variant="destructive" className="p-2 sm:p-3">
-          <AlertTriangle className="h-4 w-4" />
+        <Alert variant="destructive" className="p-1.5">
+          <AlertTriangle className="h-3.5 w-3.5" />
           <AlertTitle className="text-xs font-semibold">Error</AlertTitle>
-          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">{formError}</AlertDescription>
+          <AlertDescription className="text-[10px] leading-tight">{formError}</AlertDescription>
         </Alert>
       )}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 sm:space-y-3">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
           <FormField
             control={form.control}
             name="displayName"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Full Name</FormLabel>
+              <FormItem className="space-y-1">
+                <FormLabel className="text-xs">Full Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
+                  <Input placeholder="John Doe" disabled={isLoading || !isClient} {...field} className="h-8 text-sm" />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -126,8 +123,8 @@ export function RegisterForm() {
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Email</FormLabel>
+              <FormItem className="space-y-1">
+                <FormLabel className="text-xs">Email</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
@@ -137,10 +134,10 @@ export function RegisterForm() {
                     autoCorrect="off"
                     disabled={isLoading || !isClient}
                     {...field}
-                    className="h-9 sm:h-10 text-sm"
+                    className="h-8 text-sm"
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -148,12 +145,12 @@ export function RegisterForm() {
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Password</FormLabel>
+              <FormItem className="space-y-1">
+                <FormLabel className="text-xs">Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-8 text-sm" />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -161,17 +158,17 @@ export function RegisterForm() {
             control={form.control}
             name="confirmPassword"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">Confirm Password</FormLabel>
+              <FormItem className="space-y-1">
+                <FormLabel className="text-xs">Confirm Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-9 sm:h-10 text-sm" />
+                  <Input type="password" placeholder="••••••••" disabled={isLoading || !isClient} {...field} className="h-8 text-sm" />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full h-9 sm:h-10 text-sm" disabled={isLoading || !isClient}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" className="w-full h-8 text-sm" disabled={isLoading || !isClient}>
+            {isLoading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Create Account
           </Button>
         </form>

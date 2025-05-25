@@ -9,33 +9,34 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/theme-provider'; 
 import { FileText } from 'lucide-react'; // Default icon
 import { PageTitleWithIcon } from './page-title-with-icon';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 const routeMap: Record<string, string> = {
   dashboard: 'Dashboard',
   users: 'User Management',
   customers: 'Customer Management',
-  profile: 'profile',
-  'customers/form?mode=create': 'Add Customer',
+  profile: 'Profile',
+  'customers/create': 'Add Customer',
   'config-advisor': 'Application Settings',
   // Add more as needed
 };
 
 export function Header({ className }: { className?: string }) {
   const { appName, appIconPaths, appLogoUrl } = useTheme(); 
-   const pathname = usePathname();
-    const searchParams = useSearchParams();
-  const mode = searchParams.get('mode');
+  const pathname = usePathname();
 
   const cleanPath = pathname.startsWith('/') ? pathname.slice(1) : pathname;
+  const pathSegments = cleanPath.split('/');
 
   let title = routeMap[cleanPath] || "";
 
-  // Optional: customize title further based on query params
-  if (cleanPath === 'customers/form' && mode === 'create') {
-    title = 'Add Customer';
-  } else if (cleanPath === 'customers/form' && mode === 'edit') {
-    title = 'Edit Customer'
+  // Handle dynamic routes with better path segment checking
+  if (pathSegments[0] === 'customers') {
+    if (pathSegments[1] === 'create') {
+      title = 'Add Customer';
+    } else if (pathSegments[2] === 'edit') {
+      title = 'Edit Customer';
+    }
   }
 
   return (

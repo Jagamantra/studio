@@ -36,7 +36,6 @@ function decodeJwtPayload(token: string): { sub?: string; email?: string; role?:
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isMfaVerified, setIsMfaVerifiedState] = useState(false);
@@ -50,11 +49,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchCurrentUserInfo = useCallback(async (uid: string, emailFromToken?: string, roleFromToken?: UserProfile['role']): Promise<UserProfile | null> => {
-    setLoading(true);
-    setError(null);
     try {
-      // Api.fetchUserProfile will use dummy data store but can create a placeholder if needed
-      const fetchedProfile = await Api.fetchUserProfile(uid, emailFromToken, roleFromToken);
+      // Try to fetch user details from API
+      let fetchedProfile: UserProfile | null = null;
+      if (!projectConfig.mockApiMode) {
+        try {
+          const response = await fetch('/auth/me');
+          if (response.ok) {
+            fetchedProfile = await response.json();
+          }
+        } catch (err) {
+          console.error('Error fetching user details from API:', err);
+        }
+      }
+
+      // Fall back to dummy data if needed
+      if (!fetchedProfile) {
+        fetchedProfile = await Api.fetchUserProfile(uid, emailFromToken, roleFromToken);
+      }
       
       if (fetchedProfile) {
         setUser(fetchedProfile);
@@ -65,12 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Error fetching/establishing current user info:", err);
       setError(err);
       setUser(null);
-      setSessionToken(null);
       Cookies.remove(JWT_COOKIE_NAME);
       setIsMfaVerified(false);
       return null;
-    } finally {
-      // setLoading(false) will be handled by the calling function or useEffect
     }
   }, [setIsMfaVerified]);
 
@@ -82,22 +91,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (tokenFromCookie) {
         const decoded = decodeJwtPayload(tokenFromCookie);
         if (decoded && decoded.sub && decoded.email && decoded.role) {
-          setSessionToken(tokenFromCookie);
-          // Fetch/create user profile (potentially from dummy store if real profile endpoint not ready)
+          // Fetch/create user profile
           const profile = await fetchCurrentUserInfo(decoded.sub, decoded.email, decoded.role as UserProfile['role']);
           if (profile) {
             setIsMfaVerified(true); // Assume MFA was verified if token exists and profile fetched
           } else {
             // Failed to fetch profile even with token, clear session
             Cookies.remove(JWT_COOKIE_NAME);
-            setSessionToken(null);
             setUser(null);
             setIsMfaVerified(false);
           }
         } else {
           // Invalid or incomplete token, clear it
           Cookies.remove(JWT_COOKIE_NAME);
-          setSessionToken(null);
           setUser(null);
           setIsMfaVerified(false);
         }
@@ -106,8 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     attemptAutoLogin();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Runs once on mount
-
+  }, []);
 
   // Navigation logic based on auth state
   useEffect(() => {
@@ -116,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isAuthRoute = pathname.startsWith('/auth/');
     const isMfaPage = pathname === '/auth/mfa';
 
-    if (user && isMfaVerified && sessionToken) { // Fully authenticated
+    if (user && isMfaVerified && Cookies.get(JWT_COOKIE_NAME)) { // Fully authenticated
       if (isAuthRoute) {
         router.replace('/dashboard');
       } else {
@@ -129,18 +134,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } else if (authEmailForMfa && !isMfaVerified) { // Needs MFA
-        if (!isMfaPage) {
-            router.replace('/auth/mfa');
-        }
+      if (!isMfaPage) {
+          router.replace('/auth/mfa');
+      }
     } else { // Not authenticated or MFA pending from a previous uncompleted session
-        if (!isAuthRoute && pathname !== '/') {
-            router.replace('/auth/login');
-        } else if (pathname === '/' && !isAuthRoute ) { // Handle root path redirect if not an auth route
-            router.replace('/auth/login');
-        }
+      if (!isAuthRoute && pathname !== '/') {
+          router.replace('/auth/login');
+      } else if (pathname === '/' && !isAuthRoute ) { // Handle root path redirect if not an auth route
+          router.replace('/auth/login');
+      }
     }
-  }, [user, isMfaVerified, loading, pathname, router, authEmailForMfa, sessionToken, toast]);
-
+  }, [user, isMfaVerified, loading, pathname, router, authEmailForMfa, toast]);
 
   const login = useCallback(async (email: string, password?: string): Promise<MfaSentResponse | null> => {
     setLoading(true);
@@ -153,7 +157,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/auth/mfa');
         return response;
       } else {
-        // This case should ideally not happen if API returns error for failed login attempt before MFA
         throw new Error(response.message || "Login failed before MFA step.");
       }
     } catch (err: any) {
@@ -174,9 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthEmailForMfa(details.email);
         router.push('/auth/mfa');
         return response;
-      } else {
-        throw new Error(response.message || "Registration failed before MFA step.");
       }
+       throw new Error(response.message || "Registration failed before MFA step.");
     } catch (err: any) {
       console.error("Register API error in AuthProvider:", err);
       setError(err);
@@ -189,55 +191,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyMfa = useCallback(async (mfaCode: string): Promise<LoginSuccessResponse | null> => {
     setLoading(true);
     setError(null);
-    if (!authEmailForMfa) {
-        const mfaError = new Error("Session context lost for MFA. Please log in again.");
-        setError(mfaError);
-        setLoading(false);
-        router.push('/auth/login'); // Redirect to login if MFA context is lost
-        return null;
-    }
-
     try {
-      // Response: { accessToken, email, role, expiresIn }
-      const response = await Api.verifyMfa(authEmailForMfa, mfaCode); // Calls unified api.ts
-      
-      const decodedPayload = decodeJwtPayload(response.accessToken);
-      const uidFromToken = decodedPayload?.sub;
+      const response = await Api.verifyMfa(mfaCode);
+      if (response && response.accessToken) {
+        const decodedPayload = decodeJwtPayload(response.accessToken);
+        const uidFromToken = decodedPayload?.sub;
 
-      if (!uidFromToken) {
-        throw new Error("Could not extract UID (sub) from access token.");
+        if (!uidFromToken) {
+          throw new Error("Could not extract UID from access token.");
+        }
+
+        Cookies.set(JWT_COOKIE_NAME, response.accessToken, { 
+          secure: true,
+          sameSite: 'strict',
+          expires: 1 // 1 day
+        });
+
+        // Fetch user profile
+        const userProfile = await fetchCurrentUserInfo(uidFromToken, response.email, response.role);
+        if (!userProfile) {
+          throw new Error("Failed to fetch user profile after MFA verification");
+        }
+
+        setIsMfaVerified(true);
+        setAuthEmailForMfa(null);
+
+        router.push('/dashboard');
+        toast({
+          title: "Welcome Back!",
+          message: "Successfully authenticated.",
+          variant: "success",
+        });
+
+        return response;
       }
-      
-      setSessionToken(response.accessToken);
-      // Backend is expected to set HttpOnly cookie. Client stores token in memory.
-      // If not HttpOnly, Cookies.set(JWT_COOKIE_NAME, response.accessToken, { expires: response.expiresIn / (24 * 60 * 60), path: '/' });
-
-      // Fetch/create user profile (using dummy data store for non-auth details)
-      await fetchCurrentUserInfo(uidFromToken, response.email, response.role as UserProfile['role']);
-      
-      setIsMfaVerified(true);
-      setAuthEmailForMfa(null); // Clear MFA email context
-      
-      toast({
-          title: 'Verification Successful',
-          message: 'You have been successfully verified. Welcome!',
-          variant: 'success',
-      });
-      router.push('/dashboard');
-      return {...response, uid: uidFromToken };
+      throw new Error("Invalid MFA response");
     } catch (err: any) {
-      console.error("Verify MFA API error or processing error in AuthProvider:", err);
+      console.error('MFA verification failed:', err);
       setError(err);
-      // Clear potentially partially set states on error
       setUser(null);
-      setSessionToken(null);
-      // Cookies.remove(JWT_COOKIE_NAME); // Only if client was setting it.
+      Cookies.remove(JWT_COOKIE_NAME);
       setIsMfaVerified(false);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [authEmailForMfa, router, setIsMfaVerified, fetchCurrentUserInfo, toast]);
+  }, [fetchCurrentUserInfo, router, setIsMfaVerified, toast]);
 
   const logout = useCallback(async () => {
     setLoading(true);
@@ -245,8 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await Api.logoutUser(); // Calls unified api.ts; backend handles token invalidation
     
     // Clear all client-side session information
-    Cookies.remove(JWT_COOKIE_NAME); // Remove auth cookie if it was set client-side or for good measure
-    setSessionToken(null);
+    Cookies.remove(JWT_COOKIE_NAME);
     setUser(null);
     setIsMfaVerified(false);
     setAuthEmailForMfa(null);
@@ -256,35 +254,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserPreferencesInContext = useCallback((preferences: Partial<ThemeSettings>) => {
     setUser(prevUser => {
-        if (!prevUser) return null;
-        const updatedUser = {
-            ...prevUser,
-            preferences: { ...(prevUser.preferences || {}), ...preferences },
-        };
-        // No need to persist to localStorage here, ThemeProvider does that.
-        // And Api.updateUserPreferences is called by ThemeProvider.
-        return updatedUser;
+      if (!prevUser) return null;
+      const updatedUser = {
+        ...prevUser,
+        preferences: { ...(prevUser.preferences || {}), ...preferences },
+      };
+      return updatedUser;
     });
   }, []);
 
   const updateCurrentLocalUser = useCallback((updatedProfileData: Partial<UserProfile>) => {
     setUser(prevUser => {
       if (!prevUser) return null;
-      // Persist to localStorage through API layer for mock mode.
-      // Real mode will rely on backend for profile persistence.
-      // Api.updateUserProfile(prevUser.uid, updatedProfileData); // Called from profile page directly
       return { ...prevUser, ...updatedProfileData };
     });
   }, []);
 
-
-  const contextValue: AuthContextType = useMemo(() => ({
+  const contextValue = useMemo<AuthContextType>(() => ({
     user,
     loading,
     error,
     isMfaVerified,
     authEmailForMfa,
-    sessionToken,
     login,
     register,
     verifyMfa,
@@ -295,10 +286,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUserPreferencesInContext,
     updateCurrentLocalUser,
   }), [
-      user, loading, error, isMfaVerified, authEmailForMfa, sessionToken,
-      login, register, verifyMfa, logout, fetchCurrentUserInfo,
-      setIsMfaVerified, updateUserPreferencesInContext, updateCurrentLocalUser
-    ]);
+    user, loading, error, isMfaVerified, authEmailForMfa,
+    login, register, verifyMfa, logout, fetchCurrentUserInfo,
+    setUser, setIsMfaVerified, updateUserPreferencesInContext, updateCurrentLocalUser
+  ]);
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }

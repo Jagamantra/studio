@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback } from "react";
 import type { z } from "zod";
 import { CustomerAccordionForm } from "@/components/customers/customer-dialog";
@@ -67,13 +67,14 @@ const sanitizeCustomerData = (data: Partial<Customer>): CustomerFormValues => {
   return sanitized as CustomerFormValues;
 };
 
-export default function CustomerFormClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
+interface CustomerFormClientProps {
+  mode: 'edit' | 'create';
+  customerId?: string;
+}
 
-  const mode = searchParams.get("mode") === "edit" ? "edit" : "create";
-  const customerId = searchParams.get("id");
+export function CustomerFormClient({ mode, customerId }: CustomerFormClientProps) {
+  const router = useRouter();
+  const { toast } = useToast();
 
   const [customer, setCustomer] = useState<CustomerFormValues | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);

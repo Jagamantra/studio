@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -69,7 +68,6 @@ export default function MfaPage() {
     }
   }, [authContextError]);
 
-
   const form = useForm<MfaFormValues>({
     resolver: zodResolver(mfaFormSchema),
     defaultValues: {
@@ -78,11 +76,12 @@ export default function MfaPage() {
   });
 
   const onSubmit = async (data: MfaFormValues) => {
-    setFormError(null); // Clear previous form errors before new submission
+    if (authLoading) return;
+    setFormError(null);
     
     if (!authEmailForMfa && !projectConfig.mockApiMode) {
         setFormError("Session context lost. Please log in again.");
-        await logout(); // Consider if logout is needed or just redirect
+        await logout();
         return;
     }
     
@@ -97,7 +96,6 @@ export default function MfaPage() {
         if (response && response.accessToken) { 
             // Success: AuthProvider handles redirection and success toast
         } else {
-            // Failure from verifyMfa or API
             const errMsg = authContextError?.message || (response as any)?.message || 'The OTP entered is incorrect or an error occurred.';
             setFormError(errMsg);
             form.setError('otp', { type: 'manual', message: 'Invalid OTP.' });
@@ -110,8 +108,8 @@ export default function MfaPage() {
   const handleBackToLogin = async () => {
     await logout(); 
   };
-
-  if (!isClient || (authLoading && !formError && !authContextError)) { // Show loader if auth is loading and no errors yet shown
+  // Always show loader initially and while processing
+  if (!isClient || authLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -119,8 +117,8 @@ export default function MfaPage() {
     );
   }
   
-  // Show session expired if no email for MFA and not currently loading (implies something went wrong before MFA attempt)
-  if (!authEmailForMfa && !authLoading && !projectConfig.mockApiMode) {
+  // Only show session expired on explicit error or missing context
+  if ((!authEmailForMfa && !projectConfig.mockApiMode) || authContextError?.message?.toLowerCase().includes('session')) {
     return (
       <Card className="w-full max-w-md">
         <CardHeader>
@@ -138,87 +136,96 @@ export default function MfaPage() {
   return (
     <>
       {projectConfig.mockApiMode && mockOtp && (
-        <Alert variant="default" className="mb-6 sm:mb-8 p-2 sm:p-3">
-          <Info className="h-4 w-4" />
-          <AlertTitle className="text-xs font-semibold">Mock MFA Code (Mock Mode Only)</AlertTitle>
-          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">
+        <Alert variant="default" className="mb-3 p-1.5">
+          <Info className="h-3.5 w-3.5" />
+          <AlertTitle className="text-xs font-semibold">Mock MFA Code</AlertTitle>
+          <AlertDescription className="text-[10px] leading-tight">
             Your One-Time Password is:{' '}
-            <strong className="text-sm sm:text-base font-semibold tracking-wider">
+            <strong className="text-sm font-semibold tracking-wider">
               {mockOtp}
             </strong>
           </AlertDescription>
         </Alert>
       )}
       {!projectConfig.mockApiMode && authEmailForMfa && (
-         <Alert variant="default" className="mb-6 sm:mb-8 p-2 sm:p-3">
-          <Info className="h-4 w-4" />
+         <Alert variant="default" className="mb-3 p-1.5">
+          <Info className="h-3.5 w-3.5" />
           <AlertTitle className="text-xs font-semibold">Check Your Authentication Device</AlertTitle>
-          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">
+          <AlertDescription className="text-[10px] leading-tight">
             A One-Time Password has been sent to {authEmailForMfa ? `your email (${authEmailForMfa})` : 'your registered MFA method'}.
           </AlertDescription>
         </Alert>
       )}
       {formError && (
-        <Alert variant="destructive" className="mb-4 p-2 sm:p-3">
-          <AlertTriangle className="h-4 w-4" />
+        <Alert variant="destructive" className="mb-3 p-1.5">
+          <AlertTriangle className="h-3.5 w-3.5" />
           <AlertTitle className="text-xs font-semibold">Verification Error</AlertTitle>
-          <AlertDescription className="text-[10px] sm:text-[11px] leading-tight">{formError}</AlertDescription>
+          <AlertDescription className="text-[10px] leading-tight">{formError}</AlertDescription>
         </Alert>
       )}
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center p-3 sm:p-4">
-          <div className="mx-auto mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <KeyRound className="h-5 w-5 sm:h-6 sm:w-6" />
+        <CardHeader className="text-center p-3">
+          <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <KeyRound className="h-4 w-4" />
           </div>
-          <CardTitle className="text-base sm:text-lg">Two-Factor Authentication</CardTitle>
-          <CardDescription className="text-[10px] sm:text-xs">
+          <CardTitle className="text-base">Two-Factor Authentication</CardTitle>
+          <CardDescription className="text-[10px]">
             Enter the 6-digit code.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 p-3 sm:p-4">
+        <CardContent className="space-y-3 p-3">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
               <FormField
                 control={form.control}
                 name="otp"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs sm:text-sm">One-Time Password</FormLabel>
+                  <FormItem className="space-y-1">
+                    <FormLabel className="text-xs">One-Time Password</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Enter 6-digit OTP"
                         maxLength={6}
-                        {...field}
-                        className="h-9 sm:h-10 text-center text-sm sm:text-base tracking-[0.15em] sm:tracking-[0.2em]"
+                        value={field.value}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                          field.onChange(value);
+                          if (value.length === 6 && !authLoading) {
+                            onSubmit({ otp: value });
+                          }
+                        }}
+                        className="h-8 text-center text-sm tracking-[0.15em]"
                         disabled={authLoading}
                         autoComplete="one-time-code"
                         inputMode="numeric"
                       />
                     </FormControl>
-                    <FormMessage />
+                    {authLoading && (
+                      <div className="flex justify-center mt-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                      </div>
+                    )}
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
-              <Button
-                type="submit"
-                className="w-full h-9 sm:h-10 text-sm"
-                disabled={authLoading}
-              >
-                {authLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Verify Code
-              </Button>
+              <div className="text-center text-xs mt-2">
+                {projectConfig.mockApiMode && (
+                  <p className="text-muted-foreground text-[10px] mb-1">
+                    This is a mock MFA screen.
+                  </p>
+                )}
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-xs" 
+                  onClick={handleBackToLogin} 
+                  disabled={authLoading}
+                >
+                  Back to Login
+                </Button>
+              </div>
             </form>
           </Form>
-          <div className="text-center text-xs sm:text-sm mt-3">
-             {projectConfig.mockApiMode && (
-                <p className="text-muted-foreground text-[10px] sm:text-xs mb-1">
-                This is a mock MFA screen.
-                </p>
-             )}
-            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm" onClick={handleBackToLogin} disabled={authLoading}>
-              Back to Login
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </>
