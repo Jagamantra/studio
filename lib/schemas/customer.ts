@@ -19,7 +19,11 @@ export const customerFormSchema = z.object({
   description: z.string().optional(),
 
   // Visit Data
-  visitDate: z.string().optional(), // ISO string
+  visitDate: z.preprocess((val) => {
+    if (val instanceof Date) return val.toISOString(); // convert Date → ISO string
+    if (typeof val === "string") return val;           // keep string as is
+    return undefined;                                  // undefined or null is okay for optional
+  }, z.string().optional()),
   advisor: z.string().optional(),
   visitLocation: z.string().optional(),
   visitFrequency: z.string().optional(),
@@ -28,7 +32,7 @@ export const customerFormSchema = z.object({
   // Comments
   comments: z.string().optional(),
 
-  // System Metadata
-  lastModified: z.string().optional(), // ISO string
+  // // System Metadata
+  // updatedAt: z.string().optional(), // ISO string
   status: z.enum(["in-progress", "on-hold", "completed"]),
 });

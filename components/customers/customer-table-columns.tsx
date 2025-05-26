@@ -42,10 +42,10 @@ export const getCustomerColumns = (options?: GetCustomerColumnsOptions): ColumnD
       header: "Advisor",
     },
     {
-      accessorKey: "lastModified",
+      accessorKey: "updatedAt",
       header: "Last Modified",
       cell: ({ row }) => {
-        const date = new Date(row.getValue("lastModified"));
+        const date = new Date(row.getValue("updatedAt"));
         return date.toLocaleDateString();
       },
     },

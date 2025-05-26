@@ -356,7 +356,7 @@ export const updateCustomer = async (id: string, customer: Partial<Customer>): P
             mockCustomers[index] = { ...mockCustomers[index], ...customer };
             return mockCustomers[index];
         } else {
-            const response = await apiClient.patch(`/customers/${id}`, customer);
+            const response = await apiClient.post(`/customers/${id}`, customer);
             return response.data;
         }
     } catch (error) {

@@ -27,7 +27,7 @@ export const mockCustomers: Customer[] = [
 
     comments: "Discussed potential for expanding product line and improving supply chain.",
     
-    lastModified: "2024-05-20T10:30:00Z",
+    updatedAt: "2024-05-20T10:30:00Z",
     status: "in-progress",
   },
 
@@ -57,7 +57,7 @@ export const mockCustomers: Customer[] = [
 
     comments: "Explored integration options for new client management software.",
     
-    lastModified: "2024-05-19T14:20:00Z",
+    updatedAt: "2024-05-19T14:20:00Z",
     status: "on-hold",
   },
 
@@ -87,7 +87,7 @@ export const mockCustomers: Customer[] = [
 
     comments: "Reviewed contract renewal terms and new market expansion plans.",
     
-    lastModified: "2024-05-18T09:15:00Z",
+    updatedAt: "2024-05-18T09:15:00Z",
     status: "completed",
   },
 ];

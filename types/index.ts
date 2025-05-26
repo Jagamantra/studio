@@ -165,10 +165,8 @@ export interface Customer {
   conversationPartner: string;
 
   // Comments
+  updatedAt: string; // ISO format
   comments: string;
-
-  // System Metadata
-  lastModified: string;
   status: CustomerStatus;
 }
 
