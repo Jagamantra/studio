@@ -16,6 +16,7 @@ import {
 interface GetCustomerColumnsOptions {
   onEdit?: (customer: Customer) => void;
   onDelete?: (customerId: string) => void;
+  isAdmin?: boolean;
 }
 
 const StatusBadgeMap: Record<CustomerStatus, { label: string; variant: "default" | "secondary" | "destructive" }> = {
@@ -27,19 +28,18 @@ const StatusBadgeMap: Record<CustomerStatus, { label: string; variant: "default"
 export const getCustomerColumns = (options?: GetCustomerColumnsOptions): ColumnDef<Customer>[] => {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-
   const columns: ColumnDef<Customer>[] = [
     {
-      accessorKey: "customerName",
-      header: "Customer Name",
+      accessorKey: "companyName",
+      header: "Company Name",
     },
     {
-      accessorKey: "contactName",
+      accessorKey: "dga",
       header: "Contact Name",
     },
     {
-      accessorKey: "advisorName",
-      header: "Advisor Name",
+      accessorKey: "advisor",
+      header: "Advisor",
     },
     {
       accessorKey: "lastModified",

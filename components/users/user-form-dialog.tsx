@@ -100,14 +100,14 @@ export function UserFormDialog({ isOpen, onOpenChange, editingUser, onSubmit, is
         </DialogHeader>
         
         {/* Scrollable area for the form */}
-        <div className="flex-grow overflow-y-auto py-4 pr-3"> {/* pr-3 for scrollbar space */}
+        <div className="flex-grow overflow-y-auto py-4 pr-3 no-scrollbar"> {/* pr-3 for scrollbar space */}
           <Form {...form}>
             <form 
               id={formId} // Assign the unique ID here
               onSubmit={form.handleSubmit(internalFormSubmit)} 
               className="space-y-0" // Remove space-y-0 if grid handles all spacing
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5"> {/* Grid for form fields, increased gap-y */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5  px-2"> {/* Grid for form fields, increased gap-y */}
                 <FormField
                   control={form.control}
                   name="displayName"

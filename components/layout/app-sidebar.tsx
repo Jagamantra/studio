@@ -90,7 +90,7 @@ export function AppSidebar() {
             </DropdownMenu>
           </div> */}
           <div className="group-data-[collapsible=icon]:order-last">
-            <Link href="/dashboard" className="flex items-center space-x-2">
+            <Link href="/dashboard" className="flex items-center space-x-2 justify-center">
             {appLogoUrl ? (
               <Image
                 src={appLogoUrl} 

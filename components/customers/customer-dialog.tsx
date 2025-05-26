@@ -31,6 +31,7 @@ import { Loader2, Save, DraftingCompass, RotateCcw, XCircle } from 'lucide-react
 type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
 interface CustomerAccordionFormProps {
+  key: string;
   onSubmit: (data: CustomerFormValues) => Promise<void>;
   customer: CustomerFormValues;
   mode?: 'create' | 'edit';
@@ -93,32 +94,8 @@ const cleanDefaultsForCreate: CustomerFormValues = {
     status: "in-progress",
 };
 
-const sanitizeLoadedDraft = (data: any): CustomerFormValues => {
-  const sanitized: Partial<CustomerFormValues> = { ...cleanDefaultsForCreate, ...data };
-  if (sanitized.legalForm === "") sanitized.legalForm = undefined;
-  if (sanitized.advisor === "") sanitized.advisor = undefined;
-  if (sanitized.visitFrequency === "") sanitized.visitFrequency = undefined;
-  if (sanitized.staffFTE === null || sanitized.staffFTE === "" as any) sanitized.staffFTE = undefined;
-  if (sanitized.annualTurnover === null || sanitized.annualTurnover === "" as any) sanitized.annualTurnover = undefined;
-  if (sanitized.grossProfit === null || sanitized.grossProfit === "" as any) sanitized.grossProfit = undefined;
-  if (sanitized.payrollYear === null || sanitized.payrollYear === "" as any) sanitized.payrollYear = undefined;
-  
-  if (typeof sanitized.visitDate === 'string' && sanitized.visitDate) {
-    const parsedDate = new Date(sanitized.visitDate);
-    if (!isNaN(parsedDate.getTime())) {
-      sanitized.visitDate = parsedDate;
-    } else {
-      sanitized.visitDate = undefined; // Invalid date string
-    }
-  } else if (!(sanitized.visitDate instanceof Date)) {
-    sanitized.visitDate = undefined;
-  }
-
-  return sanitized as CustomerFormValues;
-};
-
-
 export function CustomerAccordionForm({
+  key,
   onSubmit,
   customer,
   mode,
@@ -127,7 +104,7 @@ export function CustomerAccordionForm({
   const router = useRouter();
   const { toast } = useToast();
   
-  const [activeSection, setActiveSection] = React.useState<string | undefined>(undefined);
+  const [activeSection, setActiveSection] = React.useState<string | undefined>("companyDetails");
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerFormSchema),
@@ -138,7 +115,7 @@ export function CustomerAccordionForm({
     form.reset(customer);
   }, [customer, form]);
 
-  const draftKey = customer?.id && mode === 'edit' ? `customerDraft_${customer.id}` : 'customerDraft_addNew';
+  const draftKey = key;
 
   const handleSaveDraft = () => {
     const data = form.getValues();
@@ -155,7 +132,7 @@ export function CustomerAccordionForm({
       const draft = localStorage.getItem(draftKey);
       if (draft) {
         try {
-          const draftData = sanitizeLoadedDraft(JSON.parse(draft));
+          const draftData = JSON.parse(draft);
           form.reset(draftData);
           toast({ title: 'Draft Loaded', message: 'A previous draft has been loaded.', variant: 'info' });
         } catch (e) {
@@ -203,7 +180,7 @@ export function CustomerAccordionForm({
                     {sectionKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                   </AccordionTrigger>
                   <AccordionContent className="pt-2">
-                    <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-x-6 md:gap-y-5">
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-x-6 md:gap-y-5 px-2">
                       {fields.map((fieldConfig) => (
                         <FormField
                           key={fieldConfig.name}
@@ -230,7 +207,7 @@ export function CustomerAccordionForm({
               ))}
             </Accordion>
           </CardContent>
-          <CardFooter className="border-t px-4 py-3 sm:px-6 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
+          <CardFooter className="border-t px-4 py-3 sm:px-6 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 md:gap-x-6 md:gap-y-5">
             <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting} size="sm">
                <XCircle className="mr-2 h-4 w-4"/> Cancel
             </Button>

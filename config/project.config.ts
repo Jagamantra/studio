@@ -53,6 +53,6 @@ export const projectConfig: ProjectConfig = {
   ],  defaultInterfaceDensity: 'comfortable',
 
   // API configuration
-  mockCustomerApi: true, // Use mock API for customers endpoint during development
+  mockCustomerApi: false, // Use mock API for customers endpoint during development
   mockApiMode: false,    // Use real API for other endpoints
 };

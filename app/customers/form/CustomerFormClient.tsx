@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -10,33 +9,39 @@ import * as Api from "@/services/api";
 import type { Customer } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { AuthenticatedPageLayout } from "@/components/layout/authenticated-page-layout";
+import {AuthenticatedPageLayout} from "@/components/layout/authenticated-page-layout";
 
 type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
 const defaultCustomerValues: CustomerFormValues = {
+  // Company Details
   companyName: "",
-  address: "",
-  phoneNumber: "",
-  email: "",
-  website: "",
-  kvkNumber: "",
-  legalForm: undefined,
-  mainActivity: "",
-  sideActivities: "",
-  dga: "",
+  address: null,
+  phoneNumber: null,
+  email: null,
+  website: null,
+  kvkNumber: null,
+  legalForm: null,
+  mainActivity: null,
+  sideActivities: null,
+  dga: null,
   staffFTE: undefined,
   annualTurnover: undefined,
   grossProfit: undefined,
   payrollYear: undefined,
-  description: "",
-  visitDate: undefined, // Initialize as undefined for DatePicker
-  advisor: undefined,
-  visitLocation: "",
-  visitFrequency: undefined,
-  conversationPartner: "",
-  comments: "",
+  description: null,
+
+  // Visit Data
+  visitDate: null,
+  advisor: null,
+  visitLocation: null,
+  visitFrequency: null,
+  conversationPartner: null,
+
+  // Comments and Status
+  comments: null,
   status: "in-progress",
+  lastModified: new Date().toISOString(),
 };
 
 const sanitizeCustomerData = (data: Partial<Customer>): CustomerFormValues => {
@@ -45,23 +50,28 @@ const sanitizeCustomerData = (data: Partial<Customer>): CustomerFormValues => {
   if (sanitized.legalForm === "") sanitized.legalForm = undefined;
   if (sanitized.advisor === "") sanitized.advisor = undefined;
   if (sanitized.visitFrequency === "") sanitized.visitFrequency = undefined;
-  
-  if (sanitized.staffFTE === null || sanitized.staffFTE === "" as any) sanitized.staffFTE = undefined;
-  if (sanitized.annualTurnover === null || sanitized.annualTurnover === "" as any) sanitized.annualTurnover = undefined;
-  if (sanitized.grossProfit === null || sanitized.grossProfit === "" as any) sanitized.grossProfit = undefined;
-  if (sanitized.payrollYear === null || sanitized.payrollYear === "" as any) sanitized.payrollYear = undefined;
+    // Handle numeric fields
+  if (sanitized.staffFTE === "" || sanitized.staffFTE === undefined) sanitized.staffFTE = null;
+  if (sanitized.annualTurnover === "" || sanitized.annualTurnover === undefined) sanitized.annualTurnover = null;
+  if (sanitized.grossProfit === "" || sanitized.grossProfit === undefined) sanitized.grossProfit = null;
+  if (sanitized.payrollYear === "" || sanitized.payrollYear === undefined) sanitized.payrollYear = null;
+
+  // Convert numeric string values to numbers if they exist
+  if (typeof sanitized.staffFTE === 'string' && sanitized.staffFTE !== '') sanitized.staffFTE = parseInt(sanitized.staffFTE);
+  if (typeof sanitized.annualTurnover === 'string' && sanitized.annualTurnover !== '') sanitized.annualTurnover = parseFloat(sanitized.annualTurnover);
+  if (typeof sanitized.grossProfit === 'string' && sanitized.grossProfit !== '') sanitized.grossProfit = parseFloat(sanitized.grossProfit);
+  if (typeof sanitized.payrollYear === 'string' && sanitized.payrollYear !== '') sanitized.payrollYear = parseInt(sanitized.payrollYear);
 
   // Convert visitDate string from API/DB to Date object for DatePicker
   if (typeof sanitized.visitDate === 'string' && sanitized.visitDate) {
     const parsedDate = new Date(sanitized.visitDate);
-    // Check if parsedDate is a valid date
     if (!isNaN(parsedDate.getTime())) {
       sanitized.visitDate = parsedDate;
     } else {
-      sanitized.visitDate = undefined; // Or null, depending on schema preference
+      sanitized.visitDate = null;
     }
   } else if (!(sanitized.visitDate instanceof Date)) {
-    sanitized.visitDate = undefined; // Ensure it's a Date object or undefined/null
+    sanitized.visitDate = null;
   }
   
   return sanitized as CustomerFormValues;
@@ -70,17 +80,27 @@ const sanitizeCustomerData = (data: Partial<Customer>): CustomerFormValues => {
 interface CustomerFormClientProps {
   mode: 'edit' | 'create';
   customerId?: string;
+  initialData?: Customer;
 }
 
-export function CustomerFormClient({ mode, customerId }: CustomerFormClientProps) {
+export function CustomerFormClient({ mode, customerId, initialData }: CustomerFormClientProps) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [customer, setCustomer] = useState<CustomerFormValues | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize with initialData if provided
+  const [customer, setCustomer] = useState<CustomerFormValues | undefined>(
+    initialData ? sanitizeCustomerData(initialData) : undefined
+  );
+  const [isLoading, setIsLoading] = useState(!initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchCustomer = useCallback(async (id: string) => {
+  const validateAndFetchCustomer = useCallback(async (id: string) => {
+    if (!id || typeof id !== 'string') {
+      toast({ title: "Error", message: "Invalid customer ID", variant: "destructive" });
+      router.push("/customers");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const data = await Api.getCustomerById(id);
@@ -96,40 +116,62 @@ export function CustomerFormClient({ mode, customerId }: CustomerFormClientProps
     } finally {
       setIsLoading(false);
     }
-  }, [router, toast]);
-
+  }, []);
   useEffect(() => {
-    if (mode === "edit" && customerId) {
-      fetchCustomer(customerId);
-    } else {
-      setCustomer(defaultCustomerValues); 
+    if (mode === "edit" && customerId && !initialData) {
+      validateAndFetchCustomer(customerId);
+    } else if (!mode || mode === "create") {
+      setCustomer(defaultCustomerValues);
       setIsLoading(false);
     }
-  }, [mode, customerId, fetchCustomer]);
+  }, [mode, customerId, initialData, validateAndFetchCustomer]);
 
   const handleSubmit = useCallback(async (data: CustomerFormValues) => {
+    console.log("Submitting customer data:", data);
+    
     setIsSubmitting(true);
     try {
       // Ensure numeric fields are numbers or null
-      const dataToSubmit: any = { ...data };
-      if (dataToSubmit.staffFTE === undefined) dataToSubmit.staffFTE = null;
-      if (dataToSubmit.annualTurnover === undefined) dataToSubmit.annualTurnover = null;
-      if (dataToSubmit.grossProfit === undefined) dataToSubmit.grossProfit = null;
-      if (dataToSubmit.payrollYear === undefined) dataToSubmit.payrollYear = null;
+      const dataToSubmit: any = { ...data };      // Handle numeric fields
+      ['staffFTE', 'annualTurnover', 'grossProfit', 'payrollYear'].forEach(field => {
+        if (dataToSubmit[field] === undefined || dataToSubmit[field] === '') {
+          dataToSubmit[field] = null;
+        } else if (typeof dataToSubmit[field] === 'string' && dataToSubmit[field] !== '') {
+          dataToSubmit[field] = field === 'annualTurnover' || field === 'grossProfit' 
+            ? parseFloat(dataToSubmit[field] as string)
+            : parseInt(dataToSubmit[field] as string);
+        }
+      });
 
-      // Convert visitDate (Date object) to ISO string if API expects string
+      // Handle string fields that should be null when empty
+      ['address', 'phoneNumber', 'email', 'website', 'kvkNumber', 'legalForm', 
+       'mainActivity', 'sideActivities', 'dga', 'description', 'advisor', 
+       'visitLocation', 'visitFrequency', 'conversationPartner', 'comments'].forEach(field => {
+        if (!dataToSubmit[field]) {
+          dataToSubmit[field] = null;
+        }
+      });
+
+      // Convert visitDate (Date object) to ISO string if API expects string      // Handle the visit date field
       if (dataToSubmit.visitDate instanceof Date) {
         dataToSubmit.visitDate = dataToSubmit.visitDate.toISOString();
-      } else if (dataToSubmit.visitDate === null || dataToSubmit.visitDate === undefined) {
-        dataToSubmit.visitDate = null; // Or handle as per API: "" or undefined
-      }
-
-
+      } else if (typeof dataToSubmit.visitDate === 'string' && dataToSubmit.visitDate) {
+        // If it's already an ISO string, leave it as is
+        if (!isNaN(new Date(dataToSubmit.visitDate).getTime())) {
+          // Valid date string, keep it
+        } else {
+          dataToSubmit.visitDate = null;
+        }
+      } else {
+        dataToSubmit.visitDate = null;
+      }// Set lastModified for creation
+      dataToSubmit.lastModified = new Date().toISOString();
+      
       if (mode === "edit" && customerId) {
         await Api.updateCustomer(customerId, dataToSubmit as Partial<Customer>);
         toast({ title: "Success", message: "Customer updated successfully.", variant: "success" });
       } else {
-        await Api.createCustomer(dataToSubmit as Omit<Customer, 'id' | 'lastModified'>);
+        await Api.createCustomer(dataToSubmit as Omit<Customer, 'id'>);
         toast({ title: "Success", message: "Customer created successfully.", variant: "success" });
       }
       router.push("/customers");

@@ -9,6 +9,7 @@ import { rolesConfig } from '@/config/roles.config';
 import * as Api from '@/services/api'; // Now imports from the unified api.ts
 import Cookies from 'js-cookie';
 import { useToast } from '@/hooks/use-toast';
+import { projectConfig } from '@/config/project.config';
 
 const JWT_COOKIE_NAME = 'genesis_token';
 
@@ -52,21 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Try to fetch user details from API
       let fetchedProfile: UserProfile | null = null;
-      if (!projectConfig.mockApiMode) {
-        try {
-          const response = await fetch('/auth/me');
-          if (response.ok) {
-            fetchedProfile = await response.json();
-          }
-        } catch (err) {
-          console.error('Error fetching user details from API:', err);
-        }
-      }
+      // if (!projectConfig.mockApiMode) {
+      //   try {
+      //     const response = await Api.fetchUserProfile(uid, emailFromToken, roleFromToken);
+      //     if (response) {
+      //       console.log('Fetched user details from API', response);
+      //     }
+      //   } catch (err) {
+      //     console.error('Error fetching user details from API:', err);
+      //   }
+      // }
 
       // Fall back to dummy data if needed
-      if (!fetchedProfile) {
         fetchedProfile = await Api.fetchUserProfile(uid, emailFromToken, roleFromToken);
-      }
+
       
       if (fetchedProfile) {
         setUser(fetchedProfile);

@@ -10,6 +10,7 @@ import {
     previewAdminUserProfile,
 } from '@/data/dummy-data';
 import { rolesConfig } from '@/config/roles.config';
+import axios from 'axios';
 
 // In-memory store for dummy users, initialized from localStorage or defaults
 let DUMMY_USERS_DB_INSTANCE: UserProfile[] = [];
@@ -102,12 +103,12 @@ export const verifyMfa = async (mfaCode: string): Promise<LoginSuccessResponse> 
     if (projectConfig.mockApiMode) {
         console.log("API (Mock): verifyMfa code:", mfaCode);
         getMockUsersFromStorage();
-        
+
         const currentUserEmail = sessionStorage.getItem('current_auth_email');
         if (!currentUserEmail) {
             throw new Error('No active authentication session found.');
         }
-        
+
         const user = DUMMY_USERS_DB_INSTANCE.find(u => u.email === currentUserEmail);
         if (!user) {
             throw new Error('User not found.');
@@ -124,12 +125,12 @@ export const verifyMfa = async (mfaCode: string): Promise<LoginSuccessResponse> 
                 expiresIn: 3600 // 1 hour
             };
         }
-        
+
         throw new Error('Invalid MFA code.');
     } else {
         // Real API call
         console.log("API (Real): verifyMfa");
-        const response = await apiClient.post<LoginSuccessResponse>('/auth/verify-mfa', { 
+        const response = await apiClient.post<LoginSuccessResponse>('/auth/verify-mfa', {
             email: sessionStorage.getItem('current_auth_email'),
             mfaCode
         });
@@ -161,6 +162,13 @@ export const logoutUser = async (): Promise<void> => {
 // These functions currently use DUMMY_USERS_DB_INSTANCE for data storage/retrieval
 // regardless of mockApiMode, as real endpoints for these are not yet implemented.
 export const fetchUserProfile = async (uid: string, email?: string, role?: Role): Promise<UserProfile | null> => {
+    if (!projectConfig.mockApiMode) {
+        const user = await apiClient.get('/auth/me', {
+            withCredentials: true, // Ensure cookies are sent if needed
+        });
+        console.warn("API (Real): fetchUserProfile called in non-mock mode, but this function is not implemented for real API yet.");
+        console.log("user (real) ", user);
+    }
     console.log(`API (Dummy Data Source): fetchUserProfile for UID ${uid}`);
     getMockUsersFromStorage(); // Ensure DUMMY_USERS_DB_INSTANCE is up-to-date
     let user = DUMMY_USERS_DB_INSTANCE.find(u => u.uid === uid);
@@ -183,7 +191,7 @@ export const fetchUserProfile = async (uid: string, email?: string, role?: Role)
         saveMockUsersToStorage();
     } else if (!user && uid === previewAdminUserProfile.uid) { // Special case for preview admin during development
         user = { ...previewAdminUserProfile };
-        if (!DUMMY_USERS_DB_INSTANCE.find(u=> u.uid === previewAdminUserProfile.uid)) {
+        if (!DUMMY_USERS_DB_INSTANCE.find(u => u.uid === previewAdminUserProfile.uid)) {
             DUMMY_USERS_DB_INSTANCE.push(user);
             saveMockUsersToStorage();
         }
@@ -279,89 +287,98 @@ export const deleteUser = async (uid: string): Promise<void> => {
 // Then your functions remain exactly the same:
 
 export const getCustomers = async (): Promise<Customer[]> => {
-  try {
-    if (projectConfig.mockCustomerApi) {
-      const { mockCustomers } = await import('@/data/mock-customers');
-      return mockCustomers;
-    } else {
-      const response = await apiClient.get('/customers');
-      return response.data;
+    try {
+        if (projectConfig.mockCustomerApi) {
+            const { mockCustomers } = await import('@/data/mock-customers');
+            return mockCustomers;
+        } else {
+            const response = await apiClient.get('/customers');
+            return response.data;
+        }
+    } catch (error) {
+        console.error('Error fetching customers:', error);
+        throw error;
     }
-  } catch (error) {
-    console.error('Error fetching customers:', error);
-    throw error;
-  }
 };
 
-export const getCustomerById = async (id: string): Promise<Customer> => {
-  try {
-    if (projectConfig.mockCustomerApi) {
-      const { mockCustomers } = await import('@/data/mock-customers');
-      const customer = mockCustomers.find(c => c.id === id);
-      if (!customer) throw new Error('Customer not found');
-      return customer;
-    } else {
-      const response = await apiClient.get(`/customers/${id}`);
-      return response.data;
+export const getCustomerById = async (id: string): Promise<Customer | null> => {
+    try {
+        if (projectConfig.mockCustomerApi) {
+            const { mockCustomers } = await import('@/data/mock-customers');
+            const customer = mockCustomers.find(c => c.id === id);
+            if (!customer) throw new Error('Customer not found');
+            return customer;
+        } else {
+            try {
+                const response = await apiClient.get(`/customers/${id}`);
+                return response.data;
+            } catch (error: any) {
+                if (axios.isAxiosError(error)) {
+                    if (error.response?.status === 404) {
+                        return null; // customer not found
+                    }
+                }
+                throw error;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching customer:', error);
+        throw error;
     }
-  } catch (error) {
-    console.error('Error fetching customer:', error);
-    throw error;
-  }
 };
 
 export const createCustomer = async (customer: Omit<Customer, 'id'>): Promise<Customer> => {
-  try {
-    if (projectConfig.mockCustomerApi) {
-      const { mockCustomers } = await import('@/data/mock-customers');
-      const newCustomer = {
-        ...customer,
-        id: Math.random().toString(36).slice(2),
-      };
-      mockCustomers.push(newCustomer);
-      return newCustomer;
-    } else {
-      const response = await apiClient.post('/customers', customer);
-      return response.data;
+    try {
+        if (projectConfig.mockCustomerApi) {
+            const { mockCustomers } = await import('@/data/mock-customers');
+            const newCustomer = {
+                ...customer,
+                id: Math.random().toString(36).slice(2),
+            };
+            mockCustomers.push(newCustomer);
+            return newCustomer;
+        } else {
+            const response = await apiClient.post('/customers', customer);
+            return response.data;
+        }
+    } catch (error) {
+        console.error('Error creating customer:', error);
+        throw error;
     }
-  } catch (error) {
-    console.error('Error creating customer:', error);
-    throw error;
-  }
 };
 
 export const updateCustomer = async (id: string, customer: Partial<Customer>): Promise<Customer> => {
-  try {
-    if (projectConfig.mockCustomerApi) {
-      const { mockCustomers } = await import('@/data/mock-customers');
-      const index = mockCustomers.findIndex(c => c.id === id);
-      if (index === -1) throw new Error('Customer not found');
-      mockCustomers[index] = { ...mockCustomers[index], ...customer };
-      return mockCustomers[index];
-    } else {
-      const response = await apiClient.patch(`/customers/${id}`, customer);
-      return response.data;
+    try {
+        if (projectConfig.mockCustomerApi) {
+            const { mockCustomers } = await import('@/data/mock-customers');
+            const index = mockCustomers.findIndex(c => c.id === id);
+            if (index === -1) throw new Error('Customer not found');
+            mockCustomers[index] = { ...mockCustomers[index], ...customer };
+            return mockCustomers[index];
+        } else {
+            const response = await apiClient.patch(`/customers/${id}`, customer);
+            return response.data;
+        }
+    } catch (error) {
+        console.error('Error updating customer:', error);
+        throw error;
     }
-  } catch (error) {
-    console.error('Error updating customer:', error);
-    throw error;
-  }
 };
 
 export const deleteCustomer = async (id: string): Promise<void> => {
-  try {
-    if (projectConfig.mockCustomerApi) {
-      const { mockCustomers } = await import('@/data/mock-customers');
-      const index = mockCustomers.findIndex(c => c.id === id);
-      if (index === -1) throw new Error('Customer not found');
-      mockCustomers.splice(index, 1);
-    } else {
-      await apiClient.delete(`/customers/${id}`);
+    try {
+        if (projectConfig.mockCustomerApi) {
+            const { mockCustomers } = await import('@/data/mock-customers');
+            const index = mockCustomers.findIndex(c => c.id === id);
+            if (index === -1) throw new Error('Customer not found');
+            mockCustomers.splice(index, 1);
+        } else {
+            await apiClient.delete(`/customers/${id}`);
+        }
+    } catch (error) {
+        console.error('Error deleting customer:', error);
+        throw error;
     }
-  } catch (error) {
-    console.error('Error deleting customer:', error);
-    throw error;
-  }
 };
 
 
@@ -383,7 +400,7 @@ export const forgotPassword = async (email: string): Promise<void> => {
 };
 
 export const changeUserPassword = async (uid: string, currentPassword?: string, newPassword?: string): Promise<void> => {
-     if (projectConfig.mockApiMode) {
+    if (projectConfig.mockApiMode) {
         console.log(`API (Mock): changeUserPassword for UID ${uid}`);
         getMockUsersFromStorage();
         const user = DUMMY_USERS_DB_INSTANCE.find(u => u.uid === uid);

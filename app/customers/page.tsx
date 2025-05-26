@@ -39,7 +39,7 @@ export default function CustomersPage() {
     };
 
     fetchCustomers();
-  }, [toast]);
+  }, []);
 
   const handleDeleteCustomer = async (id: string) => {
     try {

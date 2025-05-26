@@ -28,7 +28,7 @@ const sidebarItems: SidebarNavItem[] = [
   {
     id: 'customer-Addition',
     label: 'Add Customer',
-    href: '/customers/form?mode=create',
+    href: '/customers/create',
     icon: BookPlus,
     roles: ['admin'],
   },
