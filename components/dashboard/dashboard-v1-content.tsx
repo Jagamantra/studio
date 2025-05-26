@@ -68,13 +68,15 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({
           <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-lg font-medium">
                   User Management
                 </CardTitle>
                 <Users className="h-4 w-4 text-primary" />
               </CardHeader>
-              <CardContent className="p-4 pt-2 flex flex-col">
-                <div className="text-2xl font-bold text-primary">
+                <CardContent className="p-4 pt-2 flex flex-col">
+                {" "}
+                {/* Center content */}
+                <div className="text-3xl font-bold text-primary text-center items-center">
                   {isLoadingUserCount ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
                   ) : userCount !== null ? (
@@ -83,7 +85,7 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({
                     "-"
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground pt-1">
+                <p className="text-xs text-muted-foreground pt-1 text-center">
                   {isLoadingUserCount
                     ? "Loading count..."
                     : "Total registered users"}
@@ -96,13 +98,17 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-lg font-medium">
                   Customer Management
                 </CardTitle>
                 <Users className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent className="p-4 pt-2 flex flex-col">
-                <div className="text-2xl font-bold text-primary items-center">
+                {" "}
+                {/* Center content */}
+                <div className="text-3xl font-bold text-primary text-center items-center">
+                  {" "}
+                  {/* Larger and centered */}
                   {isLoadingUserCount ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
                   ) : customerCount !== null ? (
@@ -111,7 +117,7 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({
                     "-"
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground pt-1">
+                <p className="text-xs text-muted-foreground pt-1 text-center">
                   {isLoadingUserCount
                     ? "Loading count..."
                     : "Total registered Customers"}
@@ -125,7 +131,7 @@ export const DashboardV1Content = React.memo(function DashboardV1Content({
             {projectConfig.enableApplicationConfig && ( // Updated to use enableApplicationConfig
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                  <CardTitle className="text-sm font-medium">
+                  <CardTitle className="text-lg font-medium">
                     Application Config
                   </CardTitle>
                   <ShieldQuestion className="h-4 w-4 text-primary" />

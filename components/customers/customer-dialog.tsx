@@ -45,12 +45,7 @@ interface CustomerAccordionFormProps {
 
 const formSections = {
   companyDetails: [
-    {
-      name: "companyName",
-      label: "Company Name / Legal Company Name *",
-      type: "text",
-      required: true,
-    },
+    { name: "companyName", label: "Company Name / Legal Company Name *", type: "text", required: true },
     { name: "address", label: "Address", type: "textarea" },
     { name: "phoneNumber", label: "Phone Number", type: "tel" },
     { name: "email", label: "E-mail Address", type: "email" },
@@ -64,29 +59,12 @@ const formSections = {
     },
     { name: "mainActivity", label: "Main activity / SBI code", type: "text" },
     { name: "sideActivities", label: "Side Activities", type: "textarea" },
-    {
-      name: "dga",
-      label: "DGA (Director and Major Shareholder)",
-      type: "text",
-    },
+    { name: "dga", label: "DGA (Director and Major Shareholder)", type: "text" },
     { name: "staffFTE", label: "Staff (FTE employed)", type: "number" },
     { name: "annualTurnover", label: "Annual turnover (€)", type: "number" },
-    {
-      name: "grossProfit",
-      label: "Gross profit excluding tax year (€)",
-      type: "number",
-    },
-    {
-      name: "payrollYear",
-      label: "Payroll year",
-      type: "number",
-      placeholder: "YYYY",
-    },
-    {
-      name: "description",
-      label: "Company Description / Explanation",
-      type: "textarea",
-    },
+    { name: "grossProfit", label: "Gross profit excluding tax year (€)", type: "number" },
+    { name: "payrollYear", label: "Payroll year", type: "number", placeholder: "YYYY" },
+    { name: "description", label: "Company Description / Explanation", type: "textarea" },
   ],
   visitData: [
     { name: "visitDate", label: "Date of Visit", type: "date" },
@@ -103,11 +81,7 @@ const formSections = {
       type: "select",
       options: ["Weekly", "Monthly", "Quarterly", "Annually", "Ad-hoc"],
     },
-    {
-      name: "conversationPartner",
-      label: "Company Conversation Partner",
-      type: "text",
-    },
+    { name: "conversationPartner", label: "Company Conversation Partner", type: "text" },
   ],
   statusAndComments: [
     {
@@ -167,15 +141,13 @@ export function CustomerAccordionForm({
 
   const draftKey = formkey;
 
-  // 🧠 Update defaultValues only when customer changes in edit mode
   useEffect(() => {
     if (mode === "edit") {
       form.reset(customer);
-      initialCustomerRef.current = customer; // Update ref too!
+      initialCustomerRef.current = customer;
     }
   }, [customer, mode, form]);
 
-  // 📥 Load draft only once if in create mode
   useEffect(() => {
     if (
       mode === "create" &&
@@ -244,12 +216,6 @@ export function CustomerAccordionForm({
 
       await onSubmit(data);
       if (mode === "create") localStorage.removeItem(draftKey);
-
-      // toast({
-      //   title: mode === "create" ? "Customer Created" : "Changes Saved",
-      //   message: "Customer saved successfully.",
-      //   variant: "success",
-      // });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -257,6 +223,25 @@ export function CustomerAccordionForm({
         variant: "destructive",
       });
     }
+  };
+
+  const handleSectionChange = (nextSection: string) => {
+    const currentFields = formSections[activeSection]?.map((f) => f.name);
+    const dirtyFields = Object.keys(form.formState.dirtyFields || {});
+    const isCurrentSectionDirty = currentFields?.some((f) =>
+      dirtyFields.includes(f)
+    );
+
+    if (isCurrentSectionDirty) {
+      toast({
+        title: "Unsaved Changes",
+        message: `Please save or reset your changes in "${activeSection}" before moving on.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setActiveSection(nextSection);
   };
 
   return (
@@ -268,7 +253,7 @@ export function CustomerAccordionForm({
               type="single"
               collapsible
               value={activeSection}
-              onValueChange={setActiveSection}
+              onValueChange={handleSectionChange}
               className="w-full space-y-4"
             >
               {Object.entries(formSections).map(([sectionKey, fields]) => (
@@ -318,13 +303,7 @@ export function CustomerAccordionForm({
             </Accordion>
           </CardContent>
           <CardFooter className="border-t px-4 py-3 sm:px-6 sm:py-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 md:gap-x-6 md:gap-y-5">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-              size="sm"
-            >
+            <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting} size="sm">
               <XCircle className="mr-2 h-4 w-4" /> Cancel
             </Button>
             <Button
