@@ -232,14 +232,14 @@ export function CustomerAccordionForm({
       dirtyFields.includes(f)
     );
 
-    if (isCurrentSectionDirty) {
-      toast({
-        title: "Unsaved Changes",
-        message: `Please save or reset your changes in "${activeSection}" before moving on.`,
-        variant: "destructive",
-      });
-      return;
-    }
+    // if (isCurrentSectionDirty) {
+    //   toast({
+    //     title: "Unsaved Changes",
+    //     message: `Please save or reset your changes in "${activeSection}" before moving on.`,
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
 
     setActiveSection(nextSection);
   };
