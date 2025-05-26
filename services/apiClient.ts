@@ -10,14 +10,38 @@ const apiClient = axios.create({
   withCredentials: true, // Important for sending cookies if backend requires them
 });
 
-apiClient.interceptors.request.use(
-  (config) => {
-    // If using token-based authentication (e.g., Bearer tokens in localStorage/sessionStorage)
-    // and not relying solely on HttpOnly cookies, you would add the token here:
-    // const token = typeof window !== 'undefined' ? localStorage.getItem('genesis_token') : null;
-    // if (token && !config.url?.includes('/auth/')) { // Don't send token for auth routes typically
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+apiClient.interceptors.request.use((config) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('genesis_token') : null;
+    const url = config.url || '';
+    
+    // Initialize headers if they don't exist
+    config.headers = config.headers || {};
+    
+    // List of auth routes that don't need token
+    const noAuthRoutes = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/forgot-password',
+      '/auth/verify-mfa'
+    ];
+    
+    // Add token if:
+    // 1. It's /auth/me or /auth/config
+    // 2. OR it's not in the noAuthRoutes list
+    if (token && 
+        (url === '/auth/me' || 
+         url === '/auth/config' || 
+         !noAuthRoutes.some(route => url.includes(route)))) {
+      
+      if (typeof config.headers === 'object') {
+        config.headers['Authorization'] = `Bearer ${token}`;
+        console.log('Added Authorization header for:', url);
+      }
+    } else {
+      console.log('No Authorization header added. Reason:', !token ? 'No token found' : 'Auth route');
+    }
+    
+    console.log('Final headers:', config.headers);
     return config;
   },
   (error) => {

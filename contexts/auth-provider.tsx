@@ -73,11 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return fetchedProfile;
       }
       throw new Error(`User profile could not be established for UID: ${uid}`);
-    } catch (err: any) {
-      console.error("Error fetching/establishing current user info:", err);
+    } catch (err: any) {      console.error("Error fetching/establishing current user info:", err);
       setError(err);
       setUser(null);
+      // Clear all authentication tokens
       Cookies.remove(JWT_COOKIE_NAME);
+      localStorage.removeItem('genesis_token');
       setIsMfaVerified(false);
       return null;
     }
@@ -199,13 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!uidFromToken) {
           throw new Error("Could not extract UID from access token.");
-        }
-
+        }        // Store token in both cookie and localStorage
         Cookies.set(JWT_COOKIE_NAME, response.accessToken, { 
           secure: true,
           sameSite: 'strict',
           expires: 1 // 1 day
         });
+        localStorage.setItem('genesis_token', response.accessToken);
 
         // Fetch user profile
         const userProfile = await fetchCurrentUserInfo(uidFromToken, response.email, response.role);
@@ -242,9 +243,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     await Api.logoutUser(); // Calls unified api.ts; backend handles token invalidation
-    
-    // Clear all client-side session information
+      // Clear all client-side session information
     Cookies.remove(JWT_COOKIE_NAME);
+    localStorage.removeItem('genesis_token');
     setUser(null);
     setIsMfaVerified(false);
     setAuthEmailForMfa(null);
