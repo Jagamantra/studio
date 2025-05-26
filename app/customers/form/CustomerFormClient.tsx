@@ -147,7 +147,7 @@ export function CustomerFormClient({
         setIsLoading(false);
       }
     },
-    [router]
+    [router, toast]
   );
 
   useEffect(() => {
