@@ -252,8 +252,8 @@ export function ThemeProvider({
       faviconLink.type = faviconUrl.endsWith('.ico') ? 'image/x-icon' : 'image/png';
     } else {
       // Fallback to default favicon
-      faviconLink.href = '/favicon.ico';
-      faviconLink.type = 'image/x-icon';
+      faviconLink.href = '/defaultfavicon.png';
+      faviconLink.type = 'image/png';
     }
 
     // Cleanup any existing object URLs
