@@ -116,7 +116,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
         });
         return;
       }
-      if (!["image/jpeg", "image/gif", "image/svg+xml"].includes(file.type)) {
+      if (!["image/png", "image/jpeg", "image/gif", "image/svg+xml"].includes(file.type)) {
         projectConfigForm.setError("appLogoUrl" as any, {
           type: "manual",
           message: "Invalid file type. Use JPG, GIF, or SVG.",
@@ -160,7 +160,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
         });
         return;
       }
-      if (!["image/jpeg", "image/gif", "image/svg+xml"].includes(file.type)) {
+      if (!["image/png", "image/jpeg", "image/gif", "image/svg+xml"].includes(file.type)) {
         projectConfigForm.setError("faviconUrl" as any, {
           type: "manual",
           message: "Invalid file type. Use JPG, GIF, or SVG.",
@@ -368,7 +368,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                           </Button>
                           <Input
                             type="file"
-                            accept="image/jpeg, image/gif, image/svg+xml"
+                            accept="image/png, image/jpeg, image/gif, image/svg+xml"
                             ref={logoFileInputRef}
                             onChange={handleLogoFileChange}
                             className="hidden"
@@ -389,7 +389,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                         </div>
                       </div>
                       <FormDescription className="text-xs">
-                        Upload a JPG, GIF, or SVG file (max 2MB).
+                        Upload a PNG, JPG, GIF, or SVG file (max 2MB).
                       </FormDescription>
 
                       <FormMessage>
@@ -450,7 +450,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                           </Button>
                           <Input
                             type="file"
-                            accept="image/jpeg, image/gif, image/svg+xml"
+                            accept="image/png, image/jpeg, image/gif, image/svg+xml"
                             ref={faviconFileInputRef}
                             onChange={handleFaviconFileChange}
                             className="hidden"
@@ -471,7 +471,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                         </div>
                       </div>
                       <FormDescription className="text-xs">
-                        Upload a JPG, GIF, or SVG file (max 2MB).
+                        Upload a PNG, JPG, GIF, or SVG file (max 2MB).
                       </FormDescription>
 
                       <FormMessage>
