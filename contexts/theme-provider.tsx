@@ -26,6 +26,7 @@ const initialState: ThemeProviderState = {
   appName: projectConfig.appName,
   appIconPaths: projectConfig.appIconPaths || [], // Ensure it's always an array
   appLogoUrl: projectConfig.appLogoUrl || null,
+  faviconUrl: projectConfig.faviconUrl || null,
   fontSize: projectConfig.availableFontSizes.find(f => f.name === projectConfig.defaultFontSizeName)?.value || projectConfig.availableFontSizes[1]?.value || '16px',
   appScale: projectConfig.availableScales.find(s => s.name === projectConfig.defaultScaleName)?.value || projectConfig.availableScales[1]?.value || '1.0',
   interfaceDensity: projectConfig.defaultInterfaceDensity,
@@ -34,6 +35,7 @@ const initialState: ThemeProviderState = {
   setBorderRadius: () => null,
   setAppVersion: () => null,
   setAppName: () => null,
+  setFaviconUrl: () => null,
   setAppIconPaths: () => null,
   setAppLogoUrl: () => null,
   setFontSize: () => null,
@@ -67,6 +69,7 @@ export function ThemeProvider({
   // Ensure appIconPaths is always initialized as an array, falling back to projectConfig or empty array
   const [appIconPaths, setAppIconPathsInternal] = useLocalStorage<string[]>(`${storageKey}-app-icon-paths`, projectConfig.appIconPaths || []);
   const [appLogoUrl, setAppLogoUrlInternal] = useLocalStorage<string | null>(`${storageKey}-app-logo-url`, initialState.appLogoUrl);
+  const [faviconUrl, setFaviconUrlInternal] = useLocalStorage<string | null>(`${storageKey}-favicon-url`, initialState.faviconUrl);
   const [fontSize, setFontSizeInternal] = useLocalStorage<string>(`${storageKey}-font-size`, initialState.fontSize);
   const [appScale, setAppScaleInternal] = useLocalStorage<string>(`${storageKey}-scale`, initialState.appScale);
   const [interfaceDensity, setInterfaceDensityInternal] = useLocalStorage<'compact' | 'comfortable' | 'spacious'>(`${storageKey}-density`, initialState.interfaceDensity);
@@ -118,6 +121,11 @@ export function ThemeProvider({
     setAppLogoUrlInternal(newUrl);
     persistPreference('appLogoUrl', newUrl);
   }, [setAppLogoUrlInternal, persistPreference]);
+  // Favicon URL is optional, so we allow null to clear it
+  const setFaviconUrl = useCallback((newUrl: string | null) => {
+    setFaviconUrlInternal(newUrl);
+    persistPreference('faviconUrl', newUrl);
+  }, [setFaviconUrlInternal, persistPreference]);
 
   const setFontSize = useCallback((newFontSize: string) => {
     setFontSizeInternal(newFontSize);
@@ -145,6 +153,7 @@ export function ThemeProvider({
       // Handle appIconPaths carefully: if undefined in prefs, use projectConfig default or empty array
       setAppIconPathsInternal(prefs.appIconPaths !== undefined ? prefs.appIconPaths : (projectConfig.appIconPaths || []));
       if (prefs.appLogoUrl !== undefined) setAppLogoUrlInternal(prefs.appLogoUrl);
+      if (prefs.faviconUrl !== undefined) setFaviconUrlInternal(prefs.faviconUrl);
       if (prefs.fontSize) setFontSizeInternal(prefs.fontSize);
       if (prefs.appScale) setAppScaleInternal(prefs.appScale);
       if (prefs.interfaceDensity) setInterfaceDensityInternal(prefs.interfaceDensity);
@@ -162,33 +171,55 @@ export function ThemeProvider({
       root.classList.add(theme);
     }
   }, [theme]);
-
   useEffect(() => {
     const root = window.document.documentElement;
     if (!accentColor) return;
-    let h: string, s: string, l: string;
+
+    let h = "180", s = "100%", l = "25%";
+    
     const applyDefaultAccent = () => {
       const defaultColorDef = projectConfig.availableAccentColors.find(c => c.name === projectConfig.defaultAccentColorName) || projectConfig.availableAccentColors[0];
-      const parts = defaultColorDef.hslValue.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?%)\s*(\d+(?:\.\d+)?%)/);
-      if (parts && parts.length === 4) [, h, s, l] = parts;
-      else { h = "180"; s = "100%"; l = "25%"; }
+      const parts = defaultColorDef?.hslValue.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?%)\s*(\d+(?:\.\d+)?%)/);
+      if (parts && parts.length === 4) {
+        h = parts[1];
+        s = parts[2];
+        l = parts[3];
+      }
     };
 
     if (accentColor.startsWith('#')) {
       const hsl = hexToHsl(accentColor);
-      if (hsl) { h = String(hsl.h); s = `${hsl.s}%`; l = `${hsl.l}%`; }
-      else applyDefaultAccent();
+      if (hsl) {
+        h = String(hsl.h);
+        s = `${hsl.s}%`;
+        l = `${hsl.l}%`;
+      } else {
+        applyDefaultAccent();
+      }
     } else {
       const parts = accentColor.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?%)\s*(\d+(?:\.\d+)?%)/);
-      if (parts && parts.length === 4) [, h, s, l] = parts;
-      else {
+      if (parts && parts.length === 4) {
+        h = parts[1];
+        s = parts[2];
+        l = parts[3];
+      } else {
         const plainHslParts = accentColor.match(/(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?)\s*(\d+(?:\.\d+)?)/);
-        if (plainHslParts && plainHslParts.length === 4) { h = plainHslParts[1]; s = `${plainHslParts[2]}%`; l = `${plainHslParts[3]}%`; }
-        else applyDefaultAccent();
+        if (plainHslParts && plainHslParts.length === 4) {
+          h = plainHslParts[1];
+          s = `${plainHslParts[2]}%`;
+          l = `${plainHslParts[3]}%`;
+        } else {
+          applyDefaultAccent();
+        }
       }
     }
-    root.style.setProperty('--accent-h', h); root.style.setProperty('--accent-s', s); root.style.setProperty('--accent-l', l);
-    root.style.setProperty('--primary-h', h); root.style.setProperty('--primary-s', s); root.style.setProperty('--primary-l', l);
+
+    root.style.setProperty('--accent-h', h);
+    root.style.setProperty('--accent-s', s);
+    root.style.setProperty('--accent-l', l);
+    root.style.setProperty('--primary-h', h);
+    root.style.setProperty('--primary-s', s);
+    root.style.setProperty('--primary-l', l);
     const lightnessValue = parseFloat(l);
     const isDarkTheme = root.classList.contains('dark');
     let fgLightnessVarKey = isDarkTheme ? (lightnessValue > 55 ? '--accent-foreground-l-dark-theme' : '--accent-foreground-l-light-theme') : (lightnessValue < 50 ? '--accent-foreground-l-light-theme' : '--accent-foreground-l-dark-theme');
@@ -200,64 +231,84 @@ export function ThemeProvider({
   useEffect(() => { if (borderRadius) window.document.documentElement.style.setProperty('--radius', borderRadius); }, [borderRadius]);
   useEffect(() => { if (fontSize) window.document.documentElement.style.fontSize = fontSize; }, [fontSize]);
   useEffect(() => { if (appScale) window.document.body.style.zoom = appScale; }, [appScale]);
-  useEffect(() => { if (interfaceDensity) window.document.documentElement.dataset.density = interfaceDensity; else delete window.document.documentElement.dataset.density; }, [interfaceDensity]);
+  useEffect(() => { if (interfaceDensity) window.document.documentElement.dataset.density = interfaceDensity; else delete window.document.documentElement.dataset.density; }, [interfaceDensity]);  // Effect for managing the favicon
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    let faviconLink = document.querySelector<HTMLLinkElement>('link#app-favicon');
+    if (!faviconLink) {
+      faviconLink = document.createElement('link');
+      faviconLink.rel = 'icon';
+      faviconLink.id = 'app-favicon';
+      document.head.appendChild(faviconLink);
+    }
 
-  // useEffect(() => {
-  //   if (typeof window === 'undefined') return;
-  //   let faviconLink = document.querySelector<HTMLLinkElement>('link#app-favicon');
-  //   if (!faviconLink) {
-  //     faviconLink = document.createElement('link'); 
-  //     faviconLink.rel = 'icon'; 
-  //     faviconLink.id = 'app-favicon';
-  //     document.head.appendChild(faviconLink);
-  //   }
+    const oldObjectUrl = (faviconLink as any)._objectUrl;
 
-  //   const currentAccentColorForFavicon = accentColor || getInitialAccentHsl();
-  //   const oldObjectUrl = (faviconLink as any)._objectUrl; // Store to revoke later
+    // Function to update favicon based on faviconUrl only
+    if (faviconUrl) {
+      // Use explicitly set favicon URL
+      faviconLink.href = faviconUrl;
+      faviconLink.type = faviconUrl.endsWith('.ico') ? 'image/x-icon' : 'image/png';
+    } else {
+      // Fallback to default favicon
+      faviconLink.href = '/favicon.ico';
+      faviconLink.type = 'image/x-icon';
+    }
 
-  //   if (appLogoUrl) { // Prioritize user-uploaded/configured logo URL
-  //     faviconLink.href = appLogoUrl;
-  //     if (appLogoUrl.startsWith('data:image/svg+xml')) {
-  //       faviconLink.type = 'image/svg+xml';
-  //     } else if (appLogoUrl.startsWith('data:image/png')) {
-  //       faviconLink.type = 'image/png';
-  //     } else if (appLogoUrl.endsWith('.ico')) {
-  //       faviconLink.type = 'image/x-icon';
-  //     } else {
-  //       faviconLink.type = appLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png';
-  //     }
-  //   } else if (appIconPaths && appIconPaths.length > 0) { // Then theme's appIconPaths
-  //     const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(${currentAccentColorForFavicon})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${appIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
-  //     const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' }); 
-  //     const newObjectUrl = URL.createObjectURL(svgBlob);
-  //     faviconLink.href = newObjectUrl; 
-  //     faviconLink.type = 'image/svg+xml';
-  //     (faviconLink as any)._objectUrl = newObjectUrl;
-  //   } else { // Fallback to static default
-  //     faviconLink.href = '/favicon.ico'; 
-  //     faviconLink.type = 'image/x-icon';
-  //   }
+    // Cleanup any existing object URLs
+    if (oldObjectUrl) {
+      URL.revokeObjectURL(oldObjectUrl);
+      delete (faviconLink as any)._objectUrl;
+    }
+  }, [faviconUrl]);
 
-  //   if (oldObjectUrl && oldObjectUrl !== faviconLink.href) { // Revoke old only if it's different and was an object URL
-  //      URL.revokeObjectURL(oldObjectUrl);
-  //      if (faviconLink.href !== (faviconLink as any)._objectUrl) { // If new href is not the new object URL (e.g. it's a static path or data URI)
-  //        delete (faviconLink as any)._objectUrl;
-  //      }
-  //   }
-  // }, [appLogoUrl, appIconPaths, accentColor, theme]);
+  // Effect for managing dynamic SVG icon based on appIconPaths
+  useEffect(() => {
+    if (typeof window === 'undefined' || !appIconPaths?.length) return;
+
+    let faviconLink = document.querySelector<HTMLLinkElement>('link#app-favicon');
+    if (!faviconLink) {
+      faviconLink = document.createElement('link');
+      faviconLink.rel = 'icon';
+      faviconLink.id = 'app-favicon';
+      document.head.appendChild(faviconLink);
+    }
+
+    const oldObjectUrl = (faviconLink as any)._objectUrl;
+
+    // Only generate SVG if we don't have a specific faviconUrl set
+    if (!faviconUrl) {
+      const currentAccentColorForFavicon = accentColor || getInitialAccentHsl();
+      const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="hsl(${currentAccentColorForFavicon})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${appIconPaths.map(d => `<path d="${d}"></path>`).join('')}</svg>`;
+      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const newObjectUrl = URL.createObjectURL(svgBlob);
+      faviconLink.href = newObjectUrl;
+      faviconLink.type = 'image/svg+xml';
+      (faviconLink as any)._objectUrl = newObjectUrl;
+    }
+
+    return () => {
+      const objectUrl = (faviconLink as any)?._objectUrl;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        delete (faviconLink as any)._objectUrl;
+      }
+    };
+  }, [appIconPaths, accentColor, faviconUrl]);
 
 
   const value = useMemo(() => ({
-    theme, accentColor, borderRadius, appVersion, appName, appIconPaths, appLogoUrl, fontSize, appScale, interfaceDensity,
-    setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths, setAppLogoUrl, setFontSize, setAppScale, setInterfaceDensity,
+    theme, accentColor, borderRadius, appVersion, appName, appIconPaths, appLogoUrl, faviconUrl, fontSize, appScale, interfaceDensity,
+    setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths, setAppLogoUrl, setFaviconUrl, setFontSize, setAppScale, setInterfaceDensity,
     availableAccentColors: projectConfig.availableAccentColors,
     availableBorderRadii: projectConfig.availableBorderRadii,
     availableFontSizes: projectConfig.availableFontSizes,
     availableScales: projectConfig.availableScales,
     availableInterfaceDensities: projectConfig.availableInterfaceDensities,
   }), [
-      theme, accentColor, borderRadius, appVersion, appName, appIconPaths, appLogoUrl, fontSize, appScale, interfaceDensity,
-      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths, setAppLogoUrl, setFontSize, setAppScale, setInterfaceDensity
+      theme, accentColor, borderRadius, appVersion, appName, appIconPaths, appLogoUrl, faviconUrl, fontSize, appScale, interfaceDensity,
+      setTheme, setAccentColor, setBorderRadius, setAppVersion, setAppName, setAppIconPaths, setAppLogoUrl, setFaviconUrl, setFontSize, setAppScale, setInterfaceDensity
     ]);
 
   return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>;

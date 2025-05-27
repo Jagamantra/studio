@@ -35,6 +35,7 @@ export type ProjectConfig = {
   appName: string;
   appIconPaths: string[]; // Changed to non-optional
   appLogoUrl?: string | null; 
+  faviconUrl?: string | null; // Optional for backward compatibility
   availableAccentColors: AccentColor[];
   defaultAccentColorName: string;
   availableBorderRadii: BorderRadiusOption[];
@@ -82,6 +83,7 @@ export type ThemeSettings = {
   appName?: string;
   appIconPaths: string[]; // Changed to non-optional, mirrors ProjectConfig
   appLogoUrl?: string | null;
+  faviconUrl?: string | null; // Optional for backward compatibility
   fontSize?: string; 
   appScale?: string; 
   interfaceDensity?: 'compact' | 'comfortable' | 'spacious';
@@ -100,9 +102,10 @@ export type UserProfile = {
   preferences?: Partial<ThemeSettings>; // Preferences can be partial
 };
 
-export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appLogoUrl' | 'appIconPaths'>> {
+export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appLogoUrl' | 'appIconPaths' | 'faviconUrl'>> {
   appIconPaths: string[]; // Non-optional
   appLogoUrl?: string | null; 
+  faviconUrl?: string | null; // Optional for backward compatibility
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setAccentColor: (accentValue: string) => void;
   setBorderRadius: (radiusValue: string) => void;
@@ -110,6 +113,7 @@ export interface ThemeProviderState extends Required<Omit<ThemeSettings, 'appLog
   setAppName: (appName: string) => void;
   setAppIconPaths: (paths: string[] | undefined) => void; // Allow undefined for clearing
   setAppLogoUrl: (url: string | null) => void;
+  setFaviconUrl: (url: string | null) => void; // Allow null for clearing
   setFontSize: (fontSizeValue: string) => void;
   setAppScale: (scaleValue: string) => void;
   setInterfaceDensity: (density: 'compact' | 'comfortable' | 'spacious') => void;

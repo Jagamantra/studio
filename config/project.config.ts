@@ -9,6 +9,7 @@ export const projectConfig: ProjectConfig = {
     "M2 12l10 5 10-5"
   ],
   appLogoUrl: "/mantra_collab_logo.ico", // Set to null to use default favicon
+  faviconUrl: "/favicon.ico", // Optional, will use appLogoUrl if not set
   availableAccentColors: [
     { name: 'Teal', hslValue: '180 100% 25%', hexValue: '#008080' },
     { name: 'Blue', hslValue: '221.2 83.2% 53.3%', hexValue: '#2563EB' },

@@ -1,8 +1,7 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 import { ThemeProvider } from '@/contexts/theme-provider';
@@ -19,42 +18,45 @@ export default function RootLayout({
 }>) {
   const AuthProviderComponent = projectConfig.mockApiMode ? MockAuthProvider : RealAuthProvider;
 
-  // Determine initial favicon href based on projectConfig for SSR
-  // This provides a server-rendered default. ThemeProvider will update it client-side.
-  let initialFaviconHref = '/favicon.ico'; // Default to the static SVG in /public
-  let initialFaviconType = 'image/x-icon';
+  // Dynamically update the favicon on client-side mount
+  useEffect(() => {
+    if (!projectConfig.faviconUrl) return;
 
-  if (projectConfig.appLogoUrl) { // Check projectConfig for a globally set logo URL first
-    initialFaviconHref = projectConfig.appLogoUrl;
-    // Determine type from URL (basic check)
-    if (projectConfig.appLogoUrl.startsWith('data:image/svg+xml')) {
-      initialFaviconType = 'image/svg+xml';
-    } else if (projectConfig.appLogoUrl.startsWith('data:image/png')) {
-      initialFaviconType = 'image/png';
-    } else if (projectConfig.appLogoUrl.endsWith('.ico')) {
-      initialFaviconType = 'image/x-icon';
-    } else {
-      // Assume common image types or let browser infer if not a data URI or known extension
-      initialFaviconType = projectConfig.appLogoUrl.startsWith('data:') ? 'image/x-icon' : 'image/png'; 
+    const favicon = document.getElementById('app-favicon') as HTMLLinkElement | null;
+
+    if (favicon) {
+      favicon.href = projectConfig.faviconUrl;
+
+      if (projectConfig.faviconUrl.endsWith('.svg')) {
+        favicon.type = 'image/svg+xml';
+      } else if (projectConfig.faviconUrl.endsWith('.png')) {
+        favicon.type = 'image/png';
+      } else if (projectConfig.faviconUrl.endsWith('.ico')) {
+        favicon.type = 'image/x-icon';
+      } else {
+        favicon.type = 'image/png'; // Fallback
+      }
     }
-  }
-  // If no projectConfig.appLogoUrl, it defaults to /favicon.svg.
-  // The ThemeProvider will handle dynamic updates using theme context's appIconPaths or appLogoUrl client-side.
+  }, []);
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Default favicon; will be updated dynamically on client-side if projectConfig.faviconUrl is set */}
         <link rel="icon" href="/favicon.ico" type="image/x-icon" id="app-favicon" />
-        {/* ThemeProvider will find and update this link with id="app-favicon" client-side */}
       </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
-        <AuthProviderComponent> {/* This needs to wrap ThemeProvider if ThemeProvider uses useAuth */}
+        <AuthProviderComponent>
           <ThemeProvider
             storageKey="genesis-theme"
             defaultTheme="system"
           >
-            <React.Suspense fallback={<div className="flex flex-1 items-center justify-center p-4"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-            {children}
+            <React.Suspense fallback={
+              <div className="flex flex-1 items-center justify-center p-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            }>
+              {children}
             </React.Suspense>
             <ThemedSonnerToaster />
           </ThemeProvider>
