@@ -43,7 +43,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Default favicon; will be updated dynamically on client-side if projectConfig.faviconUrl is set */}
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" id="app-favicon" />
+        <link rel="icon" href="/defaultfavicon.png" type="image/png" id="app-favicon" />
       </head>
       <body className={`${GeistSans.variable} font-sans antialiased flex flex-col min-h-screen`}>
         <AuthProviderComponent>
