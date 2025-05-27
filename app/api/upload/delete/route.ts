@@ -1,32 +1,19 @@
+// app/api/delete/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { unlink } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import cloudinary from '@/lib/cloudinary';
 
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-    const { filePath } = data;
+    const { public_id } = await req.json();
 
-    if (!filePath || !filePath.startsWith('/uploads/')) {
-      return NextResponse.json(
-        { error: 'Invalid file path' },
-        { status: 400 }
-      );
+    if (!public_id) {
+      return NextResponse.json({ error: 'Missing public_id' }, { status: 400 });
     }
 
-    const fullPath = join(process.cwd(), 'public', filePath);
-    
-    if (existsSync(fullPath)) {
-      await unlink(fullPath);
-    }
-
-    return NextResponse.json({ success: true });
+    const result = await cloudinary.uploader.destroy(public_id);
+    return NextResponse.json({ success: true, result });
   } catch (error) {
-    console.error('Error deleting file:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete file' },
-      { status: 500 }
-    );
+    console.error('Delete error:', error);
+    return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
   }
 }

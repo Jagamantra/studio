@@ -85,6 +85,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
   appProjectConfigAvailableFontSizes,
   appProjectConfigAvailableScales,
 }: ProjectConfigFormCardProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { appLogoUrl: currentGlobalLogoUrl, appIconPaths } = useTheme();
   const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(
@@ -108,21 +109,17 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 2 * 1024 * 1024) {
         projectConfigForm.setError("appLogoUrl" as any, {
           type: "manual",
-          message: "File size should not exceed 5MB.",
+          message: "File size should not exceed 2MB.",
         });
         return;
       }
-      if (
-        !["image/png", "image/jpeg", "image/gif", "image/svg+xml"].includes(
-          file.type
-        )
-      ) {
+      if (!["image/jpeg", "image/gif", "image/svg+xml"].includes(file.type)) {
         projectConfigForm.setError("appLogoUrl" as any, {
           type: "manual",
-          message: "Invalid file type. Use PNG, JPG, GIF, or SVG.",
+          message: "Invalid file type. Use JPG, GIF, or SVG.",
         });
         return;
       }
@@ -156,21 +153,17 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
   ) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 2 * 1024 * 1024) {
         projectConfigForm.setError("faviconUrl" as any, {
           type: "manual",
-          message: "File size should not exceed 5MB.",
+          message: "File size should not exceed 2MB.",
         });
         return;
       }
-      if (
-        !["image/png", "image/jpeg", "image/gif", "image/svg+xml"].includes(
-          file.type
-        )
-      ) {
+      if (!["image/jpeg", "image/gif", "image/svg+xml"].includes(file.type)) {
         projectConfigForm.setError("faviconUrl" as any, {
           type: "manual",
-          message: "Invalid file type. Use PNG, JPG, GIF, or SVG.",
+          message: "Invalid file type. Use JPG, GIF, or SVG.",
         });
         return;
       }
@@ -199,16 +192,25 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
     });
   };
   const onSubmit = projectConfigForm.handleSubmit(async (values) => {
+    setIsSubmitting(true);
     try {
       let logoToSave = values.appLogoUrl;
       let faviconToSave = values.faviconUrl;
 
+      let logoPublicId: string | undefined;
+      let faviconPublicId: string | undefined;
+
       if (selectedLogoFile && logoPreviewUrl) {
         const logoFileName = generateUniqueFileName(selectedLogoFile.name);
-        const logoPath = await saveBase64File(logoPreviewUrl, logoFileName);
+        const { filePath: logoPath, publicId: logoId } = await saveBase64File(
+          logoPreviewUrl,
+          logoFileName
+        );
         logoToSave = logoPath;
+        logoPublicId = logoId;
       } else if (!selectedLogoFile && logoPreviewUrl === null) {
-        logoToSave = null;
+        logoToSave = undefined;
+        logoPublicId = undefined;
       } else {
         logoToSave = currentGlobalLogoUrl;
       }
@@ -217,15 +219,25 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
         const faviconFileName = generateUniqueFileName(
           selectedFaviconFile.name
         );
-        const faviconPath = await saveBase64File(
+        const { filePath: faviconPath, publicId: favId } = await saveBase64File(
           faviconPreviewUrl,
           faviconFileName
         );
         faviconToSave = faviconPath;
+        faviconPublicId = favId;
       } else if (!selectedFaviconFile && faviconPreviewUrl === null) {
-        faviconToSave = null;
+        logoPublicId = undefined;
+        // faviconToSave = undefined;
+        faviconPublicId = undefined;
       } else {
         faviconToSave = currentGlobalFaviconUrl;
+      }
+
+      if (logoPublicId) {
+        localStorage.setItem("logoPublicId", logoPublicId);
+      }
+      if (faviconPublicId) {
+        localStorage.setItem("faviconPublicId", faviconPublicId);
       }
 
       await handleSaveProjectConfig({
@@ -246,6 +258,8 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
         type: "manual",
         message: "Error saving favicon file.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   });
 
@@ -354,7 +368,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                           </Button>
                           <Input
                             type="file"
-                            accept="image/png, image/jpeg, image/gif, image/svg+xml"
+                            accept="image/jpeg, image/gif, image/svg+xml"
                             ref={logoFileInputRef}
                             onChange={handleLogoFileChange}
                             className="hidden"
@@ -375,8 +389,9 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                         </div>
                       </div>
                       <FormDescription className="text-xs">
-                        Upload a PNG, JPG, GIF, or SVG file (max 5MB).
+                        Upload a JPG, GIF, or SVG file (max 2MB).
                       </FormDescription>
+
                       <FormMessage>
                         {
                           projectConfigForm.formState.errors.appLogoUrl
@@ -435,7 +450,7 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                           </Button>
                           <Input
                             type="file"
-                            accept="image/png, image/jpeg, image/gif, image/svg+xml"
+                            accept="image/jpeg, image/gif, image/svg+xml"
                             ref={faviconFileInputRef}
                             onChange={handleFaviconFileChange}
                             className="hidden"
@@ -456,8 +471,9 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
                         </div>
                       </div>
                       <FormDescription className="text-xs">
-                        Upload a PNG, JPG, GIF, or SVG file (max 5MB).
+                        Upload a JPG, GIF, or SVG file (max 2MB).
                       </FormDescription>
+
                       <FormMessage>
                         {
                           projectConfigForm.formState.errors.faviconUrl
@@ -636,7 +652,10 @@ export const ProjectConfigFormCard = React.memo(function ProjectConfigFormCard({
           Reset Changes
         </Button>
         <Button
-          onClick={onSubmit}
+          onClick={() => {
+            setIsSubmitting(true);
+            onSubmit();
+          }}
           disabled={
             (!projectConfigForm.formState.isDirty &&
               logoPreviewUrl === currentGlobalLogoUrl &&

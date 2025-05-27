@@ -1,37 +1,22 @@
+// app/api/delete-multiple/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { unlink } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import cloudinary from '@/lib/cloudinary';
 
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-    const { filePaths } = data;
+    const { public_ids } = await req.json();
 
-    if (!Array.isArray(filePaths)) {
-      return NextResponse.json(
-        { error: 'filePaths must be an array' },
-        { status: 400 }
-      );
+    if (!Array.isArray(public_ids)) {
+      return NextResponse.json({ error: 'public_ids must be an array' }, { status: 400 });
     }
 
-    const deletePromises = filePaths
-      .filter(path => path && path.startsWith('/uploads/'))
-      .map(async (path) => {
-        const fullPath = join(process.cwd(), 'public', path);
-        if (existsSync(fullPath)) {
-          await unlink(fullPath);
-        }
-      });
-
-    await Promise.all(deletePromises);
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting files:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete files' },
-      { status: 500 }
+    const deleteResults = await Promise.all(
+      public_ids.map(id => cloudinary.uploader.destroy(id))
     );
+
+    return NextResponse.json({ success: true, results: deleteResults });
+  } catch (error) {
+    console.error('Batch delete error:', error);
+    return NextResponse.json({ error: 'Batch delete failed' }, { status: 500 });
   }
 }

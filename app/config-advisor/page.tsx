@@ -62,6 +62,8 @@ interface StoredConfigAdvisorInputs {
   projectConfigFormData?: ProjectConfigFormValues;
   sidebarConfigContent?: string;
   rolesConfigContent?: string;
+  logoPublicId?: string | null;
+  faviconPublicId?: string | null;
 }
 
 export default function ConfigAdvisorPage() {
@@ -421,89 +423,55 @@ export default function ConfigAdvisorPage() {
     }
   };
 
-  const handleResetProjectConfig = async () => {
-    setIsResettingProjectConfig(true);
-    try {
-      // Delete user-uploaded files if they exist
-      const currentFormValues = projectConfigForm.getValues();
-      const filesToDelete = [
-        currentFormValues.appLogoUrl,
-        currentFormValues.faviconUrl,
-      ].filter((path) => path?.startsWith("/uploads/"));
+const handleResetProjectConfig = async () => {
+  setIsResettingProjectConfig(true);
+  try {
+   // Retrieve public IDs from their own keys
+    const logoPublicId = localStorage.getItem("logoPublicId");
+    const faviconPublicId = localStorage.getItem("faviconPublicId");
 
-      if (filesToDelete.length > 0) {
-        const response = await fetch("/api/upload/delete-all", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filePaths: filesToDelete,
-          }),
-        });
+    const idsToDelete = [logoPublicId, faviconPublicId].filter(Boolean);
 
-        if (!response.ok) {
-          throw new Error("Failed to delete uploaded files");
-        }
-      }
-
-      // Reset form to default values
-      const defaultLogoUrl = appProjectConfigFromModule.appLogoUrl ?? null;
-      const defaultFaviconUrl = appProjectConfigFromModule.faviconUrl ?? null;
-
-      projectConfigForm.reset({
-        appName: appProjectConfigFromModule.appName,
-        appLogoUrl: defaultLogoUrl,
-        faviconUrl: defaultFaviconUrl,
-        defaultAccentColorName:
-          appProjectConfigFromModule.defaultAccentColorName,
-        defaultBorderRadiusName:
-          appProjectConfigFromModule.defaultBorderRadiusName,
-        defaultAppVersionId: appProjectConfigFromModule.defaultAppVersionId,
-        defaultFontSizeName: appProjectConfigFromModule.defaultFontSizeName,
-        defaultScaleName: appProjectConfigFromModule.defaultScaleName,
+    if (idsToDelete.length) {
+      await fetch("/api/delete-multiple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public_ids: idsToDelete }),
       });
-
-      // Reset theme provider values
-      setAppName(appProjectConfigFromModule.appName);
-      setAppLogoUrl(defaultLogoUrl);
-      setFaviconUrl(defaultFaviconUrl);
-      const defaultAccentColor = availableAccentColors.find(
-        (c) => c.name === appProjectConfigFromModule.defaultAccentColorName
-      );
-      const defaultBorderRadius = availableBorderRadii.find(
-        (r) => r.name === appProjectConfigFromModule.defaultBorderRadiusName
-      );
-      const defaultFontSize = availableFontSizes.find(
-        (f) => f.name === appProjectConfigFromModule.defaultFontSizeName
-      );
-      const defaultScale = availableScales.find(
-        (s) => s.name === appProjectConfigFromModule.defaultScaleName
-      );
-
-      if (defaultAccentColor) setAccentColor(defaultAccentColor.hslValue);
-      if (defaultBorderRadius) setBorderRadius(defaultBorderRadius.value);
-      setAppVersion(appProjectConfigFromModule.defaultAppVersionId);
-      if (defaultFontSize) setFontSize(defaultFontSize.value);
-      if (defaultScale) setAppScale(defaultScale.value);
-
-      // Clear stored form data
-      localStorage.removeItem("configAdvisorInputs");
-
-      toast({
-        message: "Project configuration reset to defaults.",
-        type: "success",
-      });
-    } catch (error) {
-      console.error("Error resetting project config:", error);
-      toast({
-        message: "Failed to reset project configuration.",
-        type: "error",
-      });
-    } finally {
-      setIsResettingProjectConfig(false);
     }
-  };
+    const defaults = appProjectConfigFromModule;
+    projectConfigForm.reset({
+      appName: defaults.appName,
+      appLogoUrl: defaults.appLogoUrl ?? null,
+      faviconUrl: defaults.faviconUrl ?? null,
+      defaultAccentColorName: defaults.defaultAccentColorName,
+      defaultBorderRadiusName: defaults.defaultBorderRadiusName,
+      defaultAppVersionId: defaults.defaultAppVersionId,
+      defaultFontSizeName: defaults.defaultFontSizeName,
+      defaultScaleName: defaults.defaultScaleName,
+    });
+
+    setAppName(defaults.appName);
+    setAppLogoUrl(defaults.appLogoUrl ?? null);
+    setFaviconUrl(defaults.faviconUrl ?? null);
+    setAccentColor(availableAccentColors.find(c => c.name === defaults.defaultAccentColorName)?.hslValue ?? "");
+    setBorderRadius(availableBorderRadii.find(r => r.name === defaults.defaultBorderRadiusName)?.value ?? 8);
+    setFontSize(availableFontSizes.find(f => f.name === defaults.defaultFontSizeName)?.value ?? 14);
+    setAppScale(availableScales.find(s => s.name === defaults.defaultScaleName)?.value ?? 1);
+
+    localStorage.removeItem("configAdvisorInputs");
+    localStorage.removeItem("logoPublicId");
+    localStorage.removeItem("faviconPublicId");
+
+    toast({ message: "Project configuration reset to defaults.", type: "success" });
+  } catch (error) {
+    console.error("Error resetting project config:", error);
+    toast({ message: "Failed to reset project configuration.", type: "error" });
+  } finally {
+    setIsResettingProjectConfig(false);
+  }
+};
+
 
   const handleAnalyzeSubmit = async () => {
     const projectConfigData = projectConfigForm.getValues();
